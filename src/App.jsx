@@ -4,6 +4,8 @@ import { CssBaseline } from '@mui/material';
 import { AuthProvider } from './context/AuthContext';
 import Login from './components/Login';
 import Register from './components/Register';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
 import SolicitudesUsuario from './components/SolicitudesUsuario';
@@ -25,6 +27,8 @@ function App() {
             {/* Rutas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             
             {/* Rutas protegidas */}
             <Route 
