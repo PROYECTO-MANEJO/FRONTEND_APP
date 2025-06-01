@@ -120,6 +120,58 @@ class AuthService {
   getToken() {
     return localStorage.getItem('token');
   }
+
+  // Solicitar recuperación de contraseña
+  async forgotPassword(email) {
+    try {
+      const response = await api.post('/auth/forgot-password', {
+        email
+      });
+
+      if (response.data.success) {
+        return response.data;
+      }
+      
+      throw new Error(response.data.message || 'Error al enviar el correo de recuperación');
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error de conexión');
+    }
+  }
+
+  // Restablecer contraseña
+  async resetPassword(token, password) {
+    try {
+      const response = await api.post('/auth/reset-password', {
+        token,
+        password
+      });
+
+      if (response.data.success) {
+        return response.data;
+      }
+      
+      throw new Error(response.data.message || 'Error al restablecer la contraseña');
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error de conexión');
+    }
+  }
+
+  // Verificar token de recuperación
+  async verifyResetToken(token) {
+    try {
+      const response = await api.post('/auth/verify-reset-token', {
+        token
+      });
+
+      if (response.data.success) {
+        return response.data;
+      }
+      
+      throw new Error(response.data.message || 'Token de recuperación inválido');
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Token inválido o expirado');
+    }
+  }
 }
 
-export default new AuthService(); 
+export default new AuthService();
