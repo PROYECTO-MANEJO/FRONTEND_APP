@@ -124,7 +124,7 @@ class AuthService {
   // Solicitar recuperación de contraseña
   async forgotPassword(email) {
     try {
-      const response = await api.post('/auth/forgot-password', {
+      const response = await api.post('/recovery/forgot-password', {
         email
       });
 
@@ -141,7 +141,7 @@ class AuthService {
   // Restablecer contraseña
   async resetPassword(token, password) {
     try {
-      const response = await api.post('/auth/reset-password', {
+      const response = await api.post('/recovery/reset-password', {
         token,
         password
       });
@@ -159,7 +159,7 @@ class AuthService {
   // Verificar token de recuperación
   async verifyResetToken(token) {
     try {
-      const response = await api.post('/auth/verify-reset-token', {
+      const response = await api.post('/recovery/verify-reset-token', {
         token
       });
 
