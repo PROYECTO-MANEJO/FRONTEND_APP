@@ -13,6 +13,8 @@ import AdminSolicitudes from './components/AdminSolicitudes';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import theme from './theme/theme';
+import CursosPage from './components/CursosPage';
+import EventosPage from './components/EventosPage';
 
 function App() {
   return (
@@ -66,6 +68,25 @@ function App() {
                 <AdminRoute>
                   <AdminSolicitudes />
                 </AdminRoute>
+              } 
+            />
+            
+            {/* Otras rutas */}
+            <Route 
+              path="/cursos" 
+              element={
+                <ProtectedRoute>
+                  <CursosPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/eventos" 
+              element={
+                <ProtectedRoute>
+                  <EventosPage />
+                </ProtectedRoute>
               } 
             />
             
