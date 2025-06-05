@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import {
   Box,
@@ -17,7 +16,7 @@ import {
   StepLabel,
 } from '@mui/material';
 import { Category, Person, Event, School, Send } from '@mui/icons-material';
-import api from '../services/api'; 
+import api from '../services/api';
 
 const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   const [categorias, setCategorias] = useState([]);
@@ -27,7 +26,7 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const steps = ['Información básica', 'Asignaciones', 'Confirmación'];
+  const steps = ['Información básica', 'Revisión', 'Confirmación']; // Cambié "Asignaciones" por "Revisión"
 
   const [curso, setCurso] = useState({
     nom_cur: '',
@@ -39,31 +38,29 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
     ced_org_cur: ''
   });
 
-
   useEffect(() => {
     api.get('/categorias')
       .then((res) => {
-        console.log('Categorias:', res.data); // <-- Debug aquí
+        console.log('Categorias:', res.data);
         setCategorias(res.data.categorias || []);
       })
       .catch((err) => {
-        console.error('Error al obtener categorias:', err); // <-- Debug error
+        console.error('Error al obtener categorias:', err);
         setCategorias([]);
       });
 
     api.get('/organizadores')
       .then((res) => {
-        console.log('Organizadores:', res.data); // <-- Debug aquí
+        console.log('Organizadores:', res.data);
         setOrganizadores(res.data.organizadores || []);
       })
       .catch((err) => {
-        console.error('Error al obtener organizadores:', err); // <-- Debug error
+        console.error('Error al obtener organizadores:', err);
         setOrganizadores([]);
       });
   }, []);
 
   useEffect(() => {
-    console.log();
     if (cursoEditado) {
       setCurso({
         nom_cur: cursoEditado.nom_cur,
@@ -173,7 +170,9 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
                 label="Categoría"
               >
                 {categorias.map((cat) => (
-                  <MenuItem key={cat.id_cat} value={cat.id_cat}>{cat.nom_cat}</MenuItem>
+                  <MenuItem key={cat.id_cat} value={cat.id_cat}>
+                    {cat.nom_cat}
+                  </MenuItem>
                 ))}
               </Select>
               {error && <Typography variant="body2" color="error">{error}</Typography>}
@@ -187,16 +186,28 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
                 label="Organizador"
               >
                 {organizadores.map((org) => (
-                  <MenuItem key={org.ced_org} value={org.ced_org}>{org.nom_org1} {org.ape_org1}</MenuItem>
+                  <MenuItem key={org.ced_org} value={org.ced_org}>
+                    {org.nom_org1} {org.ape_org1}
+                  </MenuItem>
                 ))}
               </Select>
               {error && <Typography variant="body2" color="error">{error}</Typography>}
             </FormControl>
-               
           </Box>
         );
       case 1:
-        return <Typography variant="body1">(Asignaciones o contenido relacionado puede agregarse aquí)</Typography>;
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography variant="h6">Revisión del Curso</Typography>
+            <Typography variant="body1"><strong>Nombre del Curso:</strong> {curso.nom_cur}</Typography>
+            <Typography variant="body1"><strong>Descripción:</strong> {curso.des_cur}</Typography>
+            <Typography variant="body1"><strong>Duración:</strong> {curso.dur_cur} horas</Typography>
+            <Typography variant="body1"><strong>Fecha Inicio:</strong> {curso.fec_ini_cur}</Typography>
+            <Typography variant="body1"><strong>Fecha Fin:</strong> {curso.fec_fin_cur}</Typography>
+            <Typography variant="body1"><strong>Categoría:</strong> {categorias.find(cat => cat.id_cat === curso.id_cat_cur)?.nom_cat}</Typography>
+            <Typography variant="body1"><strong>Organizador:</strong> {organizadores.find(org => org.ced_org === curso.ced_org_cur)?.nom_org1} {organizadores.find(org => org.ced_org === curso.ced_org_cur)?.ape_org1}</Typography>
+          </Box>
+        );
       case 2:
         return (
           <Typography variant="body1">
