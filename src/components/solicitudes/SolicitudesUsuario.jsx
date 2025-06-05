@@ -21,7 +21,7 @@ import {
   Home,
   RequestPage,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Link as RouterLink } from 'react-router-dom';
 import CrearSolicitud from './CrearSolicitud';
 import MisSolicitudes from './MisSolicitudes';
@@ -39,7 +39,6 @@ const SolicitudesUsuario = () => {
   };
 
   const handleSolicitudCreada = () => {
-    // Cambiar a la pestaña de mis solicitudes cuando se crea una nueva
     setActiveTab(1);
   };
 
@@ -61,20 +60,10 @@ const SolicitudesUsuario = () => {
                 <School />
               </Avatar>
               <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
-                Sistema de Gestión de Eventos
+                MyStudy - Solicitudes
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Button
-                component={RouterLink}
-                to="/dashboard"
-                variant="outlined"
-                color="inherit"
-                startIcon={<Home />}
-                size="small"
-              >
-                Dashboard
-              </Button>
               {isAdmin() && (
                 <Button
                   component={RouterLink}
@@ -116,6 +105,7 @@ const SolicitudesUsuario = () => {
             component={RouterLink}
             to="/dashboard"
             underline="hover"
+            color="inherit"
             sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
           >
             <Home sx={{ fontSize: 16 }} />
@@ -171,4 +161,4 @@ const SolicitudesUsuario = () => {
   );
 };
 
-export default SolicitudesUsuario; 
+export default SolicitudesUsuario;

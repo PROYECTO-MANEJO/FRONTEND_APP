@@ -6,10 +6,10 @@ import {
   CircularProgress,
   Paper
 } from '@mui/material';
-import { eventoService } from '../services/eventoService';
-import { cursoService } from '../services/cursoService';
-import CursoCard from './CursoCard';
-import EventoCard from './EventoCard';
+import { eventoService } from '../../services/eventoService';
+import { cursoService } from '../../services/cursoService';
+import CursoCard from '../shared/CursoCard';
+import EventoCard from '../shared/EventoCard';
 import UserSidebar from './UserSidebar';
 
 const UserDashboard = ({ user }) => {

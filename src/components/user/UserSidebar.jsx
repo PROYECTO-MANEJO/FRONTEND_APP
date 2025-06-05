@@ -15,10 +15,11 @@ import {
   Settings,
   Logout,
   School,
-  Event
+  Event,
+  AccountCircle
 } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 
 const UserSidebar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -124,6 +125,24 @@ const UserSidebar = () => {
             <Assignment />
           </ListItemIcon>
           <ListItemText primary="Solicitudes" />
+        </ListItem>
+
+        <ListItem 
+          component={Link}
+          to="/perfil"
+          sx={{ 
+            mb: 1, 
+            borderRadius: 2,
+            color: 'white',
+            textDecoration: 'none',
+            bgcolor: isActive('/perfil') ? 'rgba(255,255,255,0.1)' : 'transparent',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+          }}
+        >
+          <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+            <AccountCircle />
+          </ListItemIcon>
+          <ListItemText primary="Mi Perfil" />
         </ListItem>
 
         <ListItem 
