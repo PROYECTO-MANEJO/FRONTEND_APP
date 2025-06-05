@@ -15,6 +15,8 @@ import { Person, CheckCircle, RequestPage, Event, School } from '@mui/icons-mate
 import { Link } from 'react-router-dom';
 import { eventoService } from '../services/eventoService';
 import { cursoService } from '../services/cursoService';
+import CursoCard from './CursoCard';
+import EventoCard from './EventoCard';
 
 const UserDashboard = ({ user }) => {
   const [eventos, setEventos] = useState([]);
@@ -48,15 +50,15 @@ const UserDashboard = ({ user }) => {
       <Box sx={{ textAlign: 'center', mt: 4 }}>
         <Typography color="error">{error}</Typography>
       </Box>
-    );
+    );   
   }
 
-  return (
+  return (  
     <>
       <Avatar
         sx={{
           width: 80,
-          height: 80,
+          height: 80,  
           bgcolor: 'primary.main',
           mx: 'auto',
           mb: 3,
@@ -147,56 +149,47 @@ const UserDashboard = ({ user }) => {
           <CircularProgress />
         </Box>
       ) : (
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h5" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Event color="primary" /> Eventos
-            </Typography>
+        <Box>
+          {/* Grid de Eventos */}
+          <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Event color="primary" /> Eventos
+          </Typography>
+          <Grid container spacing={3} sx={{ mb: 6 }}>
             {eventos.length === 0 ? (
-              <Typography color="text.secondary">No hay eventos disponibles.</Typography>
+              <Grid item xs={12}>
+                <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
+                  No hay eventos disponibles.
+                </Typography>
+              </Grid>
             ) : (
               eventos.map((evento) => (
-                <Card key={evento.id_eve} sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6">{evento.nom_eve}</Typography>
-                    <Typography variant="body2" color="text.secondary">{evento.des_eve}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Fecha: {new Date(evento.fec_ini_eve).toLocaleDateString()}
-                    </Typography>
-                    <br />
-                    <Typography variant="caption" color="text.secondary">
-                      Área: {evento.are_eve} | Audiencia: {evento.tipo_audiencia_eve}
-                    </Typography>
-                  </CardContent>
-                </Card>
+                <Grid item xs={12} sm={6} md={4} key={evento.id_eve}>
+                  <EventoCard evento={evento} />
+                </Grid>
               ))
             )}
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h5" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <School color="secondary" /> Cursos
-            </Typography>
+
+          {/* Grid de Cursos */}
+          <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <School color="secondary" /> Cursos
+          </Typography>
+          <Grid container spacing={3}>
             {cursos.length === 0 ? (
-              <Typography color="text.secondary">No hay cursos disponibles.</Typography>
+              <Grid item xs={12}>
+                <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
+                  No hay cursos disponibles.
+                </Typography>
+              </Grid>
             ) : (
               cursos.map((curso) => (
-                <Card key={curso.id_cur} sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6">{curso.nom_cur}</Typography>
-                    <Typography variant="body2" color="text.secondary">{curso.des_cur}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Fecha inicio: {new Date(curso.fec_ini_cur).toLocaleDateString()}
-                    </Typography>
-                    <br />
-                    <Typography variant="caption" color="text.secondary">
-                      Duración: {curso.dur_cur} horas
-                    </Typography>
-                  </CardContent>
-                </Card>
+                <Grid item xs={12} sm={6} md={4} key={curso.id_cur}>
+                  <CursoCard curso={curso} />
+                </Grid>
               ))
             )}
           </Grid>
-        </Grid>
+        </Box>
       )}
 
       <Box sx={{ mt: 4 }}>
