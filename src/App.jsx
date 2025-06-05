@@ -1,20 +1,28 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
-import { AuthProvider } from './context/AuthContext';
-import Login from './components/Login';
-import Register from './components/Register';
-import ForgotPassword from './components/ForgotPassword';
-import ResetPassword from './components/ResetPassword';
-import Dashboard from './components/Dashboard';
-import AdminPanel from './components/AdminPanel';
-import SolicitudesUsuario from './components/SolicitudesUsuario';
-import AdminSolicitudes from './components/AdminSolicitudes';
-import ProtectedRoute from './components/ProtectedRoute';
-import AdminRoute from './components/AdminRoute';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/theme';
-import CursosPage from './components/CursosPage';
-import EventosPage from './components/EventosPage';
+import { AuthProvider } from './context/AuthContext';
+
+// Auth components
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
+
+// User components
+import Dashboard from './components/user/Dashboard';
+import CursosPage from './components/user/CursosPage';
+import EventosPage from './components/user/EventosPage';
+
+// Admin components
+import AdminPanel from './components/admin/AdminPanel';
+import AdminSolicitudes from './components/admin/AdminSolicitudes';
+
+// Solicitudes components
+import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
 
 function App() {
   return (
@@ -23,16 +31,16 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            {/* Ruta raíz - redirige al dashboard si está autenticado, sino al login */}
+            {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
-            {/* Rutas públicas */}
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             
-            {/* Rutas protegidas */}
+            {/* Protected user routes */}
             <Route 
               path="/dashboard" 
               element={
@@ -42,7 +50,6 @@ function App() {
               } 
             />
             
-            {/* Rutas de solicitudes para usuarios */}
             <Route 
               path="/solicitudes" 
               element={
@@ -52,7 +59,7 @@ function App() {
               } 
             />
             
-            {/* Rutas de administrador */}
+            {/* Admin routes */}
             <Route 
               path="/admin" 
               element={
@@ -71,7 +78,7 @@ function App() {
               } 
             />
             
-            {/* Otras rutas */}
+            {/* User pages */}
             <Route 
               path="/cursos" 
               element={
@@ -90,7 +97,7 @@ function App() {
               } 
             />
             
-            {/* Ruta 404 - redirige al dashboard */}
+            {/* Fallback */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>

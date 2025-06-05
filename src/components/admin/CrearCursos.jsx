@@ -17,7 +17,7 @@ import {
   Snackbar, // Importamos Snackbar
 } from '@mui/material';
 import { Category, Person, Event, School, Send } from '@mui/icons-material';
-import api from '../services/api';
+import api from '../../services/api';
 
 const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   const [categorias, setCategorias] = useState([]);

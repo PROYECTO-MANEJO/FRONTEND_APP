@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
@@ -22,8 +22,7 @@ import {
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
-import authService from '../services/authService';
-import { useState, useEffect } from 'react';
+import authService from '../../services/authService';
 
 const validationSchema = Yup.object().shape({
   password: Yup.string()
@@ -99,11 +98,13 @@ const ResetPassword = () => {
               <Alert severity="error" sx={{ mb: 3 }}>
                 {error}
               </Alert>
-              <Link to="/forgot-password">
-                <Button variant="contained">
-                  Solicitar nuevo enlace
-                </Button>
-              </Link>
+              <Button 
+                component={Link} 
+                to="/forgot-password" 
+                variant="contained"
+              >
+                Solicitar nuevo enlace
+              </Button>
             </CardContent>
           </Card>
         </Container>
@@ -125,6 +126,39 @@ const ResetPassword = () => {
         }}
       >
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Mostrar éxito si la contraseña se actualizó
+  if (success) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+          padding: 2,
+        }}
+      >
+        <Container maxWidth="sm">
+          <Card elevation={3} sx={{ borderRadius: 3 }}>
+            <CardContent sx={{ p: 4, textAlign: 'center' }}>
+              <Alert severity="success" sx={{ mb: 3 }}>
+                ¡Contraseña actualizada exitosamente! Serás redirigido al login en unos segundos.
+              </Alert>
+              <Button 
+                component={Link} 
+                to="/login" 
+                variant="contained"
+              >
+                Ir al Login
+              </Button>
+            </CardContent>
+          </Card>
+        </Container>
       </Box>
     );
   }

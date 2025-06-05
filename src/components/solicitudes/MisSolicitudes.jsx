@@ -36,7 +36,7 @@ import {
   Check,
   Close,
 } from '@mui/icons-material';
-import solicitudesService from '../services/solicitudesService';
+import solicitudesService from '../../services/solicitudesService';
 
 const MisSolicitudes = () => {
   const [solicitudes, setSolicitudes] = useState([]);

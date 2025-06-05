@@ -9,7 +9,7 @@ import {
   Avatar,
 } from '@mui/material';
 import { Warning, ArrowBack, Dashboard } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminRoute = ({ children }) => {
   const { isAuthenticated, isLoading, isAdmin } = useAuth();

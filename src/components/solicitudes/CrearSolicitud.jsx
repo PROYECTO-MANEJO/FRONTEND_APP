@@ -26,8 +26,8 @@ import {
   PriorityHigh,
   CheckCircle,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
-import solicitudesService from '../services/solicitudesService';
+import { useAuth } from '../../context/AuthContext';
+import solicitudesService from '../../services/solicitudesService';
 
 const CrearSolicitud = ({ onSolicitudCreada }) => {
   const { user } = useAuth();

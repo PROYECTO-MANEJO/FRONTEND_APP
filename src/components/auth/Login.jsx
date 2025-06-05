@@ -24,7 +24,7 @@ import {
   Lock,
   School,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 const validationSchema = yup.object().shape({
   email: yup

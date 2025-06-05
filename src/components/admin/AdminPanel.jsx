@@ -32,9 +32,9 @@ import {
   EventNote,
   RequestPage,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import authService from '../services/authService';
+import authService from '../../services/authService';
 import AdminSolicitudes from './AdminSolicitudes';
 import CrearCursos from './CrearCursos';
 

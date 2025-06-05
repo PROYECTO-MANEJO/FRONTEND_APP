@@ -19,7 +19,7 @@ import {
   School,
   ArrowBack,
 } from '@mui/icons-material';
-import authService from '../services/authService';
+import authService from '../../services/authService';
 
 const validationSchema = yup.object().shape({
   email: yup

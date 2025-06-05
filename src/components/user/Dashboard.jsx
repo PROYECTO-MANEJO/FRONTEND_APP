@@ -21,10 +21,10 @@ import {
   Person,
   RequestPage,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import UserDashboard from './UserDashboard';
-import AdminDashboard from './AdminDashboard';
+import AdminDashboard from '../admin/AdminDashboard';
 
 const Dashboard = () => {
   const { user, logout, isAdmin } = useAuth();

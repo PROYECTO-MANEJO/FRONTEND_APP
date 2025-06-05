@@ -6,8 +6,8 @@ import {
   CircularProgress,
   Paper
 } from '@mui/material';
-import { cursoService } from '../services/cursoService';
-import CursoCard from './CursoCard';
+import { cursoService } from '../../services/cursoService';
+import CursoCard from '../shared/CursoCard';
 import UserSidebar from './UserSidebar';
 
 const CursosPage = () => {

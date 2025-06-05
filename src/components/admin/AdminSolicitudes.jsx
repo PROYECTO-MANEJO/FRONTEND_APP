@@ -42,7 +42,7 @@ import {
   PriorityHigh,
   AccessTime,
 } from '@mui/icons-material';
-import solicitudesService from '../services/solicitudesService';
+import solicitudesService from '../../services/solicitudesService';
 
 const AdminSolicitudes = () => {
   const [solicitudes, setSolicitudes] = useState([]);

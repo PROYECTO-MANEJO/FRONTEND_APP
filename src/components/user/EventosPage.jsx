@@ -6,8 +6,8 @@ import {
   CircularProgress,
   Paper
 } from '@mui/material';
-import { eventoService } from '../services/eventoService';
-import EventoCard from './EventoCard';
+import { eventoService } from '../../services/eventoService';
+import EventoCard from '../shared/EventoCard';
 import UserSidebar from './UserSidebar';
 
 const EventosPage = () => {
