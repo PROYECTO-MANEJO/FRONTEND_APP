@@ -16,6 +16,7 @@ import AdminRoute from './components/auth/AdminRoute';
 import Dashboard from './components/user/Dashboard';
 import CursosPage from './components/user/CursosPage';
 import EventosPage from './components/user/EventosPage';
+import UserProfile from './components/user/UserProfile';
 
 // Admin components
 import AdminPanel from './components/admin/AdminPanel';
@@ -55,6 +56,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SolicitudesUsuario />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/perfil" 
+              element={
+                <ProtectedRoute>
+                  <UserProfile />
                 </ProtectedRoute>
               } 
             />
