@@ -14,6 +14,7 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Snackbar, // Importamos Snackbar
 } from '@mui/material';
 import { Category, Person, Event, School, Send } from '@mui/icons-material';
 import api from '../services/api';
@@ -25,8 +26,10 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Estado para controlar el Snackbar
+  const [snackbarMessage, setSnackbarMessage] = useState(''); // Mensaje del Snackbar
 
-  const steps = ['Información básica', 'Revisión', 'Confirmación']; // Cambié "Asignaciones" por "Revisión"
+  const steps = ['Información básica', 'Revisión', 'Confirmación'];
 
   const [curso, setCurso] = useState({
     nom_cur: '',
@@ -107,6 +110,9 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         await api.post('/cursos', curso);
       }
       setSuccess(true);
+      setSnackbarMessage('Curso creado correctamente!'); // Mensaje para el Snackbar
+      setSnackbarOpen(true); // Abrir el Snackbar
+
       setTimeout(() => {
         setSuccess(false);
         if (onSuccess) onSuccess();
@@ -266,6 +272,17 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
           </Button>
         )}
       </Box>
+
+      {/* Snackbar para la notificación */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="success">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };
