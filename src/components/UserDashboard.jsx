@@ -10,8 +10,23 @@ import {
   Grid,
   CircularProgress,
   Divider,
+  Paper,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
-import { Person, CheckCircle, RequestPage, Event, School } from '@mui/icons-material';
+import { 
+  Person, 
+  CheckCircle, 
+  RequestPage, 
+  Event, 
+  School,
+  Dashboard as DashboardIcon,
+  Assignment,
+  Settings,
+  Logout
+} from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { eventoService } from '../services/eventoService';
 import { cursoService } from '../services/cursoService';
@@ -53,151 +68,303 @@ const UserDashboard = ({ user }) => {
     );   
   }
 
-  return (  
-    <>
-      <Avatar
-        sx={{
-          width: 80,
-          height: 80,  
-          bgcolor: 'primary.main',
-          mx: 'auto',
-          mb: 3,
+  return (
+    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      {/* Sidebar */}
+      <Box 
+        sx={{ 
+          width: 280, 
+          bgcolor: '#5855D6', 
+          color: 'white',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
-        <CheckCircle sx={{ fontSize: 40 }} />
-      </Avatar>
-      <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 700 }}>
-        ¡Bienvenido al Dashboard!
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Has iniciado sesión exitosamente en el sistema.
-      </Typography>
-      <Card
-        elevation={1}
-        sx={{
-          maxWidth: 400,
-          mx: 'auto',
-          mb: 4,
-          border: '1px solid',
-          borderColor: 'grey.200',
-        }}
-      >
-        <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-            <Person />
-            Información de tu cuenta
+        {/* Logo/Header */}
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+            MyStudy
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                Nombre:
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+            Sistema de Gestión
+          </Typography>
+        </Box>
+
+        {/* Navigation Menu */}
+        <List sx={{ px: 2, flexGrow: 1 }}>
+          <ListItem 
+            sx={{ 
+              mb: 1, 
+              borderRadius: 2, 
+              bgcolor: 'rgba(255,255,255,0.1)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+              <DashboardIcon />
+            </ListItemIcon>
+            <ListItemText primary="Dashboard" />
+          </ListItem>
+
+          <ListItem 
+            component={Link}
+            to="/cursos"
+            sx={{ 
+              mb: 1, 
+              borderRadius: 2,
+              color: 'white',
+              textDecoration: 'none',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+              <School />
+            </ListItemIcon>
+            <ListItemText primary="Cursos" />
+          </ListItem>
+
+          <ListItem 
+            component={Link}
+            to="/eventos"
+            sx={{ 
+              mb: 1, 
+              borderRadius: 2,
+              color: 'white',
+              textDecoration: 'none',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+              <Event />
+            </ListItemIcon>
+            <ListItemText primary="Eventos" />
+          </ListItem>
+
+          <ListItem 
+            component={Link}
+            to="/solicitudes"
+            sx={{ 
+              mb: 1, 
+              borderRadius: 2,
+              color: 'white',
+              textDecoration: 'none',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+              <Assignment />
+            </ListItemIcon>
+            <ListItemText primary="Solicitudes" />
+          </ListItem>
+
+          <ListItem 
+            sx={{ 
+              mb: 1, 
+              borderRadius: 2,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+              <Settings />
+            </ListItemIcon>
+            <ListItemText primary="Configuración" />
+          </ListItem>
+        </List>
+
+        {/* User Info */}
+        <Box sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Avatar 
+              sx={{ 
+                width: 40, 
+                height: 40, 
+                bgcolor: 'rgba(255,255,255,0.2)',
+                mr: 2
+              }}
+            >
+              <Person />
+            </Avatar>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                 {user?.nombre} {user?.apellido}
               </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                ID:
+              <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                {user?.rol}
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {user?.id}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                Rol:
-              </Typography>
-              <Chip
-                label={user?.rol}
-                color="primary"
-                size="small"
-                sx={{
-                  bgcolor: '#dbeafe',
-                  color: '#1d4ed8',
-                  fontWeight: 500,
-                }}
-              />
             </Box>
           </Box>
-        </CardContent>
-      </Card>
-
-      <Box sx={{ mb: 4 }}>
-        <Button
-          component={Link}
-          to="/solicitudes"
-          variant="contained"
-          size="large"
-          startIcon={<RequestPage />}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 600,
-            px: 4,
-            py: 1.5,
-          }}
-        >
-          Solicitudes de Cambio
-        </Button>
+        </Box>
       </Box>
 
-      <Divider sx={{ my: 4 }} />
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
+      {/* Main Content */}
+      <Box sx={{ flexGrow: 1, p: 3, overflow: 'auto' }}>
+        {/* Header */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            Buenos días
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+            ¡Bienvenido, {user?.nombre}!
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {new Date().toLocaleDateString('es-ES', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </Typography>
         </Box>
-      ) : (
-        <Box>
-          {/* Grid de Eventos */}
-          <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Event color="primary" /> Eventos
-          </Typography>
-          <Grid container spacing={3} sx={{ mb: 6 }}>
-            {eventos.length === 0 ? (
-              <Grid item xs={12}>
-                <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
-                  No hay eventos disponibles.
-                </Typography>
-              </Grid>
-            ) : (
-              eventos.map((evento) => (
-                <Grid item xs={12} sm={6} md={4} key={evento.id_eve}>
-                  <EventoCard evento={evento} />
-                </Grid>
-              ))
-            )}
-          </Grid>
 
-          {/* Grid de Cursos */}
-          <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <School color="secondary" /> Cursos
-          </Typography>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
           <Grid container spacing={3}>
-            {cursos.length === 0 ? (
-              <Grid item xs={12}>
-                <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
-                  No hay cursos disponibles.
+            {/* Left Column - Events */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+                  Últimos Eventos
                 </Typography>
-              </Grid>
-            ) : (
-              cursos.map((curso) => (
-                <Grid item xs={12} sm={6} md={4} key={curso.id_cur}>
-                  <CursoCard curso={curso} />
+                <Grid container spacing={2}>
+                  {eventos.length === 0 ? (
+                    <Grid item xs={12}>
+                      <Paper sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography color="text.secondary">
+                          No hay eventos disponibles
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  ) : (
+                    eventos.slice(0, 4).map((evento) => (
+                      <Grid item xs={12} key={evento.id_eve}>
+                        <EventoCard evento={evento} />
+                      </Grid>
+                    ))
+                  )}
                 </Grid>
-              ))
-            )}
-          </Grid>
-        </Box>
-      )}
+              </Box>
 
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="body2" color="text.secondary">
-          Próximamente: Gestión de eventos, cursos, participantes y más funcionalidades.
-        </Typography>
+              {/* Your Courses Section */}
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    Tus Cursos
+                  </Typography>
+                  <Button variant="text" size="small">
+                    Ver todos
+                  </Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {cursos.slice(0, 2).map((curso) => (
+                    <Grid item xs={12} key={curso.id_cur}>
+                      <CursoCard curso={curso} />
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </Grid>
+
+            {/* Right Column - Progress & Tasks */}
+            <Grid item xs={12} md={6}>
+              {/* Progress Card */}
+              <Paper sx={{ p: 3, mb: 3, textAlign: 'center' }}>
+                <Typography variant="h6" gutterBottom>
+                  Progreso de Aprendizaje
+                </Typography>
+                <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
+                  <CircularProgress
+                    variant="determinate"
+                    value={75}
+                    size={120}
+                    thickness={4}
+                    sx={{ color: '#5855D6' }}
+                  />
+                  <Box
+                    sx={{
+                      top: 0,
+                      left: 0,
+                      bottom: 0,
+                      right: 0,
+                      position: 'absolute',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography variant="h6" component="div" color="text.secondary">
+                      75%
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Total completado: 3 de 4 cursos
+                </Typography>
+              </Paper>
+
+              {/* Stats Cards */}
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={6}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
+                      {eventos.length}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Eventos
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="secondary" sx={{ fontWeight: 'bold' }}>
+                      {cursos.length}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Cursos
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+
+              {/* Quick Actions */}
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  Acciones Rápidas
+                </Typography>
+                <List dense>
+                  <ListItem 
+                    component={Link}
+                    to="/solicitudes"
+                    sx={{ 
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: 'rgba(88, 85, 214, 0.04)' }
+                    }}
+                  >
+                    <ListItemIcon>
+                      <RequestPage color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Ver Solicitudes" />
+                  </ListItem>
+                  <ListItem 
+                    sx={{ 
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: 'rgba(88, 85, 214, 0.04)' }
+                    }}
+                  >
+                    <ListItemIcon>
+                      <School color="secondary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Explorar Cursos" />
+                  </ListItem>
+                </List>
+              </Paper>
+            </Grid>
+          </Grid>
+        )}
       </Box>
-    </>
+    </Box>
   );
 };
 

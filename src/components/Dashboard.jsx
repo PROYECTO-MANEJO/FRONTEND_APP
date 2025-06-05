@@ -35,25 +35,25 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Header */}
-      <AppBar position="static" elevation={1}>
-        <Container maxWidth="lg">
-          <Toolbar sx={{ px: 0 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-              <Avatar
-                sx={{
-                  bgcolor: 'primary.main',
-                  mr: 2,
-                  width: 40,
-                  height: 40,
-                }}
-              >
-                <School />
-              </Avatar>
-              <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
-                Sistema de Gestión de Eventos
-              </Typography>
-              {isAdmin() && (
+      {/* Solo mostrar header para admin o cuando sea necesario */}
+      {isAdmin() && (
+        <AppBar position="static" elevation={1}>
+          <Container maxWidth="lg">
+            <Toolbar sx={{ px: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                <Avatar
+                  sx={{
+                    bgcolor: 'primary.main',
+                    mr: 2,
+                    width: 40,
+                    height: 40,
+                  }}
+                >
+                  <School />
+                </Avatar>
+                <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
+                  Sistema de Gestión de Eventos
+                </Typography>
                 <Button
                   component={Link}
                   to="/admin"
@@ -70,44 +70,44 @@ const Dashboard = () => {
                 >
                   Panel Admin
                 </Button>
-              )}
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Bienvenido, <strong>{user?.nombre} {user?.apellido}</strong>
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<Logout />}
-                onClick={handleLogout}
-                size="small"
-              >
-                Cerrar Sesión
-              </Button>
-            </Box>
-          </Toolbar>
-        </Container>
-      </AppBar>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Bienvenido, <strong>{user?.nombre} {user?.apellido}</strong>
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Logout />}
+                  onClick={handleLogout}
+                  size="small"
+                >
+                  Cerrar Sesión
+                </Button>
+              </Box>
+            </Toolbar>
+          </Container>
+        </AppBar>
+      )}
 
-      {/* Main Content */}
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Paper
-          elevation={2}
-          sx={{
-            borderRadius: 3,
-            overflow: 'hidden',
-          }}
-        >
-          <CardContent sx={{ p: 4, textAlign: 'center' }}>
-            {isAdmin() ? (
+      {/* Main Content sin wrapper para usuarios */}
+      {isAdmin() ? (
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Paper
+            elevation={2}
+            sx={{
+              borderRadius: 3,
+              overflow: 'hidden',
+            }}
+          >
+            <CardContent sx={{ p: 4 }}>
               <AdminDashboard user={user} />
-            ) : (
-              <UserDashboard user={user} />
-            )}
-          </CardContent>
-        </Paper>
-      </Container>
+            </CardContent>
+          </Paper>
+        </Container>
+      ) : (
+        <UserDashboard user={user} />
+      )}
     </Box>
   );
 };
