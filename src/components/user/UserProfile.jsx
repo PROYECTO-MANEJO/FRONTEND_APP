@@ -55,7 +55,7 @@ const UserProfile = () => {
   const [userData, setUserData] = useState(null);
   const [carreras, setCarreras] = useState([]);
 
-  const isEstudiante = user?.rol === 'ESTUDIANTE';
+  const isEstudiante = userData?.rol === 'ESTUDIANTE';
 
   useEffect(() => {
     const loadData = async () => {
@@ -64,11 +64,13 @@ const UserProfile = () => {
         
         // Cargar datos del usuario
         const userResponse = await userService.getProfile();
+        console.log('User data loaded:', userResponse);
         setUserData(userResponse);
 
         // Si es estudiante, cargar carreras
-        if (isEstudiante) {
+        if (userResponse?.rol === 'ESTUDIANTE') {
           const carrerasResponse = await carreraService.getAll();
+          console.log('Carreras loaded:', carrerasResponse);
           setCarreras(carrerasResponse);
         }
       } catch (error) {
@@ -76,24 +78,40 @@ const UserProfile = () => {
           type: 'error',
           text: 'Error al cargar los datos del perfil'
         });
-        console.error(error);
+        console.error('Error loading profile data:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [isEstudiante]);
+  }, []);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
     try {
-      const updatedUser = await userService.updateProfile(values);
+      // Preparar datos para enviar (sin isEstudiante)
+      const dataToSubmit = {
+        nom_usu1: values.nom_usu1,
+        nom_usu2: values.nom_usu2,
+        ape_usu1: values.ape_usu1,
+        ape_usu2: values.ape_usu2,
+        fec_nac_usu: values.fec_nac_usu,
+        num_tel_usu: values.num_tel_usu,
+        id_car_per: values.id_car_per || null
+      };
+
+      console.log('Submitting data:', dataToSubmit);
       
-      // Actualizar el contexto de autenticación
-      updateUser(updatedUser);
+      const updatedUser = await userService.updateProfile(dataToSubmit);
+      console.log('User updated:', updatedUser);
+      
+      // Actualizar el contexto de autenticación si es necesario
+      if (updateUser) {
+        updateUser(updatedUser);
+      }
       setUserData(updatedUser);
       
       setMessage({
@@ -102,7 +120,14 @@ const UserProfile = () => {
       });
       
       setIsEditing(false);
+      
+      // Limpiar mensaje después de 3 segundos
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 3000);
+      
     } catch (error) {
+      console.error('Error updating profile:', error);
       setMessage({
         type: 'error',
         text: error.message || 'Error al actualizar el perfil'
@@ -119,8 +144,14 @@ const UserProfile = () => {
   };
 
   const getCarreraNombre = (carreraId) => {
+    if (!carreraId) return 'No asignada';
     const carrera = carreras.find(c => c.id_car === carreraId);
-    return carrera ? carrera.nom_car : 'No asignada';
+    return carrera ? carrera.nom_car : 'No encontrada';
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setMessage({ type: '', text: '' });
   };
 
   if (loading) {
@@ -129,6 +160,19 @@ const UserProfile = () => {
         <UserSidebar />
         <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <CircularProgress sx={{ color: '#6d1313' }} />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+        <UserSidebar />
+        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Alert severity="error">
+            Error al cargar los datos del perfil
+          </Alert>
         </Box>
       </Box>
     );
@@ -193,13 +237,13 @@ const UserProfile = () => {
               </Typography>
               
               <Chip 
-                label={user?.rol || 'Usuario'} 
+                label={userData?.rol || 'Usuario'} 
                 color={isEstudiante ? "primary" : "secondary"}
                 sx={{ mb: 2 }}
               />
               
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                {user?.email}
+                {userData?.email}
               </Typography>
               
               <Typography variant="body2" color="text.secondary">
@@ -215,9 +259,14 @@ const UserProfile = () => {
                       Carrera
                     </Typography>
                   </Box>
-                  <Typography variant="body1">
-                    {getCarreraNombre(userData?.id_car_per)}
+                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    {userData?.carrera?.nom_car || getCarreraNombre(userData?.id_car_per)}
                   </Typography>
+                  {userData?.carrera?.nom_fac_per && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {userData.carrera.nom_fac_per}
+                    </Typography>
+                  )}
                 </>
               )}
             </Paper>
@@ -236,6 +285,7 @@ const UserProfile = () => {
                     variant="outlined"
                     startIcon={<Edit />}
                     onClick={() => setIsEditing(true)}
+                    sx={{ borderColor: '#6d1313', color: '#6d1313', '&:hover': { borderColor: '#5a1010', bgcolor: 'rgba(109, 19, 19, 0.04)' } }}
                   >
                     Editar
                   </Button>
@@ -244,10 +294,7 @@ const UserProfile = () => {
                     variant="outlined"
                     color="error"
                     startIcon={<Cancel />}
-                    onClick={() => {
-                      setIsEditing(false);
-                      setMessage({ type: '', text: '' });
-                    }}
+                    onClick={handleCancel}
                   >
                     Cancelar
                   </Button>
@@ -372,7 +419,16 @@ const UserProfile = () => {
                               </MenuItem>
                               {carreras.map((carrera) => (
                                 <MenuItem key={carrera.id_car} value={carrera.id_car}>
-                                  {carrera.nom_car}
+                                  <Box>
+                                    <Typography variant="body1">
+                                      {carrera.nom_car}
+                                    </Typography>
+                                    {carrera.nom_fac_per && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        {carrera.nom_fac_per}
+                                      </Typography>
+                                    )}
+                                  </Box>
                                 </MenuItem>
                               ))}
                             </Select>
@@ -384,6 +440,43 @@ const UserProfile = () => {
                           </FormControl>
                         </Grid>
                       )}
+
+                      {/* Información del sistema (solo lectura) */}
+                      <Grid item xs={12}>
+                        <Divider sx={{ my: 2 }} />
+                        <Typography variant="h6" gutterBottom>
+                          Información del Sistema
+                        </Typography>
+                      </Grid>
+
+                      <Grid item xs={12} sm={4}>
+                        <TextField
+                          fullWidth
+                          label="Email"
+                          value={userData?.email || ''}
+                          disabled
+                          helperText="El email no se puede modificar"
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} sm={4}>
+                        <TextField
+                          fullWidth
+                          label="Rol"
+                          value={userData?.rol || ''}
+                          disabled
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} sm={4}>
+                        <TextField
+                          fullWidth
+                          label="ID Usuario"
+                          value={userData?.id_usu || ''}
+                          disabled
+                          inputProps={{ style: { fontSize: '0.8rem' } }}
+                        />
+                      </Grid>
 
                       {/* Botón de guardar */}
                       {isEditing && (
