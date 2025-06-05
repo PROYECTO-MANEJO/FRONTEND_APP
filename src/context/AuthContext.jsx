@@ -61,6 +61,9 @@ const authReducer = (state, action) => {
 // Crear contexto
 const AuthContext = createContext();
 
+// Exportar el contexto
+export { AuthContext };
+
 // Hook personalizado para usar el contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -166,4 +169,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-}; 
+};
