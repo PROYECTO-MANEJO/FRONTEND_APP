@@ -27,7 +27,7 @@ import {
   Settings,
   Logout
 } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { eventoService } from '../services/eventoService';
 import { cursoService } from '../services/cursoService';
 import CursoCard from './CursoCard';
@@ -38,6 +38,16 @@ const UserDashboard = ({ user }) => {
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Limpiar el localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Redirigir al login
+    navigate('/login');
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -74,7 +84,7 @@ const UserDashboard = ({ user }) => {
       <Box 
         sx={{ 
           width: 280, 
-          bgcolor: '#5855D6', 
+          bgcolor: '#6d1313', 
           color: 'white',
           display: 'flex',
           flexDirection: 'column'
@@ -173,7 +183,24 @@ const UserDashboard = ({ user }) => {
 
         {/* User Info */}
         <Box sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          {/* Logout Button */}
+          <ListItem 
+            onClick={handleLogout}
+            sx={{ 
+              mb: 2,
+              borderRadius: 2,
+              cursor: 'pointer',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+              <Logout />
+            </ListItemIcon>
+            <ListItemText primary="Cerrar Sesión" />
+          </ListItem>
+
+          {/* User Profile */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Avatar 
               sx={{ 
                 width: 40, 
@@ -253,81 +280,54 @@ const UserDashboard = ({ user }) => {
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                     Tus Cursos
                   </Typography>
-                  <Button variant="text" size="small">
+                  <Button 
+                    component={Link}
+                    to="/cursos"
+                    variant="text" 
+                    size="small"
+                    sx={{ color: '#6d1313' }}
+                  >
                     Ver todos
                   </Button>
                 </Box>
                 <Grid container spacing={2}>
-                  {cursos.slice(0, 2).map((curso) => (
-                    <Grid item xs={12} key={curso.id_cur}>
-                      <CursoCard curso={curso} />
+                  {cursos.length === 0 ? (
+                    <Grid item xs={12}>
+                      <Paper sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography color="text.secondary">
+                          No estás inscrito en ningún curso
+                        </Typography>
+                        <Button 
+                          component={Link}
+                          to="/cursos"
+                          variant="outlined"
+                          sx={{ 
+                            mt: 2,
+                            borderColor: '#6d1313',
+                            color: '#6d1313',
+                            '&:hover': {
+                              bgcolor: 'rgba(109, 19, 19, 0.04)',
+                              borderColor: '#6d1313'
+                            }
+                          }}
+                        >
+                          Explorar Cursos
+                        </Button>
+                      </Paper>
                     </Grid>
-                  ))}
+                  ) : (
+                    cursos.slice(0, 2).map((curso) => (
+                      <Grid item xs={12} key={curso.id_cur}>
+                        <CursoCard curso={curso} />
+                      </Grid>
+                    ))
+                  )}
                 </Grid>
               </Box>
             </Grid>
 
             {/* Right Column - Progress & Tasks */}
             <Grid item xs={12} md={6}>
-              {/* Progress Card */}
-              <Paper sx={{ p: 3, mb: 3, textAlign: 'center' }}>
-                <Typography variant="h6" gutterBottom>
-                  Progreso de Aprendizaje
-                </Typography>
-                <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
-                  <CircularProgress
-                    variant="determinate"
-                    value={75}
-                    size={120}
-                    thickness={4}
-                    sx={{ color: '#5855D6' }}
-                  />
-                  <Box
-                    sx={{
-                      top: 0,
-                      left: 0,
-                      bottom: 0,
-                      right: 0,
-                      position: 'absolute',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography variant="h6" component="div" color="text.secondary">
-                      75%
-                    </Typography>
-                  </Box>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  Total completado: 3 de 4 cursos
-                </Typography>
-              </Paper>
-
-              {/* Stats Cards */}
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={6}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
-                      {eventos.length}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Eventos
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={6}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h4" color="secondary" sx={{ fontWeight: 'bold' }}>
-                      {cursos.length}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Cursos
-                    </Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
-
               {/* Quick Actions */}
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -339,22 +339,22 @@ const UserDashboard = ({ user }) => {
                     to="/solicitudes"
                     sx={{ 
                       borderRadius: 1,
-                      '&:hover': { bgcolor: 'rgba(88, 85, 214, 0.04)' }
+                      '&:hover': { bgcolor: 'rgba(109, 19, 19, 0.04)' }
                     }}
                   >
                     <ListItemIcon>
-                      <RequestPage color="primary" />
+                      <RequestPage sx={{ color: '#6d1313' }} />
                     </ListItemIcon>
                     <ListItemText primary="Ver Solicitudes" />
                   </ListItem>
                   <ListItem 
                     sx={{ 
                       borderRadius: 1,
-                      '&:hover': { bgcolor: 'rgba(88, 85, 214, 0.04)' }
+                      '&:hover': { bgcolor: 'rgba(109, 19, 19, 0.04)' }
                     }}
                   >
                     <ListItemIcon>
-                      <School color="secondary" />
+                      <School sx={{ color: '#6d1313' }} />
                     </ListItemIcon>
                     <ListItemText primary="Explorar Cursos" />
                   </ListItem>
