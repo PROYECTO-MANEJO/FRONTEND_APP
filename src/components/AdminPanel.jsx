@@ -36,6 +36,8 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import authService from '../services/authService';
 import AdminSolicitudes from './AdminSolicitudes';
+import CrearCursos from './CrearCursos';
+import CrearEventos from './CrearEvento';
 
 const AdminPanel = () => {
   const { user, logout } = useAuth();
@@ -102,7 +104,8 @@ const AdminPanel = () => {
   const tabs = [
     { label: 'Resumen', icon: <Assessment /> },
     { label: 'Usuarios', icon: <People /> },
-    { label: 'Eventos', icon: <Event /> },
+    { label: 'Crear Eventos', icon: <Event /> },
+    { label: 'Crear Curso', icon: <EventNote /> },
     { label: 'Solicitudes', icon: <RequestPage /> },
     { label: 'Reportes', icon: <BarChart /> },
   ];
@@ -391,24 +394,18 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 2 && (
-          <Card elevation={2}>
-            <CardContent sx={{ p: 4, textAlign: 'center' }}>
-              <Event sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h5" gutterBottom>
-                Gestión de Eventos
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Próximamente: CRUD de eventos académicos
-              </Typography>
-            </CardContent>
-          </Card>
+          <CrearEventos />
         )}
 
         {activeTab === 3 && (
+          <CrearCursos />
+        )}  
+
+        {activeTab === 4 && (
           <AdminSolicitudes />
         )}
 
-        {activeTab === 4 && (
+        {activeTab === 5 && (
           <Card elevation={2}>
             <CardContent sx={{ p: 4, textAlign: 'center' }}>
               <BarChart sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
