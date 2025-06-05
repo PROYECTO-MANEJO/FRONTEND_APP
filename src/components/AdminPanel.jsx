@@ -36,6 +36,7 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import authService from '../services/authService';
 import AdminSolicitudes from './AdminSolicitudes';
+import CrearCursos from './CrearCursos';
 
 const AdminPanel = () => {
   const { user, logout } = useAuth();
@@ -103,6 +104,7 @@ const AdminPanel = () => {
     { label: 'Resumen', icon: <Assessment /> },
     { label: 'Usuarios', icon: <People /> },
     { label: 'Eventos', icon: <Event /> },
+    { label: 'Crear Curso', icon: <EventNote /> },
     { label: 'Solicitudes', icon: <RequestPage /> },
     { label: 'Reportes', icon: <BarChart /> },
   ];
@@ -405,10 +407,14 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 3 && (
+          <CrearCursos />
+        )}  
+
+        {activeTab === 4 && (
           <AdminSolicitudes />
         )}
 
-        {activeTab === 4 && (
+        {activeTab === 5 && (
           <Card elevation={2}>
             <CardContent sx={{ p: 4, textAlign: 'center' }}>
               <BarChart sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
