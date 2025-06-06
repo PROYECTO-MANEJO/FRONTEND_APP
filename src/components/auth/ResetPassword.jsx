@@ -88,7 +88,7 @@ const ResetPassword = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+          background: 'linear-gradient(135deg, #6d1313 0%, #5a1010 100%)',
           padding: 2,
         }}
       >
@@ -121,7 +121,7 @@ const ResetPassword = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+          background: 'linear-gradient(135deg, #6d1313 0%, #5a1010 100%)',
           padding: 2,
         }}
       >
@@ -139,7 +139,7 @@ const ResetPassword = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+          background: 'linear-gradient(135deg, #6d1313 0%, #5a1010 100%)',
           padding: 2,
         }}
       >
@@ -175,7 +175,7 @@ const ResetPassword = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+        background: 'linear-gradient(135deg, #6d1313 0%, #5a1010 100%)',
         padding: 2,
       }}
     >
@@ -187,7 +187,7 @@ const ResetPassword = () => {
                 sx={{
                   width: 64,
                   height: 64,
-                  bgcolor: 'primary.main',
+                  bgcolor: '#6d1313',
                   mx: 'auto',
                   mb: 2,
                 }}
@@ -277,8 +277,14 @@ const ResetPassword = () => {
                     variant="contained"
                     size="large"
                     disabled={isSubmitting}
-                    startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Lock />}
-                    sx={{ mb: 3, py: 1.5 }}
+                    sx={{ 
+                      mb: 3, 
+                      py: 1.5,
+                      backgroundColor: '#6d1313',
+                      '&:hover': {
+                        backgroundColor: '#5a1010',
+                      },
+                    }}
                   >
                     {isSubmitting ? 'Actualizando...' : 'Actualizar Contraseña'}
                   </Button>
@@ -289,12 +295,12 @@ const ResetPassword = () => {
                       <Link
                         to="/login"
                         style={{
-                          color: '#dc2626',
+                          color: '#6d1313',
                           textDecoration: 'none',
                           fontWeight: 500,
                         }}
                       >
-                        Volver al Login
+                        Iniciar sesión
                       </Link>
                     </Typography>
                   </Box>
