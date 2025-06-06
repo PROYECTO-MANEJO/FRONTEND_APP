@@ -37,7 +37,7 @@ const UserSidebar = () => {
     <Box 
       sx={{ 
         width: 280, 
-        bgcolor: '#6d1313', 
+        bgcolor: '#6d1313',
         color: 'white',
         display: 'flex',
         flexDirection: 'column'
