@@ -112,7 +112,8 @@ const EventosPage = () => {
                     spacing={{ xs: 2, sm: 3, md: 4 }}
                     sx={{
                       '& .MuiGrid-item': {
-                        display: 'flex'
+                        display: 'flex',
+                        height: '300px' // ALTURA FIJA OBLIGATORIA
                       }
                     }}
                   >
@@ -124,7 +125,10 @@ const EventosPage = () => {
                         md={4} 
                         lg={3}
                         key={evento.id_eve}
-                        sx={{ display: 'flex' }}
+                        sx={{ 
+                          display: 'flex',
+                          height: '300px !important' // FUERZA LA ALTURA
+                        }}
                       >
                         <EventoCard evento={evento} />
                       </Grid>

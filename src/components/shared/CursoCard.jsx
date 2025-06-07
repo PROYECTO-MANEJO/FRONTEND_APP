@@ -10,15 +10,11 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  Chip,
-  IconButton
+  Chip
 } from '@mui/material';
 import { 
   InfoOutlined, 
-  Close, 
-  CalendarToday, 
-  AccessTime, 
-  People,
+  Close,
   School
 } from '@mui/icons-material';
 
@@ -30,87 +26,103 @@ const CursoCard = ({ curso }) => {
 
   return (
     <>
-      {/* ✅ CARD CON MISMAS PROPORCIONES QUE EVENTOS */}
+      {/* ✅ CARD IDÉNTICA A EVENTO */}
       <Card 
         elevation={2}
         sx={{ 
           borderRadius: 3,
           transition: 'all 0.2s ease-in-out',
-          height: '100%',
+          height: '300px', // ALTURA ABSOLUTA FIJA - IGUAL QUE EVENTOS
+          minHeight: '300px', // ALTURA MÍNIMA
+          maxHeight: '300px', // ALTURA MÁXIMA
+          display: 'flex',
+          width: '450px',
+          flexDirection: 'column',
+          position: 'relative',
           '&:hover': {
             transform: 'translateY(-4px)',
             boxShadow: 4,
           },
         }}
       >
-        <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-          {/* Chip de CURSO en la parte superior */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1 }}>
-            <Chip 
-              label="CURSO" 
-              size="small" 
-              icon={<School sx={{ fontSize: '0.8rem' }} />}
-              sx={{ 
-                bgcolor: '#b91c1c', 
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                height: '24px'
-              }} 
-            />
-          </Box>
+        <CardContent sx={{ 
+          p: 2.5, // MISMO PADDING QUE EVENTOS
+          display: 'flex', 
+          flexDirection: 'column',
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Chip de CURSO - IGUAL QUE EVENTOS */}
+          <Chip 
+            label="CURSO" 
+            size="small" 
+            icon={<School sx={{ fontSize: '0.7rem' }} />}
+            sx={{ 
+              bgcolor: '#b91c1c', // MISMO COLOR QUE EVENTOS
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '0.7rem',
+              height: '20px',
+              mb: 1,
+              alignSelf: 'flex-start'
+            }} 
+          />
 
-          {/* Título del curso */}
+          {/* Título - ALTURA CONTROLADA IGUAL QUE EVENTOS */}
           <Typography 
             variant="h6" 
             component="h3"
             sx={{ 
               fontWeight: 600, 
-              mb: 1,
               color: 'text.primary',
-              fontSize: '1.1rem',
+              fontSize: '1rem', // MISMO TAMAÑO QUE EVENTOS
+              lineHeight: 1.2,
+              mb: 1,
+              height: '2.4rem', // ALTURA FIJA IGUAL QUE EVENTOS
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              minHeight: '2.2rem'
             }}
           >
             {curso.nom_cur}
           </Typography>
           
-          {/* Descripción resumida */}
+          {/* Descripción - ALTURA CONTROLADA IGUAL QUE EVENTOS */}
           <Typography 
             variant="body2" 
             color="text.secondary" 
             sx={{ 
-              flexGrow: 1,
-              mb: 2, 
-              lineHeight: 1.5,
+              fontSize: '0.825rem', // MISMO TAMAÑO QUE EVENTOS
+              lineHeight: 1.3,
+              mb: 1.5,
+              height: '3.9rem', // ALTURA FIJA IGUAL QUE EVENTOS
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
-              overflow: 'hidden'
+              overflow: 'hidden',
             }}
           >
             {curso.des_cur}
           </Typography>
 
-          {/* Información compacta */}
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+          {/* Información compacta - IGUAL QUE EVENTOS */}
+          <Box sx={{ mb: 'auto' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
               <strong>Fecha:</strong> {new Date(curso.fec_ini_cur).toLocaleDateString()}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Duración:</strong> {curso.dur_cur} horas | <strong>Audiencia:</strong> {curso.tipo_audiencia_cur?.replace('_', ' ') || 'General'}
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              <strong>Duración:</strong> {curso.dur_cur} horas
             </Typography>
           </Box>
 
-          {/* Botón Ver Detalles */}
+          {/* Botón en el fondo - IDÉNTICO A EVENTOS */}
           <Button
             variant="outlined"
             fullWidth
-            startIcon={<InfoOutlined />}
+            size="small"
+            startIcon={<InfoOutlined sx={{ fontSize: '0.9rem' }} />}
             onClick={handleOpen}
             sx={{
               borderColor: '#b91c1c',
@@ -121,6 +133,8 @@ const CursoCard = ({ curso }) => {
               },
               textTransform: 'none',
               fontWeight: 500,
+              fontSize: '0.8rem',
+              height: '32px',
               mt: 'auto'
             }}
           >
@@ -129,151 +143,114 @@ const CursoCard = ({ curso }) => {
         </CardContent>
       </Card>
 
-      {/* ✅ DIALOG COMPLETAMENTE REDISEÑADO */}
+      {/* ✅ DIALOG MEJORADO IGUAL QUE EVENTOS */}
       <Dialog 
         open={open} 
         onClose={handleClose} 
-        maxWidth="md" 
+        maxWidth="sm" 
         fullWidth
         PaperProps={{
-          sx: { 
-            borderRadius: 4,
-            overflow: 'hidden'
-          }
+          sx: { borderRadius: 2 }
         }}
       >
-        <DialogTitle 
-          sx={{ 
-            background: 'linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)',
-            color: 'white',
-            position: 'relative',
-            p: 3
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <School sx={{ fontSize: '1.5rem' }} />
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h5" component="div" sx={{ fontWeight: 700 }}>
-                {curso.nom_cur}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-                Información detallada del curso
-              </Typography>
-            </Box>
-            <IconButton
-              onClick={handleClose}
-              sx={{ 
-                color: 'white',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-              }}
-            >
-              <Close />
-            </IconButton>
-          </Box>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" component="span">
+            {curso.nom_cur}
+          </Typography>
+          <Button
+            onClick={handleClose}
+            color="inherit"
+            size="small"
+            sx={{ minWidth: 'auto', p: 1 }}
+          >
+            <Close />
+          </Button>
         </DialogTitle>
         
-        <DialogContent sx={{ p: 0 }}>
-          <Box sx={{ p: 4 }}>
-            {/* Descripción */}
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#b91c1c' }}>
-                📋 Descripción del Curso
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box>
+              <Typography variant="subtitle2" color="primary" gutterBottom>
+                Descripción
               </Typography>
-              <Typography variant="body1" sx={{ lineHeight: 1.7, color: 'text.secondary' }}>
+              <Typography variant="body2">
                 {curso.des_cur}
               </Typography>
             </Box>
             
-            <Divider sx={{ my: 3 }} />
+            <Divider />
             
-            {/* Información en grid */}
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: '#b91c1c' }}>
-              📊 Información General
-            </Typography>
+            {/* Chips como en eventos */}
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <Chip label={`Duración: ${curso.dur_cur} horas`} color="primary" variant="outlined" />
+              {curso.tipo_audiencia_cur && (
+                <Chip label={`Audiencia: ${curso.tipo_audiencia_cur.replace('_', ' ')}`} color="secondary" variant="outlined" />
+              )}
+            </Box>
             
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, 
-              gap: 3,
-              mb: 3
-            }}>
-              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#374151', mb: 1 }}>
-                  📅 Fecha de Inicio
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Fecha de Inicio
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {new Date(curso.fec_ini_cur).toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                <Typography variant="body2">
+                  {new Date(curso.fec_ini_cur).toLocaleDateString()}
                 </Typography>
               </Box>
               
-              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#374151', mb: 1 }}>
-                  📅 Fecha de Fin
+              <Box>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Fecha de Fin
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {new Date(curso.fec_fin_cur).toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </Typography>
-              </Box>
-              
-              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#374151', mb: 1 }}>
-                  ⏱️ Duración Total
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {curso.dur_cur} horas académicas
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#374151', mb: 1 }}>
-                  👥 Audiencia Objetivo
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {curso.tipo_audiencia_cur?.replace('_', ' ') || 'Audiencia General'}
+                <Typography variant="body2">
+                  {curso.fec_fin_cur ? new Date(curso.fec_fin_cur).toLocaleDateString() : 'No especificada'}
                 </Typography>
               </Box>
             </Box>
-
-            {/* Capacidad si está disponible */}
-            {curso.capacidad_max_cur && (
-              <Box sx={{ p: 3, bgcolor: '#fef2f2', borderRadius: 2, border: '1px solid #fecaca' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#b91c1c', mb: 1 }}>
-                  👨‍🎓 Capacidad Máxima
+            
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Duración Total
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, color: '#991b1b' }}>
-                  {curso.capacidad_max_cur} estudiantes
+                <Typography variant="body2">
+                  {curso.dur_cur} horas
+                </Typography>
+              </Box>
+              
+              {curso.capacidad_max_cur && (
+                <Box>
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Capacidad Máxima
+                  </Typography>
+                  <Typography variant="body2">
+                    {curso.capacidad_max_cur} estudiantes
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {curso.tipo_audiencia_cur && (
+              <Box>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Tipo de Audiencia
+                </Typography>
+                <Typography variant="body2">
+                  {curso.tipo_audiencia_cur.replace('_', ' ')}
                 </Typography>
               </Box>
             )}
           </Box>
         </DialogContent>
         
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc' }}>
+        <DialogActions sx={{ p: 3 }}>
           <Button 
             onClick={handleClose} 
-            variant="contained"
+            variant="contained" 
             fullWidth
-            sx={{
-              background: 'linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)',
-              py: 1.5,
-              borderRadius: 3,
-              fontWeight: 600,
-              '&:hover': {
-                background: 'linear-gradient(135deg, #991b1b 0%, #b91c1c 100%)',
-              }
-            }}
+            sx={{ borderRadius: 2 }}
           >
-            Cerrar Información
+            Cerrar
           </Button>
         </DialogActions>
       </Dialog>

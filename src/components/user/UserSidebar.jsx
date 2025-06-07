@@ -83,19 +83,6 @@ const UserSidebar = () => {
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
-
-        <ListItem 
-          sx={{ 
-            mb: 1, 
-            borderRadius: 2,
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-          }}
-        >
-          <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-            <Settings />
-          </ListItemIcon>
-          <ListItemText primary="Configuración" />
-        </ListItem>
       </List>
 
       {/* User Info */}

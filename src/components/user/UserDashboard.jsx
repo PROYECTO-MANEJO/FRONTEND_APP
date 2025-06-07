@@ -160,11 +160,6 @@ const UserDashboard = ({ user }) => {
                     <Grid 
                       container 
                       spacing={{ xs: 2, sm: 3, md: 4 }}
-                      sx={{
-                        '& .MuiGrid-item': {
-                          display: 'flex'
-                        }
-                      }}
                     >
                       {eventos.slice(0, 6).map((evento) => (
                         <Grid 
@@ -174,7 +169,7 @@ const UserDashboard = ({ user }) => {
                           md={4} 
                           lg={4}
                           key={evento.id_eve}
-                          sx={{ display: 'flex' }}
+                          sx={{ height: '280px' }} // ALTURA FIJA IGUAL
                         >
                           <EventoCard evento={evento} />
                         </Grid>
@@ -244,21 +239,16 @@ const UserDashboard = ({ user }) => {
                     <Grid 
                       container 
                       spacing={{ xs: 2, sm: 3, md: 4 }}
-                      sx={{
-                        '& .MuiGrid-item': {
-                          display: 'flex'
-                        }
-                      }}
                     >
                       {cursos.slice(0, 6).map((curso) => (
                         <Grid 
                           item 
                           xs={12} 
-                          sm={6} 
+                          sm={1} 
                           md={4} 
                           lg={4}
                           key={curso.id_cur || curso.id}
-                          sx={{ display: 'flex' }}
+                          sx={{ height: '280px' }} // ALTURA FIJA IGUAL
                         >
                           <CursoCard curso={curso} />
                         </Grid>
