@@ -22,41 +22,83 @@ const EventoCard = ({ evento }) => {
 
   return (
     <>
-      <Card sx={{ mb: 2, height: '100%' }}>
-        <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="h6" gutterBottom>{evento.nom_eve}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 2 }}>
+      <Card 
+        elevation={2}
+        sx={{ 
+          borderRadius: 3,
+          transition: 'all 0.2s ease-in-out',
+          height: '100%',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: 4,
+          },
+        }}
+      >
+        <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Typography 
+            variant="h6" 
+            component="h3"
+            sx={{ 
+              fontWeight: 600, 
+              mb: 1,
+              color: 'text.primary',
+              fontSize: '1.1rem'
+            }}
+          >
+            {evento.nom_eve}
+          </Typography>
+          
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              flexGrow: 1,
+              mb: 2, 
+              lineHeight: 1.5,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
+          >
             {evento.des_eve}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Fecha: {new Date(evento.fec_ini_eve).toLocaleDateString()}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Área: {evento.are_eve} | Audiencia: {evento.tipo_audiencia_eve}
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<InfoOutlined />}
-              fullWidth
-              onClick={handleOpen}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 500,
-              }}
-            >
-              Ver Detalles
-            </Button>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+              <strong>Fecha:</strong> {new Date(evento.fec_ini_eve).toLocaleDateString()}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Área:</strong> {evento.are_eve} | <strong>Audiencia:</strong> {evento.tipo_audiencia_eve}
+            </Typography>
           </Box>
+
+          <Button
+            variant="outlined"
+            fullWidth
+            startIcon={<InfoOutlined />}
+            onClick={handleOpen}
+            sx={{
+              borderColor: '#b91c1c',
+              color: '#b91c1c',
+              '&:hover': {
+                borderColor: '#991b1b',
+                backgroundColor: '#fef2f2',
+              },
+              textTransform: 'none',
+              fontWeight: 500,
+              mt: 'auto'
+            }}
+          >
+            Ver Detalles
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Ventana de detalles */}
       <Dialog 
         open={open} 
         onClose={handleClose} 
-        maxWidth="md" 
+        maxWidth="sm" 
         fullWidth
         PaperProps={{
           sx: { borderRadius: 2 }
