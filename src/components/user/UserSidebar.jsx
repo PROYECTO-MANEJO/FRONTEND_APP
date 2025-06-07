@@ -33,6 +33,14 @@ const UserSidebar = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  const menuItems = [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'Cursos', icon: <School />, path: '/cursos' },
+    { text: 'Eventos', icon: <Event />, path: '/eventos' },
+    { text: 'Solicitudes', icon: <Assignment />, path: '/solicitudes' }, // ✅ AGREGAR ESTA LÍNEA SI NO EXISTE
+    { text: 'Mi Perfil', icon: <AccountCircle />, path: '/perfil' },
+  ];
+
   return (
     <Box 
       sx={{ 
@@ -55,108 +63,26 @@ const UserSidebar = () => {
 
       {/* Navigation Menu */}
       <List sx={{ px: 2, flexGrow: 1 }}>
-        <ListItem 
-          component={Link}
-          to="/dashboard"
-          sx={{ 
-            mb: 1, 
-            borderRadius: 2,
-            color: 'white',
-            textDecoration: 'none',
-            bgcolor: isActive('/dashboard') ? 'rgba(255,255,255,0.1)' : 'transparent',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-          }}
-        >
-          <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-
-        <ListItem 
-          component={Link}
-          to="/cursos"
-          sx={{ 
-            mb: 1, 
-            borderRadius: 2,
-            color: 'white',
-            textDecoration: 'none',
-            bgcolor: isActive('/cursos') ? 'rgba(255,255,255,0.1)' : 'transparent',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-          }}
-        >
-          <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-            <School />
-          </ListItemIcon>
-          <ListItemText primary="Cursos" />
-        </ListItem>
-
-        <ListItem 
-          component={Link}
-          to="/eventos"
-          sx={{ 
-            mb: 1, 
-            borderRadius: 2,
-            color: 'white',
-            textDecoration: 'none',
-            bgcolor: isActive('/eventos') ? 'rgba(255,255,255,0.1)' : 'transparent',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-          }}
-        >
-          <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-            <Event />
-          </ListItemIcon>
-          <ListItemText primary="Eventos" />
-        </ListItem>
-
-        <ListItem 
-          component={Link}
-          to="/solicitudes"
-          sx={{ 
-            mb: 1, 
-            borderRadius: 2,
-            color: 'white',
-            textDecoration: 'none',
-            bgcolor: isActive('/solicitudes') ? 'rgba(255,255,255,0.1)' : 'transparent',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-          }}
-        >
-          <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-            <Assignment />
-          </ListItemIcon>
-          <ListItemText primary="Solicitudes" />
-        </ListItem>
-
-        <ListItem 
-          component={Link}
-          to="/perfil"
-          sx={{ 
-            mb: 1, 
-            borderRadius: 2,
-            color: 'white',
-            textDecoration: 'none',
-            bgcolor: isActive('/perfil') ? 'rgba(255,255,255,0.1)' : 'transparent',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-          }}
-        >
-          <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-            <AccountCircle />
-          </ListItemIcon>
-          <ListItemText primary="Mi Perfil" />
-        </ListItem>
-
-        <ListItem 
-          sx={{ 
-            mb: 1, 
-            borderRadius: 2,
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-          }}
-        >
-          <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-            <Settings />
-          </ListItemIcon>
-          <ListItemText primary="Configuración" />
-        </ListItem>
+        {menuItems.map((item) => (
+          <ListItem 
+            key={item.text}
+            component={Link}
+            to={item.path}
+            sx={{ 
+              mb: 1, 
+              borderRadius: 2,
+              color: 'white',
+              textDecoration: 'none',
+              bgcolor: isActive(item.path) ? 'rgba(255,255,255,0.1)' : 'transparent',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+              {item.icon}
+            </ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItem>
+        ))}
       </List>
 
       {/* User Info */}

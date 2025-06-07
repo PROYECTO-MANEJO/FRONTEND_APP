@@ -10,9 +10,14 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  Chip
+  Chip,
+  IconButton
 } from '@mui/material';
-import { InfoOutlined, Close } from '@mui/icons-material';
+import { 
+  InfoOutlined, 
+  Close,
+  Event
+} from '@mui/icons-material';
 
 const EventoCard = ({ evento }) => {
   const [open, setOpen] = useState(false);
@@ -22,41 +27,126 @@ const EventoCard = ({ evento }) => {
 
   return (
     <>
-      <Card sx={{ mb: 2, height: '100%' }}>
-        <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="h6" gutterBottom>{evento.nom_eve}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 2 }}>
+      <Card 
+        elevation={2}
+        sx={{ 
+          borderRadius: 3,
+          transition: 'all 0.2s ease-in-out',
+          height: '300px', // ALTURA ABSOLUTA FIJA
+          minHeight: '300px', // ALTURA MÍNIMA
+          maxHeight: '300px', // ALTURA MÁXIMA
+          display: 'flex',
+          width: '450px',
+          flexDirection: 'column',
+          position: 'relative',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: 4,
+          },
+        }}
+      >
+        <CardContent sx={{ 
+          p: 2.5, 
+          display: 'flex', 
+          flexDirection: 'column',
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Chip de EVENTO */}
+          <Chip 
+            label="EVENTO" 
+            size="small" 
+            icon={<Event sx={{ fontSize: '0.7rem' }} />}
+            sx={{ 
+              bgcolor: '#b91c1c', 
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '0.7rem',
+              height: '20px',
+              mb: 1,
+              alignSelf: 'flex-start'
+            }} 
+          />
+
+          {/* Título - altura controlada */}
+          <Typography 
+            variant="h6" 
+            component="h3"
+            sx={{ 
+              fontWeight: 600, 
+              color: 'text.primary',
+              fontSize: '1rem',
+              lineHeight: 1.2,
+              mb: 1,
+              height: '2.4rem', // ALTURA FIJA
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {evento.nom_eve}
+          </Typography>
+          
+          {/* Descripción - altura controlada */}
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              fontSize: '0.825rem',
+              lineHeight: 1.3,
+              mb: 1.5,
+              height: '3.9rem', // ALTURA FIJA
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
             {evento.des_eve}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Fecha: {new Date(evento.fec_ini_eve).toLocaleDateString()}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Área: {evento.are_eve} | Audiencia: {evento.tipo_audiencia_eve}
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<InfoOutlined />}
-              fullWidth
-              onClick={handleOpen}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 500,
-              }}
-            >
-              Ver Detalles
-            </Button>
+
+          {/* Información compacta */}
+          <Box sx={{ mb: 'auto' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
+              <strong>Fecha:</strong> {new Date(evento.fec_ini_eve).toLocaleDateString()}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              <strong>Área:</strong> {evento.are_eve}
+            </Typography>
           </Box>
+
+          {/* Botón en el fondo */}
+          <Button
+            variant="outlined"
+            fullWidth
+            size="small"
+            startIcon={<InfoOutlined sx={{ fontSize: '0.9rem' }} />}
+            onClick={handleOpen}
+            sx={{
+              borderColor: '#b91c1c',
+              color: '#b91c1c',
+              '&:hover': {
+                borderColor: '#991b1b',
+                backgroundColor: '#fef2f2',
+              },
+              textTransform: 'none',
+              fontWeight: 500,
+              fontSize: '0.8rem',
+              height: '32px',
+              mt: 'auto'
+            }}
+          >
+            Ver Detalles
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Ventana de detalles */}
       <Dialog 
         open={open} 
         onClose={handleClose} 
-        maxWidth="md" 
+        maxWidth="sm" 
         fullWidth
         PaperProps={{
           sx: { borderRadius: 2 }

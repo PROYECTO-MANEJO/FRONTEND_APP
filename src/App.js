@@ -10,6 +10,8 @@ import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import UserProfile from './components/user/UserProfile';
 import theme from './theme/theme'; // ✅ IMPORTAR THEME
+import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
+import MainLayout from './layouts/MainLayout'; // Asegúrate de importar el layout si es necesario
 
 function App() {
   return (
@@ -41,6 +43,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserProfile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/solicitudes" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <SolicitudesUsuario />
+                  </MainLayout>
                 </ProtectedRoute>
               } 
             />
