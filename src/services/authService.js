@@ -113,7 +113,7 @@ class AuthService {
   // Verificar si es administrador
   isAdmin() {
     const user = this.getCurrentUser();
-    return user?.rol === 'ADMINISTRADOR';
+    return user?.rol === 'ADMINISTRADOR' || user?.rol === 'MASTER';
   }
 
   // Obtener token
