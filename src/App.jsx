@@ -19,8 +19,13 @@ import EventosPage from './components/user/EventosPage';
 import UserProfile from './components/user/UserProfile';
 
 // Admin components
-import AdminPanel from './components/admin/AdminPanel';
+import AdminDashboard from './components/admin/AdminDashboard';
 import AdminSolicitudes from './components/admin/AdminSolicitudes';
+import AdminUsuarios from './components/admin/AdminUsuarios';
+import AdminEventos from './components/admin/AdminEventos';
+import CrearCursos from './components/admin/CrearCursos';
+import AdminReportes from './components/admin/AdminReportes';
+import AdminConfiguracion from './components/admin/AdminConfiguracion';
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
@@ -74,7 +79,34 @@ function App() {
               path="/admin" 
               element={
                 <AdminRoute>
-                  <AdminPanel />
+                  <AdminDashboard />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/usuarios" 
+              element={
+                <AdminRoute>
+                  <AdminUsuarios />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/eventos" 
+              element={
+                <AdminRoute>
+                  <AdminEventos />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/cursos" 
+              element={
+                <AdminRoute>
+                  <CrearCursos />
                 </AdminRoute>
               } 
             />
@@ -84,6 +116,24 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminSolicitudes />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/reportes" 
+              element={
+                <AdminRoute>
+                  <AdminReportes />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/configuracion" 
+              element={
+                <AdminRoute>
+                  <AdminConfiguracion />
                 </AdminRoute>
               } 
             />
