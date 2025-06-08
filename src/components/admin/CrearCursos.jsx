@@ -14,10 +14,11 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Snackbar, // Importamos Snackbar
+  Snackbar,
 } from '@mui/material';
-import { Category, Person, Event, School, Send } from '@mui/icons-material';
+import { School, Send } from '@mui/icons-material';
 import api from '../../services/api';
+import AdminSidebar from './AdminSidebar';
 
 const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   const [categorias, setCategorias] = useState([]);
@@ -25,9 +26,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false); // Estado para controlar el Snackbar
-  const [snackbarMessage, setSnackbarMessage] = useState(''); // Mensaje del Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   const steps = ['Información básica', 'Revisión', 'Confirmación'];
 
@@ -109,16 +109,15 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
       } else {
         await api.post('/cursos', curso);
       }
-      setSuccess(true);
-      setSnackbarMessage('Curso creado correctamente!'); // Mensaje para el Snackbar
-      setSnackbarOpen(true); // Abrir el Snackbar
+      setSnackbarMessage('Curso creado correctamente!');
+      setSnackbarOpen(true);
 
       setTimeout(() => {
-        setSuccess(false);
         if (onSuccess) onSuccess();
         if (onClose) onClose();
       }, 1500);
-    } catch (error) {
+    } catch (err) {
+      console.error('Error al guardar curso:', err);
       setError('Error al guardar curso.');
     } finally {
       setLoading(false);
@@ -204,7 +203,9 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
       case 1:
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography variant="h6">Revisión del Curso</Typography>
+            <Typography variant="h6" sx={{ color: '#6d1313', fontWeight: 'bold' }}>
+              Revisión del Curso
+            </Typography>
             <Typography variant="body1"><strong>Nombre del Curso:</strong> {curso.nom_cur}</Typography>
             <Typography variant="body1"><strong>Descripción:</strong> {curso.des_cur}</Typography>
             <Typography variant="body1"><strong>Duración:</strong> {curso.dur_cur} horas</Typography>
@@ -226,64 +227,107 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   };
 
   return (
-    <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          <Event sx={{ mr: 1 }} /> {cursoEditado ? 'Editar Curso' : 'Crear Nuevo Curso'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Llena los campos necesarios para {cursoEditado ? 'editar los datos del curso' : 'registrar un nuevo curso'} en el sistema.
-        </Typography>
-      </Box>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <AdminSidebar />
+      
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h5" gutterBottom sx={{ color: '#6d1313', fontWeight: 'bold' }}>
+              <School sx={{ mr: 1 }} /> {cursoEditado ? 'Editar Curso' : 'Crear Nuevo Curso'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Llena los campos necesarios para {cursoEditado ? 'editar los datos del curso' : 'registrar un nuevo curso'} en el sistema.
+            </Typography>
+          </Box>
 
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel 
+                  sx={{
+                    '& .MuiStepLabel-label.Mui-active': {
+                      color: '#6d1313'
+                    },
+                    '& .MuiStepIcon-root.Mui-active': {
+                      color: '#6d1313'
+                    }
+                  }}
+                >
+                  {label}
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
 
-      <Box sx={{ mb: 4 }}>{renderStepContent(activeStep)}</Box>
+          <Box sx={{ mb: 4 }}>{renderStepContent(activeStep)}</Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Button disabled={activeStep === 0} onClick={handleBack} variant="outlined">
-          Atrás
-        </Button>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Button 
+              disabled={activeStep === 0} 
+              onClick={handleBack} 
+              variant="outlined"
+              sx={{
+                borderColor: '#6d1313',
+                color: '#6d1313',
+                '&:hover': {
+                  borderColor: '#8b1a1a',
+                  bgcolor: 'rgba(109, 19, 19, 0.04)'
+                }
+              }}
+            >
+              Atrás
+            </Button>
 
-        {activeStep === steps.length - 1 ? (
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : <Send />}
+            {activeStep === steps.length - 1 ? (
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} /> : <Send />}
+                sx={{
+                  bgcolor: '#6d1313',
+                  '&:hover': {
+                    bgcolor: '#8b1a1a'
+                  }
+                }}
+              >
+                {loading ? 'Guardando...' : cursoEditado ? 'Actualizar Curso' : 'Crear Curso'}
+              </Button>
+            ) : (
+              <Button 
+                variant="contained" 
+                onClick={handleNext}
+                sx={{
+                  bgcolor: '#6d1313',
+                  '&:hover': {
+                    bgcolor: '#8b1a1a'
+                  }
+                }}
+              >
+                Siguiente
+              </Button>
+            )}
+          </Box>
+
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={6000}
+            onClose={() => setSnackbarOpen(false)}
           >
-            {loading ? 'Guardando...' : cursoEditado ? 'Actualizar Curso' : 'Crear Curso'}
-          </Button>
-        ) : (
-          <Button variant="contained" onClick={handleNext}>
-            Siguiente
-          </Button>
-        )}
+            <Alert onClose={() => setSnackbarOpen(false)} severity="success">
+              {snackbarMessage}
+            </Alert>
+          </Snackbar>
+        </Paper>
       </Box>
-
-      {/* Snackbar para la notificación */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <Alert onClose={() => setSnackbarOpen(false)} severity="success">
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </Paper>
+    </Box>
   );
 };
 

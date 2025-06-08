@@ -17,7 +17,13 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
-  Fab
+  Fab,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import {
   Add,
@@ -27,12 +33,16 @@ import {
   LocationOn,
   CalendarToday,
   People,
-  Visibility
+  Visibility,
+  Category
 } from '@mui/icons-material';
 import AdminSidebar from './AdminSidebar';
+import api from '../../services/api';
 
 const AdminEventos = () => {
   const [eventos, setEventos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [organizadores, setOrganizadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -44,63 +54,60 @@ const AdminEventos = () => {
     ubicacion: '',
     capacidad: '',
     precio: '',
-    imagen: ''
+    imagen: '',
+    id_cat_eve: '',
+    ced_org_eve: ''
+  });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  const [stats, setStats] = useState({
+    totalEventos: 0,
+    eventosActivos: 0,
+    totalInscripciones: 0,
+    capacidadTotal: 0
   });
 
   useEffect(() => {
-    loadEventos();
+    cargarDatos();
   }, []);
 
-  const loadEventos = async () => {
+  const cargarDatos = async () => {
     try {
       setLoading(true);
-      // Aquí iría la llamada real a la API
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Datos simulados
-      setEventos([
-        {
-          id: 1,
-          titulo: 'Conferencia de Tecnología 2024',
-          descripcion: 'Una conferencia sobre las últimas tendencias en tecnología',
-          fecha: '2024-03-15',
-          hora: '09:00',
-          ubicacion: 'Centro de Convenciones',
-          capacidad: 200,
-          inscritos: 150,
-          precio: 50,
-          estado: 'ACTIVO',
-          imagen: '/api/placeholder/300/200'
-        },
-        {
-          id: 2,
-          titulo: 'Workshop de Desarrollo Web',
-          descripcion: 'Taller práctico de desarrollo web moderno',
-          fecha: '2024-03-20',
-          hora: '14:00',
-          ubicacion: 'Aula Magna',
-          capacidad: 50,
-          inscritos: 35,
-          precio: 30,
-          estado: 'ACTIVO',
-          imagen: '/api/placeholder/300/200'
-        },
-        {
-          id: 3,
-          titulo: 'Seminario de Marketing Digital',
-          descripcion: 'Estrategias efectivas de marketing digital',
-          fecha: '2024-03-25',
-          hora: '10:00',
-          ubicacion: 'Sala de Conferencias',
-          capacidad: 100,
-          inscritos: 80,
-          precio: 40,
-          estado: 'ACTIVO',
-          imagen: '/api/placeholder/300/200'
-        }
-      ]);
+      // Cargar eventos
+      const eventosResponse = await api.get('/eventos');
+      const eventosData = eventosResponse.data.eventos || [];
+      setEventos(eventosData);
+      
+      // Cargar categorías
+      const categoriasResponse = await api.get('/categorias');
+      setCategorias(categoriasResponse.data.categorias || []);
+      
+      // Cargar organizadores
+      const organizadoresResponse = await api.get('/organizadores');
+      setOrganizadores(organizadoresResponse.data.organizadores || []);
+      
+      // Calcular estadísticas
+      const totalEventos = eventosData.length;
+      const eventosActivos = eventosData.filter(e => e.est_eve === 'ACTIVO').length;
+      const totalInscripciones = eventosData.reduce((sum, e) => sum + (e.inscripciones?.length || 0), 0);
+      const capacidadTotal = eventosData.reduce((sum, e) => sum + parseInt(e.cap_max_eve || 0), 0);
+      
+      setStats({
+        totalEventos,
+        eventosActivos,
+        totalInscripciones,
+        capacidadTotal
+      });
+      
     } catch (error) {
-      console.error('Error al cargar eventos:', error);
+      console.error('Error al cargar datos:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error al cargar los datos',
+        severity: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -110,14 +117,16 @@ const AdminEventos = () => {
     setSelectedEvent(event);
     if (event) {
       setFormData({
-        titulo: event.titulo,
-        descripcion: event.descripcion,
-        fecha: event.fecha,
-        hora: event.hora,
-        ubicacion: event.ubicacion,
-        capacidad: event.capacidad.toString(),
-        precio: event.precio.toString(),
-        imagen: event.imagen
+        titulo: event.nom_eve,
+        descripcion: event.des_eve,
+        fecha: event.fec_ini_eve?.substring(0, 10) || '',
+        hora: event.hor_ini_eve || '',
+        ubicacion: event.lug_eve || '',
+        capacidad: event.cap_max_eve || '',
+        precio: event.precio || '',
+        imagen: event.imagen || '',
+        id_cat_eve: event.id_cat_eve || '',
+        ced_org_eve: event.ced_org_eve || ''
       });
     } else {
       setFormData({
@@ -128,7 +137,9 @@ const AdminEventos = () => {
         ubicacion: '',
         capacidad: '',
         precio: '',
-        imagen: ''
+        imagen: '',
+        id_cat_eve: '',
+        ced_org_eve: ''
       });
     }
     setOpenDialog(true);
@@ -141,12 +152,57 @@ const AdminEventos = () => {
 
   const handleSaveEvent = async () => {
     try {
-      // Aquí iría la lógica para guardar/actualizar evento
-      console.log('Guardando evento:', formData);
+      setLoading(true);
+      
+      if (selectedEvent) {
+        await api.put(`/eventos/${selectedEvent.id_eve}`, formData);
+        setSnackbar({
+          open: true,
+          message: 'Evento actualizado correctamente',
+          severity: 'success'
+        });
+      } else {
+        await api.post('/eventos', formData);
+        setSnackbar({
+          open: true,
+          message: 'Evento creado correctamente',
+          severity: 'success'
+        });
+      }
+      
       handleCloseDialog();
-      loadEventos();
+      cargarDatos();
+      
     } catch (error) {
       console.error('Error al guardar evento:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error al guardar el evento',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (eventoId) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este evento?')) {
+      try {
+        await api.delete(`/eventos/${eventoId}`);
+        setSnackbar({
+          open: true,
+          message: 'Evento eliminado correctamente',
+          severity: 'success'
+        });
+        cargarDatos();
+      } catch (error) {
+        console.error('Error al eliminar evento:', error);
+        setSnackbar({
+          open: true,
+          message: 'Error al eliminar el evento',
+          severity: 'error'
+        });
+      }
     }
   };
 
@@ -163,32 +219,21 @@ const AdminEventos = () => {
     }
   };
 
-  const stats = [
-    {
-      title: 'Total Eventos',
-      value: eventos.length,
-      icon: <Event />,
-      color: '#3b82f6'
-    },
-    {
-      title: 'Eventos Activos',
-      value: eventos.filter(e => e.estado === 'ACTIVO').length,
-      icon: <CalendarToday />,
-      color: '#10b981'
-    },
-    {
-      title: 'Total Inscritos',
-      value: eventos.reduce((sum, e) => sum + e.inscritos, 0),
-      icon: <People />,
-      color: '#f59e0b'
-    },
-    {
-      title: 'Capacidad Total',
-      value: eventos.reduce((sum, e) => sum + e.capacidad, 0),
-      icon: <LocationOn />,
-      color: '#7c3aed'
-    }
-  ];
+  const getCategoriaName = (idCategoria) => {
+    const categoria = categorias.find(cat => cat.id_cat === idCategoria);
+    return categoria ? categoria.nom_cat : 'Sin categoría';
+  };
+
+  if (loading && eventos.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+        <AdminSidebar />
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <CircularProgress size={60} sx={{ color: '#6d1313' }} />
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
@@ -251,25 +296,25 @@ const AdminEventos = () => {
         ) : (
           <Grid container spacing={3}>
             {eventos.map((evento) => (
-              <Grid item xs={12} sm={6} md={4} key={evento.id}>
+              <Grid item xs={12} sm={6} md={4} key={evento.id_eve}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <CardMedia
                     component="img"
                     height="200"
                     image={evento.imagen}
-                    alt={evento.titulo}
+                    alt={evento.nom_eve}
                     sx={{ bgcolor: '#e5e7eb' }}
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
-                        {evento.titulo}
+                        {evento.nom_eve}
                       </Typography>
                       <Chip
-                        label={evento.estado}
+                        label={evento.est_eve || 'ACTIVO'}
                         size="small"
                         sx={{
-                          bgcolor: getEstadoColor(evento.estado),
+                          bgcolor: getEstadoColor(evento.est_eve),
                           color: 'white',
                           fontWeight: 500,
                           ml: 1
@@ -278,27 +323,34 @@ const AdminEventos = () => {
                     </Box>
                     
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {evento.descripcion}
+                      {evento.des_eve}
                     </Typography>
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <CalendarToday sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {evento.fecha} - {evento.hora}
+                        {evento.fec_ini_eve ? new Date(evento.fec_ini_eve).toLocaleDateString() : 'Sin fecha'}
                       </Typography>
                     </Box>
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <LocationOn sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {evento.ubicacion}
+                        {evento.lug_eve || 'Sin ubicación'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Category sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {getCategoriaName(evento.id_cat_eve)}
                       </Typography>
                     </Box>
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <People sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {evento.inscritos}/{evento.capacidad} inscritos
+                        {evento.cap_max_eve || 'Sin límite'}
                       </Typography>
                     </Box>
                     
@@ -317,7 +369,7 @@ const AdminEventos = () => {
                       <IconButton color="info" size="small">
                         <Visibility />
                       </IconButton>
-                      <IconButton color="error" size="small">
+                      <IconButton color="error" size="small" onClick={() => handleDelete(evento.id_eve)}>
                         <Delete />
                       </IconButton>
                     </Box>
@@ -411,6 +463,38 @@ const AdminEventos = () => {
                   onChange={(e) => setFormData({ ...formData, imagen: e.target.value })}
                 />
               </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Categoría</InputLabel>
+                  <Select
+                    value={formData.id_cat_eve}
+                    label="Categoría"
+                    onChange={(e) => setFormData({ ...formData, id_cat_eve: e.target.value })}
+                  >
+                    {categorias.map((categoria) => (
+                      <MenuItem key={categoria.id_cat} value={categoria.id_cat}>
+                        {categoria.nom_cat}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Organizador</InputLabel>
+                  <Select
+                    value={formData.ced_org_eve}
+                    label="Organizador"
+                    onChange={(e) => setFormData({ ...formData, ced_org_eve: e.target.value })}
+                  >
+                    {organizadores.map((organizador) => (
+                      <MenuItem key={organizador.ced_org} value={organizador.ced_org}>
+                        {organizador.nom_org1} {organizador.ape_org1}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
             </Grid>
           </DialogContent>
           <DialogActions>
@@ -424,6 +508,20 @@ const AdminEventos = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Snackbar */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     </Box>
   );

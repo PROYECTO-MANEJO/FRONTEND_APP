@@ -52,7 +52,7 @@ const AdminSidebar = () => {
     <Box 
       sx={{ 
         width: 280, 
-        bgcolor: '#7c3aed',
+        bgcolor: '#6d1313',
         color: 'white',
         display: 'flex',
         flexDirection: 'column'

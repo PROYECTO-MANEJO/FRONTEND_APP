@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   Typography,
   Box,
@@ -9,7 +9,11 @@ import {
   Card,
   CardContent,
   Avatar,
-  Chip
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar
 } from '@mui/material';
 import { 
   People,
@@ -19,293 +23,291 @@ import {
   BarChart,
   TrendingUp,
   CheckCircle,
-  AdminPanelSettings
+  AdminPanelSettings,
+  Assignment,
+  Notifications,
+  Person,
+  EventNote
 } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
+import { AuthContext } from '../../context/AuthContext';
 
-const AdminDashboard = ({ user }) => {
+const AdminDashboard = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalUsuarios: 0,
-    eventosActivos: 0,
-    cursosDisponibles: 0,
-    solicitudesPendientes: 0
+    totalUsers: 0,
+    totalEvents: 0,
+    totalCourses: 0,
+    pendingRequests: 0
   });
 
   useEffect(() => {
     // Simular carga de estadísticas
-    const loadStats = async () => {
-      try {
-        setLoading(true);
-        // Aquí irían las llamadas reales a la API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setStats({
-          totalUsuarios: 1234,
-          eventosActivos: 42,
-          cursosDisponibles: 18,
-          solicitudesPendientes: 7
-        });
-      } catch (error) {
-        console.error('Error al cargar estadísticas:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStats();
+    setTimeout(() => {
+      setStats({
+        totalUsers: 156,
+        totalEvents: 23,
+        totalCourses: 12,
+        pendingRequests: 8
+      });
+      setLoading(false);
+    }, 1000);
   }, []);
-
-  const statsCards = [
-    {
-      title: 'Total Usuarios',
-      value: stats.totalUsuarios,
-      icon: <People />,
-      color: '#3b82f6',
-      path: '/admin/usuarios'
-    },
-    {
-      title: 'Eventos Activos',
-      value: stats.eventosActivos,
-      icon: <Event />,
-      color: '#10b981',
-      path: '/admin/eventos'
-    },
-    {
-      title: 'Cursos Disponibles',
-      value: stats.cursosDisponibles,
-      icon: <School />,
-      color: '#f59e0b',
-      path: '/admin/cursos'
-    },
-    {
-      title: 'Solicitudes Pendientes',
-      value: stats.solicitudesPendientes,
-      icon: <RequestPage />,
-      color: '#ef4444',
-      path: '/admin/solicitudes'
-    },
-  ];
 
   const quickActions = [
     {
       title: 'Gestionar Usuarios',
-      description: 'Ver, crear y administrar usuarios del sistema',
+      description: 'Administrar cuentas de usuario',
       icon: <People />,
-      color: '#3b82f6',
-      path: '/admin/usuarios'
+      path: '/admin/usuarios',
+      color: '#6d1313'
     },
     {
-      title: 'Crear Evento',
-      description: 'Crear y configurar nuevos eventos',
+      title: 'Gestionar Eventos',
+      description: 'Crear y administrar eventos',
       icon: <Event />,
-      color: '#10b981',
-      path: '/admin/eventos'
+      path: '/admin/eventos',
+      color: '#6d1313'
     },
     {
-      title: 'Crear Curso',
-      description: 'Crear y configurar nuevos cursos',
+      title: 'Crear Cursos',
+      description: 'Administrar cursos disponibles',
       icon: <School />,
-      color: '#f59e0b',
-      path: '/admin/cursos'
+      path: '/admin/cursos',
+      color: '#6d1313'
     },
     {
       title: 'Ver Solicitudes',
-      description: 'Revisar solicitudes de cambio pendientes',
+      description: 'Revisar solicitudes pendientes',
       icon: <RequestPage />,
-      color: '#ef4444',
-      path: '/admin/solicitudes'
+      path: '/admin/solicitudes',
+      color: '#6d1313'
     },
     {
       title: 'Reportes',
-      description: 'Ver estadísticas y generar reportes',
-      icon: <BarChart />,
-      color: '#8b5cf6',
-      path: '/admin/reportes'
+      description: 'Generar reportes del sistema',
+      icon: <TrendingUp />,
+      path: '/admin/reportes',
+      color: '#6d1313'
     },
     {
       title: 'Configuración',
-      description: 'Configurar parámetros del sistema',
-      icon: <AdminPanelSettings />,
-      color: '#6b7280',
-      path: '/admin/configuracion'
+      description: 'Configurar el sistema',
+      icon: <Assignment />,
+      path: '/admin/configuracion',
+      color: '#6d1313'
     }
   ];
 
-  return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
-      <AdminSidebar />
+  const recentActivities = [
+    { id: 1, type: 'user', message: 'Nuevo usuario registrado: Juan Pérez', time: '2 min ago' },
+    { id: 2, type: 'event', message: 'Evento "Conferencia Tech" creado', time: '15 min ago' },
+    { id: 3, type: 'request', message: 'Nueva solicitud de cambio recibida', time: '1 hora ago' },
+    { id: 4, type: 'course', message: 'Curso "React Avanzado" actualizado', time: '2 horas ago' }
+  ];
 
-      {/* Main Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <Container maxWidth="xl" sx={{ py: 4, px: 3 }}>
-          {/* Welcome Header */}
-          <Box sx={{ mb: 6, textAlign: 'center' }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              {new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 18 ? 'Buenas tardes' : 'Buenas noches'}
-            </Typography>
-            <Typography 
-              variant="h3" 
-              sx={{ 
-                fontWeight: 700, 
-                mb: 1,
-                background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                color: 'transparent',
-                fontSize: { xs: '2rem', md: '3rem' }
-              }}
-            >
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'user': return <Person />;
+      case 'event': return <EventNote />;
+      case 'request': return <RequestPage />;
+      case 'course': return <School />;
+      default: return <Notifications />;
+    }
+  };
+
+  const getActivityColor = (type) => {
+    switch (type) {
+      case 'user': return '#6d1313';
+      case 'event': return '#6d1313';
+      case 'request': return '#6d1313';
+      case 'course': return '#6d1313';
+      default: return '#6d1313';
+    }
+  };
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <AdminSidebar />
+      
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        {/* Header */}
+        <Box sx={{ mb: 4 }}>
+          <Box 
+            sx={{ 
+              background: 'linear-gradient(135deg, #6d1313 0%, #8b1a1a 100%)',
+              borderRadius: 3,
+              p: 4,
+              color: 'white',
+              mb: 3
+            }}
+          >
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
               ¡Bienvenido, {user?.nombre}!
             </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
-              Panel de Administración - {new Date().toLocaleDateString('es-ES', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+            <Typography variant="h6" sx={{ opacity: 0.9 }}>
+              Panel de Administración - Sistema de Gestión
             </Typography>
-            <Chip
-              label={user?.rol}
-              sx={{
-                mt: 2,
-                bgcolor: '#f3e8ff',
-                color: '#7c3aed',
-                fontWeight: 600,
-                px: 2
-              }}
-            />
           </Box>
+        </Box>
 
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
-              <CircularProgress size={60} sx={{ color: '#7c3aed' }} />
-            </Box>
-          ) : (
-            <>
-              {/* Statistics Cards */}
-              <Box sx={{ mb: 6 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: 'text.primary' }}>
-                  Estadísticas del Sistema
-                </Typography>
-                <Grid container spacing={3}>
-                  {statsCards.map((card, index) => (
-                    <Grid item xs={12} sm={6} md={3} key={index}>
-                      <Card
-                        component={Link}
-                        to={card.path}
-                        sx={{
-                          textDecoration: 'none',
-                          height: '100%',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-                          },
-                        }}
-                      >
-                        <CardContent sx={{ p: 3 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <Avatar
-                              sx={{
-                                bgcolor: card.color,
-                                width: 48,
-                                height: 48,
-                                mr: 2,
-                              }}
-                            >
-                              {card.icon}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                                {card.value.toLocaleString()}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {card.title}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
+        {/* Statistics Cards */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
+                    <People />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
+                      {loading ? <CircularProgress size={24} /> : stats.totalUsers}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Total Usuarios
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
 
-              {/* Quick Actions */}
-              <Box sx={{ mb: 6 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: 'text.primary' }}>
-                  Acciones Rápidas
-                </Typography>
-                <Grid container spacing={3}>
-                  {quickActions.map((action, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Card
-                        component={Link}
-                        to={action.path}
-                        sx={{
-                          textDecoration: 'none',
-                          height: '100%',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-                          },
-                        }}
-                      >
-                        <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <Avatar
-                              sx={{
-                                bgcolor: action.color,
-                                width: 40,
-                                height: 40,
-                                mr: 2,
-                              }}
-                            >
-                              {action.icon}
-                            </Avatar>
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                              {action.title}
-                            </Typography>
-                          </Box>
-                          <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
+                    <Event />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
+                      {loading ? <CircularProgress size={24} /> : stats.totalEvents}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Eventos Activos
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
+                    <School />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
+                      {loading ? <CircularProgress size={24} /> : stats.totalCourses}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Cursos Disponibles
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
+                    <Assignment />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
+                      {loading ? <CircularProgress size={24} /> : stats.pendingRequests}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Solicitudes Pendientes
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Quick Actions */}
+        <Card sx={{ borderRadius: 3, boxShadow: 3, mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: '#6d1313' }}>
+              Acciones Rápidas
+            </Typography>
+            <Grid container spacing={2}>
+              {quickActions.map((action, index) => (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Card 
+                    sx={{ 
+                      borderRadius: 2, 
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      '&:hover': { 
+                        transform: 'translateY(-4px)',
+                        boxShadow: 6
+                      }
+                    }}
+                    onClick={() => navigate(action.path)}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Avatar sx={{ bgcolor: action.color, mr: 2 }}>
+                          {action.icon}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            {action.title}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
                             {action.description}
                           </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
                 </Grid>
-              </Box>
+              ))}
+            </Grid>
+          </CardContent>
+        </Card>
 
-              {/* Recent Activity */}
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: 'text.primary' }}>
-                  Actividad Reciente
-                </Typography>
-                <Paper 
-                  elevation={2}
-                  sx={{ 
-                    p: 4, 
-                    textAlign: 'center',
-                    borderRadius: 3,
-                    bgcolor: '#fafafa'
-                  }}
-                >
-                  <TrendingUp sx={{ fontSize: '3rem', color: '#cbd5e1', mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    Panel de actividad en desarrollo
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Próximamente: Registro de actividades recientes del sistema
-                  </Typography>
-                </Paper>
-              </Box>
-            </>
-          )}
-        </Container>
+        {/* Recent Activity */}
+        <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: '#6d1313' }}>
+              Actividad Reciente
+            </Typography>
+            <List>
+              {recentActivities.map((activity) => (
+                <ListItem key={activity.id} sx={{ borderRadius: 2, mb: 1 }}>
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: getActivityColor(activity.type) }}>
+                      {getActivityIcon(activity.type)}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={activity.message}
+                    secondary={activity.time}
+                  />
+                  <Chip 
+                    label={activity.type.toUpperCase()} 
+                    size="small" 
+                    sx={{ bgcolor: '#6d1313', color: 'white' }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </CardContent>
+        </Card>
       </Box>
     </Box>
   );
