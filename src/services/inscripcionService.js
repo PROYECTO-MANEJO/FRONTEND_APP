@@ -22,14 +22,24 @@ export const inscripcionService = {
     }
   },
 
-  // Inscripciones para cursos (si se implementa en el futuro)
-  inscribirseCurso: async () => {
-    // Por ahora retorna un error indicando que no está implementado
-    throw new Error('Las inscripciones a cursos aún no están implementadas en el backend');
+  // Inscripciones para cursos
+  inscribirseCurso: async (inscripcionData) => {
+    try {
+      const response = await api.post('/inscripcionesCursos/curso', inscripcionData);
+      return response.data;
+    } catch (error) {
+      console.error('Error al inscribirse en curso:', error);
+      throw error;
+    }
   },
 
   obtenerMisInscripcionesCursos: async () => {
-    // Por ahora retorna un array vacío
-    return [];
+    try {
+      const response = await api.get('/inscripcionesCursos/curso/mis-inscripciones');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error al obtener inscripciones de cursos:', error);
+      throw error;
+    }
   }
 }; 
