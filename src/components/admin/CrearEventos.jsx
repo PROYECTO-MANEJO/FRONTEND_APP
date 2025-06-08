@@ -132,12 +132,9 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
                 dur_eve: parseInt(evento.dur_eve, 10),
                 capacidad_max_eve: parseInt(evento.capacidad_max_eve, 10),
                 // Combina fecha y hora para los campos de hora
-                hor_ini_eve: evento.fec_ini_eve && evento.hor_ini_eve
-                    ? `${evento.fec_ini_eve}T${evento.hor_ini_eve}:00`
-                    : null,
-                hor_fin_eve: evento.fec_fin_eve && evento.hor_fin_eve
-                    ? `${evento.fec_fin_eve}T${evento.hor_fin_eve}:00`
-                    : null,
+                hor_ini_eve: evento.hor_ini_eve ? `${evento.hor_ini_eve}:00` : null,
+                hor_fin_eve: evento.hor_fin_eve ? `${evento.hor_fin_eve}:00` : null,
+
             };
             // POST o PUT según corresponda
             if (eventoEditado) {
