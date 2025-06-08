@@ -21,7 +21,8 @@ import {
   AdminPanelSettings,
   AccountCircle,
   EventNote,
-  RequestPage
+  RequestPage,
+  VerifiedUser
 } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
@@ -41,6 +42,7 @@ const AdminSidebar = () => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
     ...(user?.rol === 'MASTER' ? [{ text: 'Usuarios', icon: <People />, path: '/admin/usuarios' }] : []),
+    ...(user?.rol === 'MASTER' ? [{ text: 'Verificar Documentos', icon: <VerifiedUser />, path: '/admin/verificacion-documentos' }] : []),
     { text: 'Eventos', icon: <Event />, path: '/admin/eventos' },
     { text: 'Cursos', icon: <School />, path: '/admin/cursos' },
     { text: 'Solicitudes', icon: <RequestPage />, path: '/admin/solicitudes' },
