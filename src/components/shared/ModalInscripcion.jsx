@@ -26,6 +26,66 @@ import {
 import { inscripcionService } from '../../services/inscripcionService';
 import { useAuth } from '../../context/AuthContext';
 
+// Función para mejorar los mensajes de error
+const mejorarMensajeError = (errorMessage) => {
+  const mensajesEspecificos = {
+    'Solo puedes inscribirte en eventos públicos': {
+      titulo: '🚫 Acceso Restringido',
+      mensaje: 'Como usuario externo, solo puedes inscribirte en eventos abiertos al público general. Este evento es exclusivo para estudiantes de carreras específicas.',
+      tipo: 'warning'
+    },
+    'No tienes una carrera asignada. Contacta al administrador.': {
+      titulo: '⚠️ Carrera No Asignada',
+      mensaje: 'Para inscribirte en este evento necesitas tener una carrera asignada en tu perfil. Por favor, contacta al administrador para que complete tu información académica.',
+      tipo: 'warning'
+    },
+    'Este evento no está habilitado para tu carrera': {
+      titulo: '📚 Carrera No Habilitada',
+      mensaje: 'Este evento está dirigido específicamente a estudiantes de ciertas carreras y la tuya no está incluida. Puedes buscar otros eventos disponibles para tu carrera.',
+      tipo: 'warning'
+    },
+    'Ya estás inscrito en este evento': {
+      titulo: '✅ Ya Inscrito',
+      mensaje: 'Ya te encuentras inscrito en este evento. Puedes revisar el estado de tu inscripción en tu perfil o contactar al organizador si tienes dudas.',
+      tipo: 'info'
+    },
+    'Faltan campos obligatorios': {
+      titulo: '📝 Información Incompleta',
+      mensaje: 'Por favor, completa todos los campos obligatorios del formulario de inscripción, especialmente el método de pago.',
+      tipo: 'error'
+    },
+    'Método de pago no válido': {
+      titulo: '💳 Método de Pago Inválido',
+      mensaje: 'El método de pago seleccionado no es válido. Por favor, selecciona una opción válida: Tarjeta de Crédito, Transferencia Bancaria o Depósito.',
+      tipo: 'error'
+    },
+    'Evento no encontrado': {
+      titulo: '❌ Evento No Encontrado',
+      mensaje: 'El evento al que intentas inscribirte no existe o ha sido eliminado. Por favor, actualiza la página e intenta nuevamente.',
+      tipo: 'error'
+    },
+    'Cuenta no encontrada': {
+      titulo: '👤 Usuario No Encontrado',
+      mensaje: 'No se pudo encontrar tu información de usuario. Por favor, cierra sesión e inicia sesión nuevamente.',
+      tipo: 'error'
+    }
+  };
+
+  // Buscar mensaje específico
+  for (const [clave, info] of Object.entries(mensajesEspecificos)) {
+    if (errorMessage.includes(clave)) {
+      return info;
+    }
+  }
+
+  // Mensaje genérico mejorado
+  return {
+    titulo: '⚠️ Error en la Inscripción',
+    mensaje: `Ha ocurrido un problema: ${errorMessage}. Si el problema persiste, por favor contacta al soporte técnico.`,
+    tipo: 'error'
+  };
+};
+
 const ModalInscripcion = ({ 
   open, 
   onClose, 
@@ -36,7 +96,7 @@ const ModalInscripcion = ({
   const [metodoPago, setMetodoPago] = useState('');
   const [enlacePago, setEnlacePago] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   
   const { user } = useAuth();
@@ -49,19 +109,19 @@ const ModalInscripcion = ({
 
   const handleSubmit = async () => {
     if (!metodoPago) {
-      setError('Debes seleccionar un método de pago');
+      setError(mejorarMensajeError('Faltan campos obligatorios'));
       return;
     }
 
     // Verificar que tengamos el ID del usuario
     const userId = user?.id;
     if (!userId) {
-      setError('Error: No se pudo obtener el ID del usuario. Por favor, cierra sesión e inicia sesión nuevamente.');
+      setError(mejorarMensajeError('Cuenta no encontrada'));
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
       const inscripcionData = {
@@ -93,7 +153,8 @@ const ModalInscripcion = ({
       }, 2000);
 
     } catch (error) {
-      setError(error.message || 'Error al procesar la inscripción');
+      const errorMessage = error.message || 'Error al procesar la inscripción';
+      setError(mejorarMensajeError(errorMessage));
     } finally {
       setLoading(false);
     }
@@ -102,7 +163,7 @@ const ModalInscripcion = ({
   const resetForm = () => {
     setMetodoPago('');
     setEnlacePago('');
-    setError('');
+    setError(null);
     setSuccess(false);
   };
 
@@ -185,8 +246,13 @@ const ModalInscripcion = ({
             <Divider />
 
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
+              <Alert severity={error.tipo || 'error'} sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {error.titulo}
+                </Typography>
+                <Typography variant="body2">
+                  {error.mensaje}
+                </Typography>
               </Alert>
             )}
 

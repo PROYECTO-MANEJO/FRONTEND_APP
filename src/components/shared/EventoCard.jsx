@@ -124,9 +124,29 @@ const EventoCard = ({ evento }) => {
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
               <strong>Fecha:</strong> {new Date(evento.fec_ini_eve).toLocaleDateString()}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
               <strong>Área:</strong> {evento.are_eve}
             </Typography>
+            {evento.organizador_nombre && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
+                <strong>Organizador:</strong> {evento.organizador_nombre}
+              </Typography>
+            )}
+            {evento.carreras && evento.carreras.length > 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                <strong>Carreras:</strong> {evento.carreras.length > 1 ? `${evento.carreras.length} carreras` : evento.carreras[0].nombre}
+              </Typography>
+            )}
+            {evento.tipo_audiencia_eve === 'PUBLICO_GENERAL' && (
+              <Typography variant="body2" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                ✨ Abierto al público general
+              </Typography>
+            )}
+            {evento.tipo_audiencia_eve === 'TODAS_CARRERAS' && (
+              <Typography variant="body2" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                🎓 Todas las carreras
+              </Typography>
+            )}
           </Box>
 
           {/* Botón en el fondo */}
@@ -191,10 +211,33 @@ const EventoCard = ({ evento }) => {
             
             <Divider />
             
-            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
               <Chip label={`Área: ${evento.are_eve}`} color="primary" variant="outlined" />
-              <Chip label={`Audiencia: ${evento.tipo_audiencia_eve}`} color="secondary" variant="outlined" />
+              <Chip label={`Audiencia: ${evento.tipo_audiencia_eve.replace(/_/g, ' ')}`} color="secondary" variant="outlined" />
+              {evento.organizador_nombre && (
+                <Chip label={`Organizador: ${evento.organizador_nombre}`} color="info" variant="outlined" />
+              )}
             </Box>
+
+            {/* Información de carreras */}
+            {evento.carreras && evento.carreras.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Carreras Habilitadas
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {evento.carreras.map((carrera, index) => (
+                    <Chip 
+                      key={index} 
+                      label={carrera.nombre} 
+                      size="small" 
+                      color="success" 
+                      variant="outlined" 
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
             
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <Box>
