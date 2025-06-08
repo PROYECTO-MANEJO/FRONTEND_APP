@@ -11,6 +11,7 @@ import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
+import MasterRoute from './components/auth/MasterRoute';
 
 // User components
 import Dashboard from './components/user/Dashboard';
@@ -28,6 +29,7 @@ import CrearEventos from './components/admin/CrearEventos';
 import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
 import AdminConfiguracion from './components/admin/AdminConfiguracion';
+import AdminVerificacionDocumentos from './components/admin/AdminVerificacionDocumentos';
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
@@ -92,6 +94,15 @@ function App() {
                 <AdminRoute>
                   <AdminUsuarios />
                 </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/verificacion-documentos" 
+              element={
+                <MasterRoute>
+                  <AdminVerificacionDocumentos />
+                </MasterRoute>
               } 
             />
             
