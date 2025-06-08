@@ -21,8 +21,9 @@ const solicitudesService = {
     try {
       const params = new URLSearchParams();
       
-      if (filtros.estado) params.append('estado', filtros.estado);
-      if (filtros.tipo_cambio) params.append('tipo_cambio', filtros.tipo_cambio);
+      // Solo agregar parámetros que no estén vacíos
+      if (filtros.estado && filtros.estado !== '') params.append('estado', filtros.estado);
+      if (filtros.tipo_cambio && filtros.tipo_cambio !== '') params.append('tipo_cambio', filtros.tipo_cambio);
       if (filtros.page) params.append('page', filtros.page);
       if (filtros.limit) params.append('limit', filtros.limit);
 
@@ -54,9 +55,10 @@ const solicitudesService = {
     try {
       const params = new URLSearchParams();
       
-      if (filtros.estado) params.append('estado', filtros.estado);
-      if (filtros.tipo_cambio) params.append('tipo_cambio', filtros.tipo_cambio);
-      if (filtros.prioridad) params.append('prioridad', filtros.prioridad);
+      // Solo agregar parámetros que no estén vacíos
+      if (filtros.estado && filtros.estado !== '') params.append('estado', filtros.estado);
+      if (filtros.tipo_cambio && filtros.tipo_cambio !== '') params.append('tipo_cambio', filtros.tipo_cambio);
+      if (filtros.prioridad && filtros.prioridad !== '') params.append('prioridad', filtros.prioridad);
       if (filtros.page) params.append('page', filtros.page);
       if (filtros.limit) params.append('limit', filtros.limit);
 
@@ -131,7 +133,7 @@ const solicitudesService = {
   // Obtener las opciones disponibles para los formularios
   getOpcionesTipoCambio() {
     return [
-      { value: 'NUEVA_FUNCIONALIDAD', label: 'Nueva Funcionalidad' },
+      { value: 'FUNCIONALIDAD_NUEVA', label: 'Nueva Funcionalidad' },
       { value: 'MEJORA_EXISTENTE', label: 'Mejora Existente' },
       { value: 'CORRECCION_ERROR', label: 'Corrección de Error' },
       { value: 'CAMBIO_INTERFAZ', label: 'Cambio de Interfaz' },

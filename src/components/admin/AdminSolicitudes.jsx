@@ -130,13 +130,16 @@ const AdminSolicitudes = () => {
   };
 
   const limpiarFiltros = () => {
-    setFiltros({
+    console.log('Limpiando filtros...');
+    const nuevosFiltros = {
       estado: '',
       tipo_cambio: '',
       prioridad: '',
       page: 1,
       limit: 8
-    });
+    };
+    console.log('Nuevos filtros:', nuevosFiltros);
+    setFiltros(nuevosFiltros);
   };
 
   const verDetalle = async (solicitud) => {
