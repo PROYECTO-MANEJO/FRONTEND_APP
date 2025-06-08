@@ -214,7 +214,7 @@ const InscripcionCard = ({ inscripcion, tipo }) => {
   };
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2 }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2 , width: '450px'}}>
       <CardContent sx={{ flexGrow: 1, p: 3 }}>
         {/* Header con tipo y estado */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
