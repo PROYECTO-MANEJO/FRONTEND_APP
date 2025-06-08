@@ -30,6 +30,7 @@ import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
 import AdminConfiguracion from './components/admin/AdminConfiguracion';
 import AdminVerificacionDocumentos from './components/admin/AdminVerificacionDocumentos';
+import AdminGestionInscripciones from './components/admin/AdminGestionInscripciones';
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
@@ -138,6 +139,15 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminCursos />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/gestion-inscripciones" 
+              element={
+                <AdminRoute>
+                  <AdminGestionInscripciones />
                 </AdminRoute>
               } 
             />
