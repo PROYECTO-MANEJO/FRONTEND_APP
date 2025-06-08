@@ -28,7 +28,7 @@ const EventoCard = ({ evento }) => {
   const [inscripcionOpen, setInscripcionOpen] = useState(false);
   
   // Hook para manejar inscripciones (solo si no es "mis eventos")
-  const { obtenerEstadoEvento, puedeInscribirse, cargarInscripciones } = useInscripciones();
+  const { obtenerEstadoEvento, cargarInscripciones } = useInscripciones();
   
   // Verificar si este es un evento de "mis eventos" (tiene estado_inscripcion)
   const esMiEvento = Boolean(evento.estado_inscripcion);
@@ -45,8 +45,6 @@ const EventoCard = ({ evento }) => {
         fechaAprobacion: evento.fecha_aprobacion
       }
     : obtenerEstadoEvento(evento.id_eve);
-    
-  const puedeInscribirseEnEvento = esMiEvento ? false : puedeInscribirse(evento.id_eve, true);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -365,28 +363,8 @@ const EventoCard = ({ evento }) => {
             Cerrar
           </Button>
           
-          {/* Estado de inscripción en el modal */}
-          {estadoInscripcion ? (
-            <Box sx={{ flex: 1 }}>
-              <EstadoInscripcion 
-                estado={estadoInscripcion.estado} 
-                size="large" 
-                showDetails={true}
-                estadoData={estadoInscripcion}
-              />
-              {puedeInscribirseEnEvento && (
-                <Button 
-                  onClick={handleInscripcionOpen}
-                  variant="contained"
-                  startIcon={<EventAvailable />}
-                  sx={{ borderRadius: 2, width: '100%', mt: 1 }}
-                  color="warning"
-                >
-                  Volver a Inscribirse
-                </Button>
-              )}
-            </Box>
-          ) : (
+          {/* Botón de inscripción solo si no está inscrito */}
+          {!estadoInscripcion && (
             <Button
               onClick={handleInscripcionOpen}
               variant="contained"
