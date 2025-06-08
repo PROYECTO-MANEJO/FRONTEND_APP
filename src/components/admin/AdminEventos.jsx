@@ -203,12 +203,43 @@ const AdminEventos = () => {
         return new Date(fecha).toISOString().split('T')[0];
       };
 
-      const formatearHora = (hora) => {
+      const formatearHoraParaInput = (hora) => {
         if (!hora) return '';
-        if (typeof hora === 'string' && hora.includes(':')) {
-          return hora.substring(0, 5);
+        
+        // Si es un string que ya está en formato HH:MM o HH:MM:SS
+        if (typeof hora === 'string') {
+          if (hora.includes('T')) {
+            // Es un timestamp ISO, extraer solo la hora
+            const date = new Date(hora);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+          } else if (hora.includes(':')) {
+            // Ya está en formato de hora, tomar solo HH:MM
+            return hora.substring(0, 5);
+          }
         }
-        return hora;
+        
+        // Si es un objeto Date
+        if (hora instanceof Date) {
+          const hours = hora.getHours().toString().padStart(2, '0');
+          const minutes = hora.getMinutes().toString().padStart(2, '0');
+          return `${hours}:${minutes}`;
+        }
+        
+        // Intentar convertir a Date si es un timestamp
+        try {
+          const date = new Date(hora);
+          if (!isNaN(date.getTime())) {
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+          }
+        } catch (error) {
+          console.warn('Error formateando hora para input:', hora, error);
+        }
+        
+        return '';
       };
 
       setEvento({
@@ -217,8 +248,8 @@ const AdminEventos = () => {
         id_cat_eve: eventoData.id_cat_eve || '',
         fec_ini_eve: formatearFecha(eventoData.fec_ini_eve),
         fec_fin_eve: formatearFecha(eventoData.fec_fin_eve),
-        hor_ini_eve: formatearHora(eventoData.hora_inicio || eventoData.hor_ini_eve),
-        hor_fin_eve: formatearHora(eventoData.hora_fin || eventoData.hor_fin_eve),
+        hor_ini_eve: formatearHoraParaInput(eventoData.hora_inicio || eventoData.hor_ini_eve),
+        hor_fin_eve: formatearHoraParaInput(eventoData.hora_fin || eventoData.hor_fin_eve),
         dur_eve: eventoData.dur_eve || 0,
         are_eve: eventoData.are_eve || '',
         ubi_eve: eventoData.ubi_eve || '',
@@ -426,10 +457,47 @@ const AdminEventos = () => {
 
   const formatearHora = (hora) => {
     if (!hora) return 'Sin hora';
-    if (typeof hora === 'string' && hora.includes(':')) {
-      return hora.substring(0, 5); // HH:MM
+    
+    // Si es un string que ya está en formato HH:MM o HH:MM:SS
+    if (typeof hora === 'string') {
+      if (hora.includes('T')) {
+        // Es un timestamp ISO, extraer solo la hora
+        const date = new Date(hora);
+        return date.toLocaleTimeString('es-ES', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false 
+        });
+      } else if (hora.includes(':')) {
+        // Ya está en formato de hora, tomar solo HH:MM
+        return hora.substring(0, 5);
+      }
     }
-    return hora;
+    
+    // Si es un objeto Date
+    if (hora instanceof Date) {
+      return hora.toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+    }
+    
+    // Intentar convertir a Date si es un timestamp
+    try {
+      const date = new Date(hora);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString('es-ES', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false 
+        });
+      }
+    } catch (error) {
+      console.warn('Error formateando hora:', hora, error);
+    }
+    
+    return hora.toString();
   };
 
   const statsCards = [
@@ -619,8 +687,8 @@ const AdminEventos = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <Schedule sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                         <Typography variant="body2" color="text.secondary">
-                          {formatearHora(evento.hora_inicio)}
-                          {evento.hora_fin && ` - ${formatearHora(evento.hora_fin)}`}
+                          {formatearHora(evento.hora_inicio || evento.hor_ini_eve)}
+                          {(evento.hora_fin || evento.hor_fin_eve) && ` - ${formatearHora(evento.hora_fin || evento.hor_fin_eve)}`}
                         </Typography>
                       </Box>
                       
