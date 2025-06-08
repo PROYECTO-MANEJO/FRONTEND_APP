@@ -16,14 +16,26 @@ import {
 import { 
   InfoOutlined, 
   Close,
-  Event
+  Event,
+  EventAvailable
 } from '@mui/icons-material';
+import ModalInscripcion from './ModalInscripcion';
 
 const EventoCard = ({ evento }) => {
   const [open, setOpen] = useState(false);
+  const [inscripcionOpen, setInscripcionOpen] = useState(false);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+  
+  const handleInscripcionOpen = () => setInscripcionOpen(true);
+  const handleInscripcionClose = () => setInscripcionOpen(false);
+  
+  const handleInscripcionExitosa = () => {
+    // Aquí podrías actualizar el estado del componente padre
+    // o mostrar una notificación de éxito
+    console.log('Inscripción exitosa en evento:', evento.nom_eve);
+  };
 
   return (
     <>
@@ -255,17 +267,33 @@ const EventoCard = ({ evento }) => {
           </Box>
         </DialogContent>
         
-        <DialogActions sx={{ p: 3 }}>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
           <Button 
             onClick={handleClose} 
-            variant="contained" 
-            fullWidth
-            sx={{ borderRadius: 2 }}
+            variant="outlined"
+            sx={{ borderRadius: 2, flex: 1 }}
           >
             Cerrar
           </Button>
+          <Button 
+            onClick={handleInscripcionOpen}
+            variant="contained"
+            startIcon={<EventAvailable />}
+            sx={{ borderRadius: 2, flex: 1 }}
+          >
+            Inscribirse
+          </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal de Inscripción */}
+      <ModalInscripcion
+        open={inscripcionOpen}
+        onClose={handleInscripcionClose}
+        item={evento}
+        tipo="evento"
+        onInscripcionExitosa={handleInscripcionExitosa}
+      />
     </>
   );
 };
