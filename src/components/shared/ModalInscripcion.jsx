@@ -127,7 +127,7 @@ const ModalInscripcion = ({
   const { user } = useAuth();
 
   const metodosPago = [
-    { value: 'TARJETA DE CREDITO', label: 'Tarjeta de Crédito' },
+    { value: 'TARJETA_CREDITO', label: 'Tarjeta de Crédito' },
     { value: 'TRANFERENCIA', label: 'Transferencia Bancaria' },
     { value: 'DEPOSITO', label: 'Depósito Bancario' }
   ];
