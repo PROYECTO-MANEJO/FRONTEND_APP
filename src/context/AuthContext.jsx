@@ -152,7 +152,7 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar si es administrador
   const isAdmin = () => {
-    return state.user?.rol === 'ADMINISTRADOR';
+    return state.user?.rol === 'ADMINISTRADOR' || state.user?.rol === 'MASTER';
   };
 
   const value = {
