@@ -317,12 +317,16 @@ const AdminCursos = () => {
         precio: curso.es_gratuito ? null : parseFloat(curso.precio)
       };
 
+      let cursoId;
+      
       if (isEditing) {
         // Actualizar curso existente
         const response = await api.put(`/cursos/${selectedCourse.id_cur}`, cursoData);
         
         // Verificar que la respuesta sea exitosa
         if (response.data && response.data.success) {
+          cursoId = selectedCourse.id_cur;
+          
           setSnackbar({
             open: true,
             message: 'Curso actualizado exitosamente',
@@ -332,11 +336,13 @@ const AdminCursos = () => {
           throw new Error('Respuesta inesperada del servidor');
         }
       } else {
-        // Crear nuevo curso
+        // Crear nuevo curso (las carreras se incluyen en el payload principal)
         const response = await api.post('/cursos', cursoData);
         
         // Verificar que la respuesta sea exitosa
         if (response.data && response.data.success) {
+          cursoId = response.data?.curso?.id_cur;
+          
           setSnackbar({
             open: true,
             message: 'Curso creado exitosamente',
@@ -344,6 +350,45 @@ const AdminCursos = () => {
           });
         } else {
           throw new Error('Respuesta inesperada del servidor');
+        }
+      }
+
+      // Manejar carreras si es necesario
+      if (curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && cursoId) {
+        if (isEditing) {
+          // Para edición: eliminar asociaciones existentes
+          try {
+            const asociacionesResponse = await api.get('/cursosPorCarrera/listar');
+            const asociacionesActuales = asociacionesResponse.data.data.filter(
+              asoc => asoc.id_cur_per === cursoId
+            );
+
+            // Eliminar asociaciones existentes
+            for (const asociacion of asociacionesActuales) {
+              await api.delete('/cursosPorCarrera/eliminar', {
+                data: {
+                  cursoId: cursoId,
+                  carreraId: asociacion.id_car_per
+                }
+              });
+            }
+          } catch (error) {
+            console.warn('Error eliminando asociaciones previas:', error);
+          }
+        }
+
+        // Crear nuevas asociaciones
+        if (curso.carreras_seleccionadas.length > 0) {
+          for (const carreraId of curso.carreras_seleccionadas) {
+            try {
+              await api.post('/cursosPorCarrera/asociar', {
+                cursoId: cursoId,
+                carreraId: carreraId
+              });
+            } catch (error) {
+              console.warn('Error asociando carrera:', carreraId, error);
+            }
+          }
         }
       }
       
