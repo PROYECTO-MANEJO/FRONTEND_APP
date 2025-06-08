@@ -42,6 +42,8 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
 
     const steps = ['Información básica', 'Revisión', 'Confirmación'];
 
+    const hoy = new Date().toISOString().split('T')[0];
+
     const [evento, setEvento] = useState({
         nom_eve: '',
         des_eve: '',
@@ -104,6 +106,7 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
 
     const handleNext = () => {
         if (activeStep === 0) {
+            const hoy = new Date().toISOString().split('T')[0];
             if (!evento.nom_eve.trim() || evento.nom_eve.length < 3) {
                 setError('El nombre debe tener al menos 3 caracteres.');
                 return;
@@ -114,6 +117,59 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
             }
             if (evento.tipo_audiencia_eve === 'CARRERA_ESPECIFICA' && evento.carreras.length === 0) {
                 setError('Seleccione al menos una carrera.');
+                return;
+            }
+            if (evento.fec_ini_eve < hoy) {
+                setError('La fecha de inicio no puede ser anterior a hoy.');
+                return;
+            }
+            if (evento.fec_fin_eve && evento.fec_fin_eve < evento.fec_ini_eve) {
+                setError('La fecha de fin no puede ser anterior a la de inicio.');
+                return;
+            }
+            // Validación de hora de inicio
+            if (evento.hor_ini_eve) {
+                const [hIni] = evento.hor_ini_eve.split(':').map(Number);
+                if (hIni < 8 || hIni > 18) {
+                    setError('La hora de inicio debe ser entre 08:00 y 18:00.');
+                    return;
+                }
+            }
+            // Validación de hora de fin
+            if (evento.hor_fin_eve) {
+                const [hFin] = evento.hor_fin_eve.split(':').map(Number);
+                if (hFin < 10 || hFin > 20) {
+                    setError('La hora de fin debe ser entre 10:00 y 20:00.');
+                    return;
+                }
+            }
+            // Validación: la hora de fin debe ser mayor a la de inicio
+            if (evento.hor_ini_eve && evento.hor_fin_eve) {
+                const [hIni, mIni] = evento.hor_ini_eve.split(':').map(Number);
+                const [hFin, mFin] = evento.hor_fin_eve.split(':').map(Number);
+                const iniMins = hIni * 60 + mIni;
+                const finMins = hFin * 60 + mFin;
+                if (finMins <= iniMins) {
+                    setError('La hora de fin debe ser mayor a la hora de inicio.');
+                    return;
+                }
+                // Si es un solo día, debe haber al menos 2 horas de diferencia
+                if (
+                    evento.fec_fin_eve &&
+                    evento.fec_ini_eve &&
+                    evento.fec_fin_eve === evento.fec_ini_eve &&
+                    finMins - iniMins < 120
+                ) {
+                    setError('La hora de fin debe ser al menos 2 horas después de la hora de inicio.');
+                    return;
+                }
+            }
+            if (evento.dur_eve <= 0) {
+                setError('La duración debe ser mayor a 0.');
+                return;
+            }
+            if (evento.capacidad_max_eve <= 0) {
+                setError('La capacidad máxima debe ser mayor a 0.');
                 return;
             }
         }
@@ -164,6 +220,35 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
         }
     };
 
+    useEffect(() => {
+        // Solo calcular si todos los datos están presentes
+        if (
+            evento.fec_ini_eve &&
+            evento.fec_fin_eve &&
+            evento.hor_ini_eve &&
+            evento.hor_fin_eve
+        ) {
+            // Calcular días (incluyendo ambos extremos)
+            const fechaInicio = new Date(evento.fec_ini_eve);
+            const fechaFin = new Date(evento.fec_fin_eve);
+            const diffDias = Math.floor((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
+
+            // Calcular horas por día
+            const [hIni, mIni] = evento.hor_ini_eve.split(':').map(Number);
+            const [hFin, mFin] = evento.hor_fin_eve.split(':').map(Number);
+            const minutosPorDia = (hFin * 60 + mFin) - (hIni * 60 + mIni);
+            const horasPorDia = minutosPorDia / 60;
+
+            // Solo actualizar si los valores tienen sentido
+            if (diffDias > 0 && horasPorDia > 0) {
+                setEvento(ev => ({
+                    ...ev,
+                    dur_eve: horasPorDia * diffDias
+                }));
+            }
+        }
+    }, [evento.fec_ini_eve, evento.fec_fin_eve, evento.hor_ini_eve, evento.hor_fin_eve]);
+
     const renderStepContent = (step) => {
         switch (step) {
             case 0:
@@ -208,6 +293,7 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
                             InputLabelProps={{ shrink: true }}
                             value={evento.fec_ini_eve}
                             onChange={handleChange('fec_ini_eve')}
+                            inputProps={{ min: hoy }}
                         />
                         <TextField
                             fullWidth
@@ -216,6 +302,7 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
                             InputLabelProps={{ shrink: true }}
                             value={evento.fec_fin_eve}
                             onChange={handleChange('fec_fin_eve')}
+                            inputProps={{ min: evento.fec_ini_eve || hoy }}
                         />
                         <TextField
                             fullWidth
@@ -224,6 +311,7 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
                             InputLabelProps={{ shrink: true }}
                             value={evento.hor_ini_eve}
                             onChange={handleChange('hor_ini_eve')}
+                            inputProps={{ min: "08:00", max: "18:00" }}
                         />
                         <TextField
                             fullWidth
@@ -232,13 +320,25 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
                             InputLabelProps={{ shrink: true }}
                             value={evento.hor_fin_eve}
                             onChange={handleChange('hor_fin_eve')}
+                            inputProps={{
+                                min: (() => {
+                                    if (!evento.hor_ini_eve) return "10:00";
+                                    // Suma 2 horas a la hora de inicio
+                                    const [h, m] = evento.hor_ini_eve.split(':').map(Number);
+                                    let minHour = h + 2;
+                                    if (minHour < 10) minHour = 10;
+                                    if (minHour > 20) minHour = 20;
+                                    return `${minHour.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                                })(),
+                                max: "20:00"
+                            }}
                         />
                         <TextField
                             fullWidth
                             type="number"
                             label="Duración (horas)"
                             value={evento.dur_eve}
-                            onChange={handleChange('dur_eve')}
+                            InputProps={{ readOnly: true }}
                         />
                         <FormControl fullWidth>
                             <InputLabel id="area-label">Área</InputLabel>
