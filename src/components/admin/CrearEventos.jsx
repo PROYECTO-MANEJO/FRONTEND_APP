@@ -67,7 +67,7 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
             .then((res) => setOrganizadores(res.data.organizadores || []))
             .catch(() => setOrganizadores([]));
         api.get('/carreras')
-            .then((res) => setCarreras(res.data.carreras || []))
+            .then((res) => setCarreras(res.data.data || []))
             .catch(() => setCarreras([]));
     }, []);
 
@@ -139,15 +139,17 @@ const CrearEvento = ({ eventoEditado = null, onClose, onSuccess }) => {
             // POST o PUT según corresponda
             if (eventoEditado) {
                 await api.put(`/eventos/${eventoEditado.id_eve}`, data);
+                if (evento.tipo_audiencia_eve === 'CARRERA_ESPECIFICA' && evento.carreras.length > 0) {
+                    await api.post(`/eventos/${eventoEditado.id_eve}/carreras`, { carreras: evento.carreras });
+                }
             } else {
-                await api.post('/eventos', data);
-            }
-            // Relacionar carreras si corresponde
-            if (evento.tipo_audiencia_eve === 'CARRERA_ESPECIFICA' && evento.carreras.length > 0) {
-                // Supón que tu backend tiene un endpoint para esto:
-                // POST /eventos/:id_eve/carreras { carreras: [id_car, ...] }
-                const id = eventoEditado ? eventoEditado.id_eve : data.id_eve;
-                await api.post(`/eventos/${id}/carreras`, { carreras: evento.carreras });
+                const res = await api.post('/eventos', data);
+                // Asegúrate de que el backend responde con el id del evento creado:
+                // { success: true, data: { id_eve: '...' } }
+                const newId = res.data?.data?.id_eve;
+                if (evento.tipo_audiencia_eve === 'CARRERA_ESPECIFICA' && evento.carreras.length > 0 && newId) {
+                    await api.post(`/eventos/${newId}/carreras`, { carreras: evento.carreras });
+                }
             }
             setSnackbarMessage('Evento guardado correctamente!');
             setSnackbarOpen(true);
