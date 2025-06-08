@@ -33,6 +33,7 @@ import {
   Person as UserIcon
 } from '@mui/icons-material';
 import { documentService } from '../../services/documentService';
+import AdminSidebar from './AdminSidebar';
 
 const AdminVerificacionDocumentos = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -282,88 +283,106 @@ const AdminVerificacionDocumentos = () => {
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Verificación de Documentos
-      </Typography>
-
-      {alert.show && (
-        <Alert severity={alert.severity} sx={{ mb: 2 }}>
-          {alert.message}
-        </Alert>
-      )}
-
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Documentos Pendientes de Verificación ({documentData.total})
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <AdminSidebar />
+      
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        {/* Header */}
+        <Box 
+          sx={{
+            background: 'linear-gradient(135deg, #6d1313 0%, #8b1a1a 100%)',
+            borderRadius: 3,
+            p: 4,
+            color: 'white',
+            mb: 3
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+            Verificación de Documentos
           </Typography>
-
-          <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-            <Tab 
-              label={`Estudiantes (${documentData.estudiantes.length})`}
-              icon={<StudentIcon />}
-              iconPosition="start"
-            />
-            <Tab 
-              label={`Usuarios (${documentData.usuarios.length})`}
-              icon={<UserIcon />}
-              iconPosition="start"
-            />
-          </Tabs>
-
-          {tabValue === 0 ? (
-            documentData.estudiantes.length > 0 ? (
-              renderUserTable(documentData.estudiantes, 'estudiante')
-            ) : (
-              <Alert severity="info">No hay estudiantes con documentos pendientes de verificación</Alert>
-            )
-          ) : (
-            documentData.usuarios.length > 0 ? (
-              renderUserTable(documentData.usuarios, 'usuario')
-            ) : (
-              <Alert severity="info">No hay usuarios con documentos pendientes de verificación</Alert>
-            )
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dialog de Confirmación */}
-      <Dialog
-        open={confirmDialog.open}
-        onClose={() => setConfirmDialog({ open: false, action: '', user: null })}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {confirmDialog.action === 'approve' ? 'Aprobar Documentos' : 'Rechazar Documentos'}
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            {confirmDialog.action === 'approve' 
-              ? `¿Está seguro de que desea aprobar los documentos de ${confirmDialog.user?.nombre_completo}?`
-              : `¿Está seguro de que desea rechazar los documentos de ${confirmDialog.user?.nombre_completo}? Los documentos serán eliminados y el usuario deberá subir nuevos archivos.`
-            }
+          <Typography variant="h6" sx={{ opacity: 0.9 }}>
+            Gestión de documentos de identidad de usuarios
           </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={() => setConfirmDialog({ open: false, action: '', user: null })}
-            disabled={actionLoading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={executeAction}
-            color={confirmDialog.action === 'approve' ? 'success' : 'error'}
-            variant="contained"
-            disabled={actionLoading}
-            startIcon={actionLoading ? <CircularProgress size={20} /> : null}
-          >
-            {confirmDialog.action === 'approve' ? 'Aprobar' : 'Rechazar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+
+        {alert.show && (
+          <Alert severity={alert.severity} sx={{ mb: 2 }}>
+            {alert.message}
+          </Alert>
+        )}
+
+        <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Documentos Pendientes de Verificación ({documentData.total})
+            </Typography>
+
+            <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
+              <Tab 
+                label={`Estudiantes (${documentData.estudiantes.length})`}
+                icon={<StudentIcon />}
+                iconPosition="start"
+              />
+              <Tab 
+                label={`Usuarios (${documentData.usuarios.length})`}
+                icon={<UserIcon />}
+                iconPosition="start"
+              />
+            </Tabs>
+
+            {tabValue === 0 ? (
+              documentData.estudiantes.length > 0 ? (
+                renderUserTable(documentData.estudiantes, 'estudiante')
+              ) : (
+                <Alert severity="info">No hay estudiantes con documentos pendientes de verificación</Alert>
+              )
+            ) : (
+              documentData.usuarios.length > 0 ? (
+                renderUserTable(documentData.usuarios, 'usuario')
+              ) : (
+                <Alert severity="info">No hay usuarios con documentos pendientes de verificación</Alert>
+              )
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Dialog de Confirmación */}
+        <Dialog
+          open={confirmDialog.open}
+          onClose={() => setConfirmDialog({ open: false, action: '', user: null })}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {confirmDialog.action === 'approve' ? 'Aprobar Documentos' : 'Rechazar Documentos'}
+          </DialogTitle>
+          <DialogContent>
+            <Typography>
+              {confirmDialog.action === 'approve' 
+                ? `¿Está seguro de que desea aprobar los documentos de ${confirmDialog.user?.nombre_completo}?`
+                : `¿Está seguro de que desea rechazar los documentos de ${confirmDialog.user?.nombre_completo}? Los documentos serán eliminados y el usuario deberá subir nuevos archivos.`
+              }
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={() => setConfirmDialog({ open: false, action: '', user: null })}
+              disabled={actionLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={executeAction}
+              color={confirmDialog.action === 'approve' ? 'success' : 'error'}
+              variant="contained"
+              disabled={actionLoading}
+              startIcon={actionLoading ? <CircularProgress size={20} /> : null}
+            >
+              {confirmDialog.action === 'approve' ? 'Aprobar' : 'Rechazar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
     </Box>
   );
 };
