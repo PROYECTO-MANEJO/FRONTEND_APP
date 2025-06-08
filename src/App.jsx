@@ -23,6 +23,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import AdminSolicitudes from './components/admin/AdminSolicitudes';
 import AdminUsuarios from './components/admin/AdminUsuarios';
 import AdminEventos from './components/admin/AdminEventos';
+import CrearEventos from './components/admin/CrearEventos';
 import CrearCursos from './components/admin/CrearCursos';
 import AdminReportes from './components/admin/AdminReportes';
 import AdminConfiguracion from './components/admin/AdminConfiguracion';
@@ -98,6 +99,24 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminEventos />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/crear-eventos" 
+              element={
+                <AdminRoute>
+                  <CrearEventos />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/editar-evento/:id" 
+              element={
+                <AdminRoute>
+                  <CrearEventos />
                 </AdminRoute>
               } 
             />
