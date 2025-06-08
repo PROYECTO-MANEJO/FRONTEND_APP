@@ -59,10 +59,11 @@ const AdminUsuarios = () => {
     nom_usu2: '',
     ape_usu1: '',
     ape_usu2: '',
-    ema_usu: '',
-    tel_usu: '',
-    rol_cue: 'USUARIO',
-    con_cue: ''
+    cor_cue: '',
+    num_tel_usu: '',
+    fec_nac_usu: '',
+    pas_usu: '',
+    id_car_per: 1
   });
 
   const [stats, setStats] = useState({
@@ -109,16 +110,25 @@ const AdminUsuarios = () => {
   const handleOpenDialog = (usuario = null) => {
     if (usuario) {
       setEditingUser(usuario);
+      
+      // Formatear fecha para el input date
+      let fechaFormateada = '';
+      if (usuario.fec_nac_usu) {
+        const fecha = new Date(usuario.fec_nac_usu);
+        fechaFormateada = fecha.toISOString().split('T')[0];
+      }
+      
       setUserForm({
         ced_usu: usuario.ced_usu || '',
         nom_usu1: usuario.nom_usu1 || '',
         nom_usu2: usuario.nom_usu2 || '',
         ape_usu1: usuario.ape_usu1 || '',
         ape_usu2: usuario.ape_usu2 || '',
-        ema_usu: usuario.ema_usu || '',
-        tel_usu: usuario.tel_usu || '',
-        rol_cue: usuario.rol_cue || 'USUARIO',
-        con_cue: '' // No mostrar contraseña existente
+        cor_cue: usuario.cor_cue || '',
+        num_tel_usu: usuario.num_tel_usu || '',
+        fec_nac_usu: fechaFormateada,
+        pas_usu: '', // No mostrar contraseña existente
+        id_car_per: usuario.id_car_per || 1
       });
     } else {
       setEditingUser(null);
@@ -128,10 +138,11 @@ const AdminUsuarios = () => {
         nom_usu2: '',
         ape_usu1: '',
         ape_usu2: '',
-        ema_usu: '',
-        tel_usu: '',
-        rol_cue: 'USUARIO',
-        con_cue: ''
+        cor_cue: '',
+        num_tel_usu: '',
+        fec_nac_usu: '',
+        pas_usu: '',
+        id_car_per: 1
       });
     }
     setDialogOpen(true);
@@ -154,23 +165,48 @@ const AdminUsuarios = () => {
       setLoading(true);
       
       if (editingUser) {
-        // Para edición, solo enviar campos que no estén vacíos
-        const updateData = { ...userForm };
-        if (!updateData.con_cue) {
-          delete updateData.con_cue; // No actualizar contraseña si está vacía
+        // Para edición, preparar datos de actualización
+        const updateData = {
+          nom_usu1: userForm.nom_usu1,
+          nom_usu2: userForm.nom_usu2,
+          ape_usu1: userForm.ape_usu1,
+          ape_usu2: userForm.ape_usu2,
+          fec_nac_usu: userForm.fec_nac_usu,
+          num_tel_usu: userForm.num_tel_usu,
+          cor_cue: userForm.cor_cue
+        };
+        
+        // Solo incluir contraseña si no está vacía
+        if (userForm.pas_usu && userForm.pas_usu.trim() !== '') {
+          updateData.pas_usu = userForm.pas_usu;
         }
         
-        await api.put(`/usuarios/${editingUser.ced_usu}`, updateData);
+        await api.put(`/users/${editingUser.ced_usu}`, updateData);
         setSnackbar({
           open: true,
-          message: 'Usuario actualizado correctamente',
+          message: 'Administrador actualizado correctamente',
           severity: 'success'
         });
       } else {
-        await api.post('/usuarios', userForm);
+        // Para creación, usar la función adminCreateUser del backend
+        const createData = { ...userForm };
+        
+        // Validar campos requeridos
+        if (!createData.ced_usu || !createData.nom_usu1 || !createData.ape_usu1 || 
+            !createData.cor_cue || !createData.num_tel_usu || !createData.fec_nac_usu || 
+            !createData.pas_usu) {
+          setSnackbar({
+            open: true,
+            message: 'Por favor, complete todos los campos requeridos',
+            severity: 'error'
+          });
+          return;
+        }
+        
+        await api.post('/auth/createAdmin', createData);
         setSnackbar({
           open: true,
-          message: 'Usuario creado correctamente',
+          message: 'Administrador creado correctamente',
           severity: 'success'
         });
       }
@@ -179,10 +215,10 @@ const AdminUsuarios = () => {
       cargarUsuarios();
       
     } catch (error) {
-      console.error('Error al guardar usuario:', error);
+      console.error('Error al guardar administrador:', error);
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || 'Error al guardar el usuario',
+        message: error.response?.data?.message || 'Error al guardar el administrador',
         severity: 'error'
       });
     } finally {
@@ -193,7 +229,7 @@ const AdminUsuarios = () => {
   const handleDelete = async (cedula) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
       try {
-        await api.delete(`/usuarios/${cedula}`);
+        await api.delete(`/users/${cedula}`);
         setSnackbar({
           open: true,
           message: 'Usuario eliminado correctamente',
@@ -235,7 +271,7 @@ const AdminUsuarios = () => {
       usuario.nom_usu1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       usuario.ape_usu1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       usuario.ced_usu?.includes(searchTerm) ||
-      usuario.ema_usu?.toLowerCase().includes(searchTerm.toLowerCase());
+      usuario.cor_cue?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = roleFilter === '' || usuario.rol_cue === roleFilter;
     
@@ -423,8 +459,8 @@ const AdminUsuarios = () => {
                         </Box>
                       </TableCell>
                       <TableCell>{usuario.ced_usu}</TableCell>
-                      <TableCell>{usuario.ema_usu}</TableCell>
-                      <TableCell>{usuario.tel_usu}</TableCell>
+                      <TableCell>{usuario.cor_cue}</TableCell>
+                      <TableCell>{usuario.num_tel_usu}</TableCell>
                       <TableCell>
                         <Chip
                           label={usuario.rol_cue}
@@ -527,8 +563,8 @@ const AdminUsuarios = () => {
                     fullWidth
                     label="Email"
                     type="email"
-                    value={userForm.ema_usu}
-                    onChange={handleInputChange('ema_usu')}
+                    value={userForm.cor_cue}
+                    onChange={handleInputChange('cor_cue')}
                     required
                   />
                 </Grid>
@@ -536,29 +572,31 @@ const AdminUsuarios = () => {
                   <TextField
                     fullWidth
                     label="Teléfono"
-                    value={userForm.tel_usu}
-                    onChange={handleInputChange('tel_usu')}
+                    value={userForm.num_tel_usu}
+                    onChange={handleInputChange('num_tel_usu')}
+                    required
                   />
                 </Grid>
                 <Grid item xs={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Rol</InputLabel>
-                    <Select
-                      value={userForm.rol_cue}
-                      label="Rol"
-                      onChange={handleInputChange('rol_cue')}
-                    >
-                      <MenuItem value="ADMINISTRADOR">Administrador</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <TextField
+                    fullWidth
+                    label="Fecha de Nacimiento"
+                    type="date"
+                    value={userForm.fec_nac_usu}
+                    onChange={handleInputChange('fec_nac_usu')}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    required
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label={editingUser ? "Nueva Contraseña (dejar vacío para no cambiar)" : "Contraseña"}
                     type="password"
-                    value={userForm.con_cue}
-                    onChange={handleInputChange('con_cue')}
+                    value={userForm.pas_usu}
+                    onChange={handleInputChange('pas_usu')}
                     required={!editingUser}
                   />
                 </Grid>

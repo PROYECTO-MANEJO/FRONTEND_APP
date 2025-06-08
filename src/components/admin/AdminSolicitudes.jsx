@@ -430,16 +430,16 @@ const AdminSolicitudes = () => {
       <AdminSidebar />
       
       <Box sx={{ flexGrow: 1, p: 3 }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#6d1313', fontWeight: 'bold' }}>
             <RequestPage />
-            Gestión de Solicitudes de Cambio
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Administra todas las solicitudes de cambio del sistema
-          </Typography>
-        </Box>
+          Gestión de Solicitudes de Cambio
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Administra todas las solicitudes de cambio del sistema
+        </Typography>
+      </Box>
 
       {/* Tabs */}
       <Tabs 

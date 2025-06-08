@@ -231,19 +231,19 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
       <AdminSidebar />
       
       <Box sx={{ flexGrow: 1, p: 3 }}>
-        <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
-          <Box sx={{ mb: 4 }}>
+    <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
+      <Box sx={{ mb: 4 }}>
             <Typography variant="h5" gutterBottom sx={{ color: '#6d1313', fontWeight: 'bold' }}>
               <School sx={{ mr: 1 }} /> {cursoEditado ? 'Editar Curso' : 'Crear Nuevo Curso'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Llena los campos necesarios para {cursoEditado ? 'editar los datos del curso' : 'registrar un nuevo curso'} en el sistema.
-            </Typography>
-          </Box>
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Llena los campos necesarios para {cursoEditado ? 'editar los datos del curso' : 'registrar un nuevo curso'} en el sistema.
+        </Typography>
+      </Box>
 
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-            {steps.map((label) => (
-              <Step key={label}>
+      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+        {steps.map((label) => (
+          <Step key={label}>
                 <StepLabel 
                   sx={{
                     '& .MuiStepLabel-label.Mui-active': {
@@ -256,19 +256,19 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
                 >
                   {label}
                 </StepLabel>
-              </Step>
-            ))}
-          </Stepper>
+          </Step>
+        ))}
+      </Stepper>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-          <Box sx={{ mb: 4 }}>{renderStepContent(activeStep)}</Box>
+      <Box sx={{ mb: 4 }}>{renderStepContent(activeStep)}</Box>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Button 
               disabled={activeStep === 0} 
               onClick={handleBack} 
@@ -282,25 +282,25 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
                 }
               }}
             >
-              Atrás
-            </Button>
+          Atrás
+        </Button>
 
-            {activeStep === steps.length - 1 ? (
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} /> : <Send />}
+        {activeStep === steps.length - 1 ? (
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : <Send />}
                 sx={{
                   bgcolor: '#6d1313',
                   '&:hover': {
                     bgcolor: '#8b1a1a'
                   }
                 }}
-              >
-                {loading ? 'Guardando...' : cursoEditado ? 'Actualizar Curso' : 'Crear Curso'}
-              </Button>
-            ) : (
+          >
+            {loading ? 'Guardando...' : cursoEditado ? 'Actualizar Curso' : 'Crear Curso'}
+          </Button>
+        ) : (
               <Button 
                 variant="contained" 
                 onClick={handleNext}
@@ -311,21 +311,21 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
                   }
                 }}
               >
-                Siguiente
-              </Button>
-            )}
-          </Box>
+            Siguiente
+          </Button>
+        )}
+      </Box>
 
-          <Snackbar
-            open={snackbarOpen}
-            autoHideDuration={6000}
-            onClose={() => setSnackbarOpen(false)}
-          >
-            <Alert onClose={() => setSnackbarOpen(false)} severity="success">
-              {snackbarMessage}
-            </Alert>
-          </Snackbar>
-        </Paper>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="success">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Paper>
       </Box>
     </Box>
   );

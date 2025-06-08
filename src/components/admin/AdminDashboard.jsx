@@ -137,14 +137,14 @@ const AdminDashboard = () => {
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Box 
-            sx={{ 
+      sx={{
               background: 'linear-gradient(135deg, #6d1313 0%, #8b1a1a 100%)',
               borderRadius: 3,
               p: 4,
               color: 'white',
               mb: 3
-            }}
-          >
+      }}
+    >
             <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
               ¡Bienvenido, {user?.nombre}!
             </Typography>
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
                       {loading ? <CircularProgress size={24} /> : stats.totalEvents}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
                       Eventos Activos
                     </Typography>
                   </Box>
@@ -206,11 +206,11 @@ const AdminDashboard = () => {
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
                       {loading ? <CircularProgress size={24} /> : stats.totalCourses}
-                    </Typography>
+            </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Cursos Disponibles
-                    </Typography>
-                  </Box>
+            </Typography>
+          </Box>
                 </Box>
               </CardContent>
             </Card>
@@ -227,13 +227,13 @@ const AdminDashboard = () => {
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
                       {loading ? <CircularProgress size={24} /> : stats.pendingRequests}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
                       Solicitudes Pendientes
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+            </Typography>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
           </Grid>
         </Grid>
 
@@ -247,8 +247,8 @@ const AdminDashboard = () => {
               {quickActions.map((action, index) => (
                 <Grid item xs={12} sm={6} md={4} key={index}>
                   <Card 
-                    sx={{ 
-                      borderRadius: 2, 
+        sx={{
+          borderRadius: 2,
                       cursor: 'pointer',
                       transition: 'all 0.3s ease',
                       '&:hover': { 
@@ -271,7 +271,7 @@ const AdminDashboard = () => {
                             {action.description}
                           </Typography>
                         </Box>
-                      </Box>
+    </Box>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -285,7 +285,7 @@ const AdminDashboard = () => {
           <CardContent>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: '#6d1313' }}>
               Actividad Reciente
-            </Typography>
+      </Typography>
             <List>
               {recentActivities.map((activity) => (
                 <ListItem key={activity.id} sx={{ borderRadius: 2, mb: 1 }}>
@@ -310,7 +310,7 @@ const AdminDashboard = () => {
         </Card>
       </Box>
     </Box>
-  );
+);
 };
 
 export default AdminDashboard;
