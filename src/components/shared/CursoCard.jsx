@@ -22,7 +22,8 @@ import {
   Category,
   Person,
   People,
-  LocationOn
+  LocationOn,
+  AttachMoney
 } from '@mui/icons-material';
 import ModalInscripcion from './ModalInscripcion';
 import EstadoInscripcion from './EstadoInscripcion';
@@ -184,6 +185,13 @@ const CursoCard = ({ curso }) => {
                 {curso.categoria_nombre || 'Sin categoría'}
               </Typography>
             </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary">
+                {curso.es_gratuito ? 'Gratuito' : `$${curso.precio}`}
+              </Typography>
+            </Box>
           </Box>
 
           {/* Carreras habilitadas (chips) */}
@@ -319,7 +327,7 @@ const CursoCard = ({ curso }) => {
                 </Box>
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
                 <Box>
                   <Typography variant="subtitle2" color="primary" gutterBottom>
                     Categoría
@@ -336,6 +344,23 @@ const CursoCard = ({ curso }) => {
                   <Typography variant="body2">
                     {curso.organizador_nombre || 'Sin organizador'}
                   </Typography>
+                </Box>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Costo
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2">
+                    {curso.es_gratuito ? 'Gratuito' : `$${curso.precio} USD`}
+                  </Typography>
+                  <Chip 
+                    label={curso.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                    size="small"
+                    color={curso.es_gratuito ? 'success' : 'warning'}
+                    variant="outlined"
+                  />
                 </Box>
               </Box>
             </Box>

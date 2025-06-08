@@ -43,7 +43,8 @@ import {
   Person,
   Save,
   Cancel,
-  Info
+  Info,
+  AttachMoney
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -85,7 +86,9 @@ const AdminCursos = () => {
     capacidad_max_cur: '',
     tipo_audiencia_cur: '',
     carreras_seleccionadas: [],
-    requiere_verificacion_docs: true
+    requiere_verificacion_docs: true,
+    es_gratuito: true,
+    precio: ''
   });
 
   const TIPOS_AUDIENCIA = [
@@ -559,6 +562,20 @@ const AdminCursos = () => {
                         <Typography variant="body2" color="text.secondary">
                           {curso.organizador_nombre || 'Sin organizador'}
                         </Typography>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {curso.es_gratuito ? 'Gratuito' : `$${curso.precio || '0'}`}
+                        </Typography>
+                        <Chip 
+                          label={curso.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                          size="small"
+                          color={curso.es_gratuito ? 'success' : 'warning'}
+                          variant="outlined"
+                          sx={{ ml: 1, fontSize: '0.7rem' }}
+                        />
                       </Box>
                     </Box>
 

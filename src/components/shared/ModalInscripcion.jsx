@@ -14,7 +14,8 @@ import {
   TextField,
   Alert,
   CircularProgress,
-  Divider
+  Divider,
+  Chip
 } from '@mui/material';
 import { 
   Close,
@@ -133,7 +134,9 @@ const ModalInscripcion = ({
   ];
 
   const handleSubmit = async () => {
-    if (!metodoPago) {
+    // Verificar si es contenido pagado y faltan campos de pago
+    const esGratuito = item.es_gratuito;
+    if (!esGratuito && !metodoPago) {
       setError(mejorarMensajeError('Faltan campos obligatorios'));
       return;
     }
@@ -151,9 +154,13 @@ const ModalInscripcion = ({
     try {
       const inscripcionData = {
         idUsuario: userId,
-        metodoPago,
-        enlacePago: enlacePago || '',
       };
+
+      // Solo agregar información de pago si no es gratuito
+      if (!esGratuito) {
+        inscripcionData.metodoPago = metodoPago;
+        inscripcionData.enlacePago = enlacePago || '';
+      }
 
       if (tipo === 'evento') {
         inscripcionData.idEvento = item.id_eve;
@@ -258,13 +265,25 @@ const ModalInscripcion = ({
                 {descripcion}
               </Typography>
               
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1 }}>
                 <Typography variant="body2">
                   <strong>Fecha de inicio:</strong> {new Date(fechaInicio).toLocaleDateString()}
                 </Typography>
                 <Typography variant="body2">
                   <strong>Duración:</strong> {duracion} horas
                 </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2">
+                  <strong>Costo:</strong> {item.es_gratuito ? 'Gratuito' : `$${item.precio} USD`}
+                </Typography>
+                <Chip 
+                  label={item.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                  size="small"
+                  color={item.es_gratuito ? 'success' : 'warning'}
+                  variant="outlined"
+                />
               </Box>
             </Box>
 
@@ -282,46 +301,69 @@ const ModalInscripcion = ({
             )}
 
             {/* Formulario de inscripción */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Payment color="primary" />
-                Información de Pago
-              </Typography>
-
-              <FormControl fullWidth required>
-                <InputLabel>Método de Pago</InputLabel>
-                <Select
-                  value={metodoPago}
-                  label="Método de Pago"
-                  onChange={(e) => setMetodoPago(e.target.value)}
-                  disabled={loading}
-                >
-                  {metodosPago.map((metodo) => (
-                    <MenuItem key={metodo.value} value={metodo.value}>
-                      {metodo.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <TextField
-                fullWidth
-                label="Enlace de Comprobante de Pago (Opcional)"
-                placeholder="https://ejemplo.com/comprobante"
-                value={enlacePago}
-                onChange={(e) => setEnlacePago(e.target.value)}
-                disabled={loading}
-                helperText="Si ya realizaste el pago, puedes agregar el enlace del comprobante"
-              />
-
-              <Alert severity="info" sx={{ mt: 1 }}>
-                <Typography variant="body2">
-                  <strong>Importante:</strong> Una vez enviada la inscripción, 
-                  deberás esperar la aprobación del administrador. 
-                  Recibirás una notificación por email con el estado de tu inscripción.
+            {item.es_gratuito ? (
+              /* Contenido gratuito */
+              <Box>
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                    🎉 ¡{esEvento ? 'Evento' : 'Curso'} Gratuito!
+                  </Typography>
+                  <Typography variant="body2">
+                    Este {esEvento ? 'evento' : 'curso'} es completamente gratuito. 
+                    Tu inscripción será procesada automáticamente y recibirás una confirmación inmediata.
+                  </Typography>
+                </Alert>
+              </Box>
+            ) : (
+              /* Contenido pagado */
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Payment color="primary" />
+                  Información de Pago
                 </Typography>
-              </Alert>
-            </Box>
+
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Precio: ${item.precio} USD</strong> - Este {esEvento ? 'evento' : 'curso'} requiere pago. 
+                    Deberás completar la información de pago para proceder con tu inscripción.
+                  </Typography>
+                </Alert>
+
+                <FormControl fullWidth required>
+                  <InputLabel>Método de Pago</InputLabel>
+                  <Select
+                    value={metodoPago}
+                    label="Método de Pago"
+                    onChange={(e) => setMetodoPago(e.target.value)}
+                    disabled={loading}
+                  >
+                    {metodosPago.map((metodo) => (
+                      <MenuItem key={metodo.value} value={metodo.value}>
+                        {metodo.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  fullWidth
+                  label="Enlace de Comprobante de Pago (Opcional)"
+                  placeholder="https://ejemplo.com/comprobante"
+                  value={enlacePago}
+                  onChange={(e) => setEnlacePago(e.target.value)}
+                  disabled={loading}
+                  helperText="Si ya realizaste el pago, puedes agregar el enlace del comprobante"
+                />
+
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  <Typography variant="body2">
+                    <strong>Importante:</strong> Una vez enviada la inscripción, 
+                    deberás esperar la aprobación del administrador. 
+                    Recibirás una notificación por email con el estado de tu inscripción.
+                  </Typography>
+                </Alert>
+              </Box>
+            )}
           </Box>
         )}
       </DialogContent>
@@ -339,11 +381,11 @@ const ModalInscripcion = ({
           <Button 
             onClick={handleSubmit}
             variant="contained"
-            disabled={loading || !metodoPago}
+            disabled={loading || (!item.es_gratuito && !metodoPago)}
             sx={{ minWidth: 100 }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           >
-            {loading ? 'Procesando...' : 'Inscribirse'}
+            {loading ? 'Procesando...' : (item.es_gratuito ? 'Inscribirse Gratis' : 'Inscribirse')}
           </Button>
         </DialogActions>
       )}

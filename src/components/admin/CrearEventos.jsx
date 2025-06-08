@@ -30,7 +30,8 @@ import {
   LocationOn,
   People,
   Category,
-  Edit
+  Edit,
+  AttachMoney
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
@@ -73,6 +74,8 @@ const CrearEventos = () => {
         ced_org_eve: '',
         capacidad_max_eve: '',
         tipo_audiencia_eve: '',
+        es_gratuito: true,
+        precio: '',
     carreras_seleccionadas: []
   });
 
@@ -157,6 +160,8 @@ const CrearEventos = () => {
         ced_org_eve: eventoData.ced_org_eve || '',
         capacidad_max_eve: eventoData.capacidad_max_eve || '',
         tipo_audiencia_eve: eventoData.tipo_audiencia_eve || '',
+        es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
+        precio: eventoData.precio || '',
         carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : []
       });
 
@@ -212,6 +217,14 @@ const CrearEventos = () => {
     if (field === 'tipo_audiencia_eve') {
       if (value !== 'CARRERA_ESPECIFICA') {
         setEvento(prev => ({ ...prev, carreras_seleccionadas: [] }));
+      }
+    }
+
+    // Lógica especial para configuración de precio
+    if (field === 'es_gratuito') {
+      if (value) {
+        // Si se marca como gratuito, limpiar el precio
+        setEvento(prev => ({ ...prev, precio: '' }));
       }
     }
 
@@ -321,6 +334,20 @@ const CrearEventos = () => {
       nuevosErrores.carreras_seleccionadas = 'Debe seleccionar al menos una carrera';
     }
 
+    // Validar configuración de precio
+    if (!evento.es_gratuito) {
+      if (!evento.precio || evento.precio === '') {
+        nuevosErrores.precio = 'El precio es obligatorio para eventos pagados';
+      } else {
+        const precio = parseFloat(evento.precio);
+        if (isNaN(precio) || precio <= 0) {
+          nuevosErrores.precio = 'El precio debe ser un número mayor a 0';
+        } else if (precio > 10000) {
+          nuevosErrores.precio = 'El precio no puede exceder $10,000';
+        }
+      }
+    }
+
     setErrors(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
@@ -352,7 +379,9 @@ const CrearEventos = () => {
         ubi_eve: evento.ubi_eve.trim(),
         ced_org_eve: evento.ced_org_eve,
         capacidad_max_eve: parseInt(evento.capacidad_max_eve),
-        tipo_audiencia_eve: evento.tipo_audiencia_eve
+        tipo_audiencia_eve: evento.tipo_audiencia_eve,
+        es_gratuito: evento.es_gratuito,
+        precio: evento.es_gratuito ? null : parseFloat(evento.precio)
       };
 
       let eventoId;
@@ -474,6 +503,8 @@ const CrearEventos = () => {
       ced_org_eve: '',
       capacidad_max_eve: '',
       tipo_audiencia_eve: '',
+      es_gratuito: true,
+      precio: '',
       carreras_seleccionadas: []
     });
     setErrors({});
@@ -839,6 +870,71 @@ const CrearEventos = () => {
                         </Alert>
                       </Grid>
                     )}
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Configuración de Precio */}
+            <Grid item xs={12}>
+              <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                    <AttachMoney sx={{ mr: 1 }} />
+                    Configuración de Precio
+                  </Typography>
+                  
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <FormControl error={!!errors.es_gratuito}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Checkbox
+                            checked={evento.es_gratuito}
+                            onChange={(e) => handleChange('es_gratuito')({ target: { value: e.target.checked } })}
+                            sx={{ 
+                              color: '#6d1313',
+                              '&.Mui-checked': { color: '#6d1313' }
+                            }}
+                          />
+                          <Typography variant="body1">
+                            Evento gratuito (sin costo para los participantes)
+                          </Typography>
+                        </Box>
+                        {errors.es_gratuito && <FormHelperText>{errors.es_gratuito}</FormHelperText>}
+                      </FormControl>
+                    </Grid>
+
+                    {!evento.es_gratuito && (
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          type="number"
+                          label="Precio (USD)"
+                          value={evento.precio}
+                          onChange={handleChange('precio')}
+                          error={!!errors.precio}
+                          helperText={errors.precio || 'Ingrese el precio del evento en dólares'}
+                          inputProps={{ 
+                            min: 0.01, 
+                            max: 10000,
+                            step: 0.01
+                          }}
+                          InputProps={{
+                            startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>$</Typography>
+                          }}
+                          required
+                        />
+                      </Grid>
+                    )}
+
+                    <Grid item xs={12}>
+                      <Alert severity={evento.es_gratuito ? "success" : "info"}>
+                        {evento.es_gratuito 
+                          ? "Este evento será gratuito. Los estudiantes podrán inscribirse sin necesidad de proporcionar información de pago."
+                          : "Este evento es pagado. Los estudiantes deberán proporcionar el método de pago y el comprobante al inscribirse."
+                        }
+                      </Alert>
+                    </Grid>
                   </Grid>
                 </CardContent>
               </Card>

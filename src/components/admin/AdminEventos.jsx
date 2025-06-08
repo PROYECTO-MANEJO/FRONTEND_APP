@@ -43,7 +43,8 @@ import {
   Person,
   Save,
   Cancel,
-  Info
+  Info,
+  AttachMoney
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -88,6 +89,8 @@ const AdminEventos = () => {
     ced_org_eve: '',
     capacidad_max_eve: '',
     tipo_audiencia_eve: '',
+    es_gratuito: true,
+    precio: '',
     carreras_seleccionadas: []
   });
 
@@ -737,6 +740,20 @@ const AdminEventos = () => {
                         <Typography variant="body2" color="text.secondary">
                           {evento.organizador_nombre || 'Sin organizador'}
                         </Typography>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {evento.es_gratuito ? 'Gratuito' : `$${evento.precio || '0'}`}
+                        </Typography>
+                        <Chip 
+                          label={evento.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                          size="small"
+                          color={evento.es_gratuito ? 'success' : 'warning'}
+                          variant="outlined"
+                          sx={{ ml: 1, fontSize: '0.7rem' }}
+                        />
                       </Box>
                     </Box>
 
