@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Box,
   Typography,
@@ -39,10 +39,14 @@ import {
   AdminPanelSettings,
   Person
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import api from '../../services/api';
+import { AuthContext } from '../../context/AuthContext';
 
 const AdminUsuarios = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -52,6 +56,13 @@ const AdminUsuarios = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Verificar si el usuario tiene rol MASTER
+  useEffect(() => {
+    if (user && user.rol !== 'MASTER') {
+      navigate('/admin');
+    }
+  }, [user, navigate]);
   
   const [userForm, setUserForm] = useState({
     ced_usu: '',
@@ -292,6 +303,25 @@ const AdminUsuarios = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  // Si el usuario no es MASTER, no mostrar el componente
+  if (user && user.rol !== 'MASTER') {
+    return (
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+        <AdminSidebar />
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Card sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="h5" color="error" gutterBottom>
+              Acceso Denegado
+            </Typography>
+            <Typography variant="body1">
+              Solo los usuarios con rol MASTER pueden acceder a este módulo.
+            </Typography>
+          </Card>
+        </Box>
+      </Box>
+    );
+  }
 
   if (loading && usuarios.length === 0) {
     return (

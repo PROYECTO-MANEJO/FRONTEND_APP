@@ -40,7 +40,7 @@ const AdminSidebar = () => {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
-    { text: 'Usuarios', icon: <People />, path: '/admin/usuarios' },
+    ...(user?.rol === 'MASTER' ? [{ text: 'Usuarios', icon: <People />, path: '/admin/usuarios' }] : []),
     { text: 'Eventos', icon: <Event />, path: '/admin/eventos' },
     { text: 'Cursos', icon: <School />, path: '/admin/cursos' },
     { text: 'Solicitudes', icon: <RequestPage />, path: '/admin/solicitudes' },
