@@ -31,7 +31,7 @@ const UserDashboard = ({ user }) => {
       try {
         setLoading(true);
         const [eventosData, cursosData] = await Promise.all([
-          eventoService.getAll(),
+          eventoService.getEventosDisponibles(),
           cursoService.getAll()
         ]);
         setEventos(eventosData);
@@ -65,42 +65,35 @@ const UserDashboard = ({ user }) => {
       {/* Main Content */}
       <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
         <Container maxWidth="xl" sx={{ py: 4, px: 3 }}>
-          {/* Welcome Header mejorado */}
-          <Box sx={{ mb: 6, textAlign: 'center' }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              {new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 18 ? 'Buenas tardes' : 'Buenas noches'}
-            </Typography>
+          {/* Header del dashboard */}
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography 
               variant="h3" 
               sx={{ 
                 fontWeight: 700, 
-                mb: 1,
-                background: 'linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                color: 'transparent',
+                mb: 2,
+                color: 'text.primary',
                 fontSize: { xs: '2rem', md: '3rem' }
               }}
             >
               ¡Bienvenido, {user?.nombre}!
             </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
-              {new Date().toLocaleDateString('es-ES', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+            <Typography 
+              variant="h6" 
+              color="text.secondary"
+              sx={{ maxWidth: 600, mx: 'auto' }}
+            >
+              Descubre nuevos eventos disponibles para ti
             </Typography>
           </Box>
-
+          
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
               <CircularProgress size={60} sx={{ color: '#b91c1c' }} />
             </Box>
           ) : (
             <Grid container spacing={4}>
-              {/* Sección de Eventos */}
+              {/* Sección de Eventos Disponibles */}
               <Grid item xs={12}>
                 <Box sx={{ mb: 4 }}>
                   <Box sx={{ 
@@ -114,7 +107,7 @@ const UserDashboard = ({ user }) => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <Event sx={{ color: '#b91c1c', fontSize: '2rem' }} />
                       <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                        Últimos Eventos
+                        Eventos Disponibles
                       </Typography>
                     </Box>
                     <Button
@@ -150,10 +143,10 @@ const UserDashboard = ({ user }) => {
                     >
                       <Event sx={{ fontSize: '3rem', color: '#cbd5e1', mb: 2 }} />
                       <Typography variant="h6" color="text.secondary" gutterBottom>
-                        No hay eventos disponibles
+                        No hay eventos nuevos disponibles
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Actualmente no hay eventos programados
+                        Ya estás inscrito en todos los eventos disponibles o no hay eventos nuevos programados
                       </Typography>
                     </Paper>
                   ) : (
@@ -191,9 +184,9 @@ const UserDashboard = ({ user }) => {
                     gap: 2
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <School sx={{ color: '#b91c1c', fontSize: '2rem' }} />
+                      <School sx={{ color: '#16a34a', fontSize: '2rem' }} />
                       <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                        Cursos Disponibles
+                        Últimos Cursos
                       </Typography>
                     </Box>
                     <Button
@@ -202,11 +195,11 @@ const UserDashboard = ({ user }) => {
                       variant="outlined"
                       endIcon={<ArrowForward />}
                       sx={{
-                        borderColor: '#b91c1c',
-                        color: '#b91c1c',
+                        borderColor: '#16a34a',
+                        color: '#16a34a',
                         '&:hover': {
-                          borderColor: '#991b1b',
-                          backgroundColor: '#fef2f2',
+                          borderColor: '#15803d',
+                          backgroundColor: '#f0fdf4',
                         },
                         textTransform: 'none',
                         fontWeight: 600,
@@ -244,10 +237,10 @@ const UserDashboard = ({ user }) => {
                         <Grid 
                           item 
                           xs={12} 
-                          sm={1} 
+                          sm={6} 
                           md={4} 
                           lg={4}
-                          key={curso.id_cur || curso.id}
+                          key={curso.id_cur}
                           sx={{ height: '280px' }} // ALTURA FIJA IGUAL
                         >
                           <CursoCard curso={curso} />

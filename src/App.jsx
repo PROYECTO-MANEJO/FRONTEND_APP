@@ -17,6 +17,7 @@ import Dashboard from './components/user/Dashboard';
 import CursosPage from './components/user/CursosPage';
 import EventosPage from './components/user/EventosPage';
 import UserProfile from './components/user/UserProfile';
+import MisInscripciones from './components/user/MisInscripciones';
 
 // Admin components
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -172,6 +173,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EventosPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/mis-inscripciones" 
+              element={
+                <ProtectedRoute>
+                  <MisInscripciones />
                 </ProtectedRoute>
               } 
             />

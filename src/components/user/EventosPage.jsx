@@ -20,7 +20,7 @@ const EventosPage = () => {
     const loadEventos = async () => {
       try {
         setLoading(true);
-        const eventosData = await eventoService.getAll();
+        const eventosData = await eventoService.getMisEventos();
         setEventos(eventosData);
       } catch (err) {
         setError('Error al cargar los eventos');
@@ -62,14 +62,14 @@ const EventosPage = () => {
                 fontSize: { xs: '2rem', md: '3rem' }
               }}
             >
-              Eventos Disponibles
+              Mis Eventos
             </Typography>
             <Typography 
               variant="h6" 
               color="text.secondary"
               sx={{ maxWidth: 600, mx: 'auto' }}
             >
-              Descubre todos los eventos emocionantes y participa en actividades enriquecedoras
+              Todos los eventos en los que estás inscrito o participando
             </Typography>
           </Box>
 
@@ -91,10 +91,10 @@ const EventosPage = () => {
                   }}
                 >
                   <Typography variant="h5" color="text.secondary" gutterBottom>
-                    No hay eventos disponibles
+                    No tienes eventos inscritos
                   </Typography>
                   <Typography variant="body1" color="text.secondary">
-                    Actualmente no hay eventos programados en la plataforma. Vuelve pronto para ver nuevas opciones.
+                    Aún no te has inscrito en ningún evento. Explora los eventos disponibles en el dashboard.
                   </Typography>
                 </Paper>
               ) : (
@@ -102,7 +102,7 @@ const EventosPage = () => {
                   {/* Contador de eventos */}
                   <Box sx={{ mb: 3, textAlign: 'center' }}>
                     <Typography variant="body1" color="text.secondary">
-                      Mostrando <strong>{eventos.length}</strong> evento{eventos.length !== 1 ? 's' : ''} disponible{eventos.length !== 1 ? 's' : ''}
+                      Tienes <strong>{eventos.length}</strong> evento{eventos.length !== 1 ? 's' : ''} inscrito{eventos.length !== 1 ? 's' : ''}
                     </Typography>
                   </Box>
 
