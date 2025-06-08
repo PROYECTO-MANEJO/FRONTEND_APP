@@ -25,7 +25,7 @@ import AdminSolicitudes from './components/admin/AdminSolicitudes';
 import AdminUsuarios from './components/admin/AdminUsuarios';
 import AdminEventos from './components/admin/AdminEventos';
 import CrearEventos from './components/admin/CrearEventos';
-import CrearCursos from './components/admin/CrearCursos';
+import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
 import AdminConfiguracion from './components/admin/AdminConfiguracion';
 
@@ -126,7 +126,7 @@ function App() {
               path="/admin/cursos" 
               element={
                 <AdminRoute>
-                  <CrearCursos />
+                  <AdminCursos />
                 </AdminRoute>
               } 
             />

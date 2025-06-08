@@ -36,8 +36,8 @@ const UserSidebar = () => {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Cursos', icon: <School />, path: '/cursos' },
-    { text: 'Eventos', icon: <Event />, path: '/eventos' },
+    { text: 'Mis Cursos', icon: <School />, path: '/cursos' },
+    { text: 'Mis Eventos', icon: <Event />, path: '/eventos' },
     { text: 'Mis Inscripciones', icon: <ListAlt />, path: '/mis-inscripciones' },
     { text: 'Solicitudes', icon: <Assignment />, path: '/solicitudes' },
     { text: 'Mi Perfil', icon: <AccountCircle />, path: '/perfil' },

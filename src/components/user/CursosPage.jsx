@@ -5,23 +5,33 @@ import {
   Grid,
   CircularProgress,
   Paper,
-  Container
+  Container,
+  Tabs,
+  Tab,
+  Divider
 } from '@mui/material';
+import { School, Assignment } from '@mui/icons-material';
 import { cursoService } from '../../services/cursoService';
 import CursoCard from '../shared/CursoCard';
 import UserSidebar from './UserSidebar';
 
 const CursosPage = () => {
-  const [cursos, setCursos] = useState([]);
+  const [misCursos, setMisCursos] = useState([]);
+  const [cursosDisponibles, setCursosDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     const loadCursos = async () => {
       try {
         setLoading(true);
-        const cursosData = await cursoService.getAll();
-        setCursos(cursosData);
+        const [misCursosData, cursosDisponiblesData] = await Promise.all([
+          cursoService.getMisCursos(),
+          cursoService.getCursosDisponibles()
+        ]);
+        setMisCursos(misCursosData);
+        setCursosDisponibles(cursosDisponiblesData);
       } catch (err) {
         setError('Error al cargar los cursos');
         console.error(err);
@@ -32,6 +42,10 @@ const CursosPage = () => {
 
     loadCursos();
   }, []);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
 
   if (error) {
     return (
@@ -62,14 +76,14 @@ const CursosPage = () => {
                 fontSize: { xs: '2rem', md: '3rem' }
               }}
             >
-              Cursos Disponibles
+              Cursos
             </Typography>
             <Typography 
               variant="h6" 
               color="text.secondary"
               sx={{ maxWidth: 600, mx: 'auto' }}
             >
-              Explora nuestra amplia selección de cursos especializados y mejora tus habilidades
+              Gestiona tus cursos inscritos y descubre cursos disponibles
             </Typography>
           </Box>
 
@@ -79,61 +93,122 @@ const CursosPage = () => {
             </Box>
           ) : (
             <>
-              {cursos.length === 0 ? (
-                <Paper 
-                  elevation={2}
-                  sx={{ 
-                    p: 6, 
-                    textAlign: 'center',
-                    borderRadius: 3,
-                    maxWidth: 500,
-                    mx: 'auto'
+              {/* Tabs para alternar entre mis cursos y cursos disponibles */}
+              <Paper elevation={1} sx={{ mb: 3, borderRadius: 2 }}>
+                <Tabs 
+                  value={tabValue} 
+                  onChange={handleTabChange}
+                  variant="fullWidth"
+                  sx={{
+                    '& .MuiTab-root': {
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      py: 2
+                    }
                   }}
                 >
-                  <Typography variant="h5" color="text.secondary" gutterBottom>
-                    No hay cursos disponibles
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    Actualmente no hay cursos programados en la plataforma. Vuelve pronto para ver nuevas opciones.
-                  </Typography>
-                </Paper>
-              ) : (
-                <>
-                  {/* Contador de cursos */}
-                  <Box sx={{ mb: 3, textAlign: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                      Mostrando <strong>{cursos.length}</strong> curso{cursos.length !== 1 ? 's' : ''} disponible{cursos.length !== 1 ? 's' : ''}
-                    </Typography>
-                  </Box>
+                  <Tab 
+                    icon={<Assignment />} 
+                    label={`Mis Cursos (${misCursos.length})`}
+                    iconPosition="start"
+                  />
+                  <Tab 
+                    icon={<School />} 
+                    label={`Disponibles (${cursosDisponibles.length})`}
+                    iconPosition="start"
+                  />
+                </Tabs>
+              </Paper>
 
-                  {/* Grid perfecto de cursos */}
-                  <Grid 
-                    container 
-                    spacing={{ xs: 2, sm: 3, md: 4 }}
-                    sx={{
-                      '& .MuiGrid-item': {
-                        display: 'flex',
-                        height: '300px' // ALTURA FIJA OBLIGATORIA
-                      }
-                    }}
-                  >
-                    {cursos.map(curso => (
+              {/* Contenido basado en el tab seleccionado */}
+              {tabValue === 0 ? (
+                // Mis Cursos
+                <>
+                  {misCursos.length === 0 ? (
+                    <Paper 
+                      elevation={2}
+                      sx={{ 
+                        p: 6, 
+                        textAlign: 'center',
+                        borderRadius: 3,
+                        maxWidth: 500,
+                        mx: 'auto'
+                      }}
+                    >
+                      <Typography variant="h5" color="text.secondary" gutterBottom>
+                        No tienes cursos inscritos
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        Aún no te has inscrito en ningún curso. Explora los cursos disponibles en la pestaña de "Disponibles".
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <>
+                      {/* Grid de mis cursos */}
                       <Grid 
-                        item 
-                        xs={12} 
-                        sm={6} 
-                        md={4} 
-                        lg={3}
-                        key={curso.id_cur || curso.id}
-                        sx={{ 
-                          display: 'flex',
-                          height: '300px !important' // FUERZA LA ALTURA
-                        }}
+                        container 
+                        spacing={{ xs: 2, sm: 3, md: 4 }}
                       >
-                        <CursoCard curso={curso} />
+                        {misCursos.map(curso => (
+                          <Grid 
+                            item 
+                            xs={12} 
+                            sm={6} 
+                            md={4} 
+                            lg={3}
+                            key={curso.id_cur}
+                          >
+                            <CursoCard curso={curso} />
+                          </Grid>
+                        ))}
                       </Grid>
-                    ))}
-                  </Grid>
+                    </>
+                  )}
+                </>
+              ) : (
+                // Cursos Disponibles
+                <>
+                  {cursosDisponibles.length === 0 ? (
+                    <Paper 
+                      elevation={2}
+                      sx={{ 
+                        p: 6, 
+                        textAlign: 'center',
+                        borderRadius: 3,
+                        maxWidth: 500,
+                        mx: 'auto'
+                      }}
+                    >
+                      <Typography variant="h5" color="text.secondary" gutterBottom>
+                        No hay cursos disponibles
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        No hay cursos disponibles para tu carrera o perfil en este momento.
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <>
+                      {/* Grid de cursos disponibles */}
+                      <Grid 
+                        container 
+                        spacing={{ xs: 2, sm: 3, md: 4 }}
+                      >
+                        {cursosDisponibles.map(curso => (
+                          <Grid 
+                            item 
+                            xs={12} 
+                            sm={6} 
+                            md={4} 
+                            lg={3}
+                            key={curso.id_cur}
+                          >
+                            <CursoCard curso={curso} />
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </>
+                  )}
                 </>
               )}
             </>

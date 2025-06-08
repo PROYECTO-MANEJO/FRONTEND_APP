@@ -32,7 +32,7 @@ const UserDashboard = ({ user }) => {
         setLoading(true);
         const [eventosData, cursosData] = await Promise.all([
           eventoService.getEventosDisponibles(),
-          cursoService.getAll()
+          cursoService.getCursosDisponibles()
         ]);
         setEventos(eventosData);
         setCursos(cursosData);
@@ -186,7 +186,7 @@ const UserDashboard = ({ user }) => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <School sx={{ color: '#16a34a', fontSize: '2rem' }} />
                       <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                        Últimos Cursos
+                        Cursos Disponibles
                       </Typography>
                     </Box>
                     <Button

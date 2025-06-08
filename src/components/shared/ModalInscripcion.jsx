@@ -68,6 +68,31 @@ const mejorarMensajeError = (errorMessage) => {
       titulo: '👤 Usuario No Encontrado',
       mensaje: 'No se pudo encontrar tu información de usuario. Por favor, cierra sesión e inicia sesión nuevamente.',
       tipo: 'error'
+    },
+    'Solo puedes inscribirte en cursos públicos': {
+      titulo: '🚫 Acceso Restringido',
+      mensaje: 'Como usuario externo, solo puedes inscribirte en cursos abiertos al público general. Este curso es exclusivo para estudiantes de carreras específicas.',
+      tipo: 'warning'
+    },
+    'Debes tener los documentos verificados para inscribirte': {
+      titulo: '📄 Documentos No Verificados',
+      mensaje: 'Este curso requiere que tengas tus documentos académicos verificados. Contacta al administrador para completar este proceso.',
+      tipo: 'warning'
+    },
+    'Este curso no está habilitado para tu carrera': {
+      titulo: '📚 Carrera No Habilitada',
+      mensaje: 'Este curso está dirigido específicamente a estudiantes de ciertas carreras y la tuya no está incluida. Puedes buscar otros cursos disponibles para tu carrera.',
+      tipo: 'warning'
+    },
+    'Ya estás inscrito en este curso': {
+      titulo: '✅ Ya Inscrito',
+      mensaje: 'Ya te encuentras inscrito en este curso. Puedes revisar el estado de tu inscripción en tu perfil o contactar al organizador si tienes dudas.',
+      tipo: 'info'
+    },
+    'Curso no encontrado': {
+      titulo: '❌ Curso No Encontrado',
+      mensaje: 'El curso al que intentas inscribirte no existe o ha sido eliminado. Por favor, actualiza la página e intenta nuevamente.',
+      tipo: 'error'
     }
   };
 
@@ -102,7 +127,7 @@ const ModalInscripcion = ({
   const { user } = useAuth();
 
   const metodosPago = [
-    { value: 'TARJETA DE CREDITO', label: 'Tarjeta de Crédito' },
+    { value: 'TARJETA_CREDITO', label: 'Tarjeta de Crédito' },
     { value: 'TRANFERENCIA', label: 'Transferencia Bancaria' },
     { value: 'DEPOSITO', label: 'Depósito Bancario' }
   ];
