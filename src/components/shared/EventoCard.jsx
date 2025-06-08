@@ -20,10 +20,33 @@ import {
   EventAvailable
 } from '@mui/icons-material';
 import ModalInscripcion from './ModalInscripcion';
+import EstadoInscripcion from './EstadoInscripcion';
+import { useInscripciones } from '../../hooks/useInscripciones';
 
 const EventoCard = ({ evento }) => {
   const [open, setOpen] = useState(false);
   const [inscripcionOpen, setInscripcionOpen] = useState(false);
+  
+  // Hook para manejar inscripciones (solo si no es "mis eventos")
+  const { obtenerEstadoEvento, puedeInscribirse, cargarInscripciones } = useInscripciones();
+  
+  // Verificar si este es un evento de "mis eventos" (tiene estado_inscripcion)
+  const esMiEvento = Boolean(evento.estado_inscripcion);
+  
+  // Si es "mi evento", usar la información del evento, si no, usar el hook
+  const estadoInscripcion = esMiEvento 
+    ? {
+        inscrito: true,
+        estado: evento.estado_inscripcion,
+        fechaInscripcion: evento.fecha_inscripcion,
+        metodoPago: evento.metodo_pago,
+        valorPagado: evento.valor_pagado,
+        enlacePago: evento.enlace_pago,
+        fechaAprobacion: evento.fecha_aprobacion
+      }
+    : obtenerEstadoEvento(evento.id_eve);
+    
+  const puedeInscribirseEnEvento = esMiEvento ? false : puedeInscribirse(evento.id_eve, true);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -32,8 +55,10 @@ const EventoCard = ({ evento }) => {
   const handleInscripcionClose = () => setInscripcionOpen(false);
   
   const handleInscripcionExitosa = () => {
-    // Aquí podrías actualizar el estado del componente padre
-    // o mostrar una notificación de éxito
+    // Recargar inscripciones después de una inscripción exitosa
+    if (!esMiEvento) {
+      cargarInscripciones();
+    }
     console.log('Inscripción exitosa en evento:', evento.nom_eve);
   };
 
@@ -47,7 +72,7 @@ const EventoCard = ({ evento }) => {
           height: '300px', // ALTURA ABSOLUTA FIJA
           minHeight: '300px', // ALTURA MÍNIMA
           maxHeight: '300px', // ALTURA MÁXIMA
-          display: 'flex',
+          display: 'flex', 
           width: '450px',
           flexDirection: 'column',
           position: 'relative',
@@ -65,21 +90,27 @@ const EventoCard = ({ evento }) => {
           position: 'relative',
           overflow: 'hidden'
         }}>
-          {/* Chip de EVENTO */}
-          <Chip 
-            label="EVENTO" 
-            size="small" 
-            icon={<Event sx={{ fontSize: '0.7rem' }} />}
-            sx={{ 
-              bgcolor: '#b91c1c', 
-              color: 'white',
-              fontWeight: 600,
-              fontSize: '0.7rem',
-              height: '20px',
-              mb: 1,
-              alignSelf: 'flex-start'
-            }} 
-          />
+          {/* Chips de EVENTO y ESTADO */}
+          <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
+            <Chip 
+              label="EVENTO" 
+              size="small" 
+              icon={<Event sx={{ fontSize: '0.7rem' }} />}
+              sx={{ 
+                bgcolor: '#b91c1c', 
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.7rem',
+                height: '20px'
+              }}
+            />
+            {estadoInscripcion && (
+              <EstadoInscripcion 
+                estado={estadoInscripcion.estado} 
+                size="small" 
+              />
+            )}
+          </Box>
 
           {/* Título - altura controlada */}
           <Typography 
@@ -100,7 +131,7 @@ const EventoCard = ({ evento }) => {
           >
             {evento.nom_eve}
           </Typography>
-          
+
           {/* Descripción - altura controlada */}
           <Typography 
             variant="body2" 
@@ -156,7 +187,7 @@ const EventoCard = ({ evento }) => {
             size="small"
             startIcon={<InfoOutlined sx={{ fontSize: '0.9rem' }} />}
             onClick={handleOpen}
-            sx={{
+            sx={{ 
               borderColor: '#b91c1c',
               color: '#b91c1c',
               '&:hover': {
@@ -236,6 +267,21 @@ const EventoCard = ({ evento }) => {
                     />
                   ))}
                 </Box>
+              </Box>
+            )}
+
+            {/* Estado de inscripción para "mis eventos" */}
+            {esMiEvento && estadoInscripcion && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Estado de tu Inscripción
+                </Typography>
+                <EstadoInscripcion 
+                  estado={estadoInscripcion.estado} 
+                  size="large" 
+                  showDetails={true}
+                  estadoData={estadoInscripcion}
+                />
               </Box>
             )}
             
@@ -318,25 +364,51 @@ const EventoCard = ({ evento }) => {
           >
             Cerrar
           </Button>
-          <Button 
-            onClick={handleInscripcionOpen}
-            variant="contained"
-            startIcon={<EventAvailable />}
-            sx={{ borderRadius: 2, flex: 1 }}
-          >
-            Inscribirse
-          </Button>
+          
+          {/* Estado de inscripción en el modal */}
+          {estadoInscripcion ? (
+            <Box sx={{ flex: 1 }}>
+              <EstadoInscripcion 
+                estado={estadoInscripcion.estado} 
+                size="large" 
+                showDetails={true}
+                estadoData={estadoInscripcion}
+              />
+              {puedeInscribirseEnEvento && (
+                <Button 
+                  onClick={handleInscripcionOpen}
+                  variant="contained"
+                  startIcon={<EventAvailable />}
+                  sx={{ borderRadius: 2, width: '100%', mt: 1 }}
+                  color="warning"
+                >
+                  Volver a Inscribirse
+                </Button>
+              )}
+            </Box>
+          ) : (
+            <Button
+              onClick={handleInscripcionOpen}
+              variant="contained"
+              startIcon={<EventAvailable />}
+              sx={{ borderRadius: 2, flex: 1 }}
+            >
+              Inscribirse
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
-      {/* Modal de Inscripción */}
-      <ModalInscripcion
-        open={inscripcionOpen}
-        onClose={handleInscripcionClose}
-        item={evento}
-        tipo="evento"
-        onInscripcionExitosa={handleInscripcionExitosa}
-      />
+      {/* Modal de Inscripción - solo para eventos disponibles */}
+      {!esMiEvento && (
+        <ModalInscripcion
+          open={inscripcionOpen}
+          onClose={handleInscripcionClose}
+          tipo="evento"
+          item={evento}
+          onInscripcionExitosa={handleInscripcionExitosa}
+        />
+      )}
     </>
   );
 };

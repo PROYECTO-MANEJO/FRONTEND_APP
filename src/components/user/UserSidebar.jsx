@@ -16,7 +16,8 @@ import {
   Logout,
   School,
   Event,
-  AccountCircle
+  AccountCircle,
+  ListAlt
 } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
@@ -37,7 +38,8 @@ const UserSidebar = () => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Cursos', icon: <School />, path: '/cursos' },
     { text: 'Eventos', icon: <Event />, path: '/eventos' },
-    { text: 'Solicitudes', icon: <Assignment />, path: '/solicitudes' }, // ✅ AGREGAR ESTA LÍNEA SI NO EXISTE
+    { text: 'Mis Inscripciones', icon: <ListAlt />, path: '/mis-inscripciones' },
+    { text: 'Solicitudes', icon: <Assignment />, path: '/solicitudes' },
     { text: 'Mi Perfil', icon: <AccountCircle />, path: '/perfil' },
   ];
 

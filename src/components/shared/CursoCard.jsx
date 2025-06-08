@@ -19,10 +19,19 @@ import {
   EventAvailable
 } from '@mui/icons-material';
 import ModalInscripcion from './ModalInscripcion';
+import EstadoInscripcion from './EstadoInscripcion';
+import { useInscripciones } from '../../hooks/useInscripciones';
 
 const CursoCard = ({ curso }) => {
   const [open, setOpen] = useState(false);
   const [inscripcionOpen, setInscripcionOpen] = useState(false);
+  
+  // Hook para manejar inscripciones
+  const { obtenerEstadoCurso, puedeInscribirse, cargarInscripciones } = useInscripciones();
+  
+  // Obtener estado de inscripción para este curso
+  const estadoInscripcion = obtenerEstadoCurso(curso.id_cur);
+  const puedeInscribirseEnCurso = puedeInscribirse(curso.id_cur, false);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -31,8 +40,8 @@ const CursoCard = ({ curso }) => {
   const handleInscripcionClose = () => setInscripcionOpen(false);
   
   const handleInscripcionExitosa = () => {
-    // Aquí podrías actualizar el estado del componente padre
-    // o mostrar una notificación de éxito
+    // Recargar inscripciones después de una inscripción exitosa
+    cargarInscripciones();
     console.log('Inscripción exitosa en curso:', curso.nom_cur);
   };
 
@@ -65,21 +74,27 @@ const CursoCard = ({ curso }) => {
           position: 'relative',
           overflow: 'hidden'
         }}>
-          {/* Chip de CURSO - IGUAL QUE EVENTOS */}
-          <Chip 
-            label="CURSO" 
-            size="small" 
-            icon={<School sx={{ fontSize: '0.7rem' }} />}
-            sx={{ 
-              bgcolor: '#b91c1c', // MISMO COLOR QUE EVENTOS
-              color: 'white',
-              fontWeight: 600,
-              fontSize: '0.7rem',
-              height: '20px',
-              mb: 1,
-              alignSelf: 'flex-start'
-            }} 
-          />
+          {/* Chips de CURSO y ESTADO */}
+          <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
+            <Chip 
+              label="CURSO" 
+              size="small" 
+              icon={<School sx={{ fontSize: '0.7rem' }} />}
+              sx={{ 
+                bgcolor: '#b91c1c', // MISMO COLOR QUE EVENTOS
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.7rem',
+                height: '20px'
+              }} 
+            />
+            {estadoInscripcion && (
+              <EstadoInscripcion 
+                estado={estadoInscripcion} 
+                tamaño="small" 
+              />
+            )}
+          </Box>
 
           {/* Título - ALTURA CONTROLADA IGUAL QUE EVENTOS */}
           <Typography 
@@ -306,14 +321,37 @@ const CursoCard = ({ curso }) => {
           >
             Cerrar
           </Button>
-          <Button 
-            onClick={handleInscripcionOpen}
-            variant="contained"
-            startIcon={<EventAvailable />}
-            sx={{ borderRadius: 2, flex: 1 }}
-          >
-            Inscribirse
-          </Button>
+          
+          {/* Estado de inscripción en el modal */}
+          {estadoInscripcion ? (
+            <Box sx={{ flex: 1 }}>
+              <EstadoInscripcion 
+                estado={estadoInscripcion} 
+                tamaño="large" 
+                mostrarTexto={true}
+              />
+              {puedeInscribirseEnCurso && (
+                <Button 
+                  onClick={handleInscripcionOpen}
+                  variant="contained"
+                  startIcon={<EventAvailable />}
+                  sx={{ borderRadius: 2, width: '100%', mt: 1 }}
+                  color="warning"
+                >
+                  Volver a Inscribirse
+                </Button>
+              )}
+            </Box>
+          ) : (
+            <Button 
+              onClick={handleInscripcionOpen}
+              variant="contained"
+              startIcon={<EventAvailable />}
+              sx={{ borderRadius: 2, flex: 1 }}
+            >
+              Inscribirse
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

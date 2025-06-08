@@ -11,6 +11,28 @@ export const eventoService = {
     }
   },
 
+  // Obtener solo eventos disponibles para inscribirse (excluyendo los que ya tienes inscripción)
+  getEventosDisponibles: async () => {
+    try {
+      const response = await api.get('/eventos/disponibles');
+      return response.data.eventos;
+    } catch (error) {
+      console.error('Error fetching eventos disponibles:', error);
+      throw error;
+    }
+  },
+
+  // Obtener mis eventos (donde estoy inscrito)
+  getMisEventos: async () => {
+    try {
+      const response = await api.get('/eventos/mis-eventos');
+      return response.data.eventos;
+    } catch (error) {
+      console.error('Error fetching mis eventos:', error);
+      throw error;
+    }
+  },
+
   inscribirse: async (inscripcionData) => {
     try {
       const response = await api.post('/inscripciones/eventos', inscripcionData);
