@@ -139,13 +139,20 @@ const AdminVerificacionDocumentos = () => {
   };
 
   const renderDocumentButtons = (user) => (
-    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
       {user.documentos.cedula_subida && (
         <Tooltip title="Descargar Cédula">
           <IconButton
             size="small"
-            color="primary"
             onClick={() => handleDownloadDocument(user.id_usu, 'cedula', user.documentos.cedula_filename)}
+            sx={{
+              backgroundColor: '#d32f2f',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: '#b71c1c'
+              },
+              border: '2px solid #d32f2f'
+            }}
           >
             <DownloadIcon />
           </IconButton>
@@ -155,8 +162,15 @@ const AdminVerificacionDocumentos = () => {
         <Tooltip title="Descargar Matrícula">
           <IconButton
             size="small"
-            color="secondary"
             onClick={() => handleDownloadDocument(user.id_usu, 'matricula', user.documentos.matricula_filename)}
+            sx={{
+              backgroundColor: '#1976d2',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: '#1565c0'
+              },
+              border: '2px solid #1976d2'
+            }}
           >
             <DownloadIcon />
           </IconButton>
@@ -224,18 +238,28 @@ const AdminVerificacionDocumentos = () => {
                     <Chip
                       label="Cédula"
                       size="small"
-                      color="primary"
-                      variant="outlined"
+                      color="error"
+                      variant="filled"
                       icon={<DocumentIcon />}
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: 'white',
+                        bgcolor: '#d32f2f'
+                      }}
                     />
                   )}
                   {user.documentos.matricula_subida && (
                     <Chip
                       label="Matrícula"
                       size="small"
-                      color="secondary"
-                      variant="outlined"
+                      color="info"
+                      variant="filled"
                       icon={<DocumentIcon />}
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: 'white',
+                        bgcolor: '#1976d2'
+                      }}
                     />
                   )}
                 </Box>
