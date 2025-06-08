@@ -168,7 +168,10 @@ const AdminEventos = () => {
       
       // Calcular estadísticas
       const totalEventos = eventosData.length;
-      const eventosActivos = eventosData.filter(e => e.est_eve === 'ACTIVO' || !e.est_eve).length;
+      const eventosActivos = eventosData.filter(e => {
+        const estado = obtenerEstadoEvento(e.fec_ini_eve, e.fec_fin_eve);
+        return estado === 'EN_CURSO' || estado === 'PROXIMAMENTE';
+      }).length;
       const totalInscripciones = eventosData.reduce((sum, e) => sum + (e.total_inscripciones || 0), 0);
       const capacidadTotal = eventosData.reduce((sum, e) => sum + parseInt(e.capacidad_max_eve || 0), 0);
       
@@ -433,12 +436,28 @@ const AdminEventos = () => {
     }
   };
 
+  // Función auxiliar para obtener el estado del evento
+  const obtenerEstadoEvento = (fechaInicio, fechaFin) => {
+    const hoy = new Date();
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    
+    if (hoy < inicio) return 'PROXIMAMENTE';
+    if (hoy >= inicio && hoy <= fin) return 'EN_CURSO';
+    if (hoy > fin) return 'FINALIZADO';
+    return 'INDETERMINADO';
+  };
+
   const getEstadoColor = (estado) => {
     switch (estado) {
-      case 'ACTIVO':
+      case 'EN_CURSO':
         return '#10b981';
       case 'FINALIZADO':
         return '#6b7280';
+      case 'PROXIMAMENTE':
+        return '#f59e0b';
+      case 'ACTIVO':
+        return '#10b981';
       case 'CANCELADO':
         return '#ef4444';
       default:
@@ -650,10 +669,10 @@ const AdminEventos = () => {
                         {evento.nom_eve}
                       </Typography>
                       <Chip
-                        label={evento.est_eve || 'ACTIVO'}
+                        label={obtenerEstadoEvento(evento.fec_ini_eve, evento.fec_fin_eve)}
                         size="small"
                         sx={{
-                          bgcolor: getEstadoColor(evento.est_eve),
+                          bgcolor: getEstadoColor(obtenerEstadoEvento(evento.fec_ini_eve, evento.fec_fin_eve)),
                           color: 'white',
                           fontWeight: 500,
                           ml: 1

@@ -11,7 +11,7 @@ import {
   Avatar,
   IconButton,
   CircularProgress,
-  Fab,
+
   Snackbar,
   Alert,
   Dialog,
@@ -384,51 +384,87 @@ const AdminCursos = () => {
     return new Date(fecha).toLocaleDateString('es-ES');
   };
 
-
+  const statsCards = [
+    {
+      title: 'Total Cursos',
+      value: stats.totalCursos,
+      icon: <School />,
+      color: '#6d1313'
+    },
+    {
+      title: 'Cursos Activos',
+      value: stats.cursosActivos,
+      icon: <Category />,
+      color: '#10b981'
+    },
+    {
+      title: 'Total Inscripciones',
+      value: stats.totalInscripciones,
+      icon: <People />,
+      color: '#3b82f6'
+    },
+    {
+      title: 'Capacidad Total',
+      value: stats.capacidadTotal,
+      icon: <Person />,
+      color: '#8b5cf6'
+    }
+  ];
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: '#f5f5f5', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box component="main" sx={{ flexGrow: 1, p: 3, ml: '240px' }}>
-        <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold', color: '#6d1313' }}>
-          Administrar Cursos
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+        <Typography variant="h4" sx={{ mb: 1, fontWeight: 'bold', color: '#6d1313' }}>
+          Gestión de Cursos
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          Administra y visualiza todos los cursos del sistema
         </Typography>
 
-        {/* Estadísticas */}
+        {/* Stats Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#6d1313', color: 'white' }}>
-              <School sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h4">{stats.totalCursos}</Typography>
-              <Typography variant="body2">Total Cursos</Typography>
-            </Paper>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#4caf50', color: 'white' }}>
-              <Category sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h4">{stats.cursosActivos}</Typography>
-              <Typography variant="body2">Cursos Activos</Typography>
-            </Paper>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#2196f3', color: 'white' }}>
-              <People sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h4">{stats.totalInscripciones}</Typography>
-              <Typography variant="body2">Total Inscripciones</Typography>
-            </Paper>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ff9800', color: 'white' }}>
-              <LocationOn sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h4">{stats.capacidadTotal}</Typography>
-              <Typography variant="body2">Capacidad Total</Typography>
-            </Paper>
-          </Grid>
+          {statsCards.map((stat, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Card>
+                <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Avatar sx={{ bgcolor: stat.color, mr: 2 }}>
+                    {stat.icon}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                      {stat.value}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.title}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
+
+        {/* Título de la lista */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#333' }}>
+            Lista de Cursos ({cursos.length})
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenModal()}
+            sx={{
+              bgcolor: '#6d1313',
+              '&:hover': { bgcolor: '#8b1a1a' },
+              borderRadius: 2,
+              px: 3
+            }}
+          >
+            Nuevo Curso
+          </Button>
+        </Box>
 
         {/* Lista de cursos */}
         {loading ? (
@@ -449,7 +485,7 @@ const AdminCursos = () => {
                     boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
                   }
                 }}>
-                  <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                  <CardContent sx={{ flexGrow: 1, p: 2, width: '400px' }}>
                     {/* Header del curso */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Box sx={{ flexGrow: 1 }}>
@@ -606,21 +642,7 @@ const AdminCursos = () => {
           </Grid>
         )}
 
-        {/* Floating Action Button */}
-        <Fab
-          color="primary"
-          aria-label="add"
-          sx={{
-            position: 'fixed',
-            bottom: 16,
-            right: 16,
-            bgcolor: '#6d1313',
-            '&:hover': { bgcolor: '#8b1a1a' }
-          }}
-          onClick={() => handleOpenModal()}
-        >
-          <Add />
-        </Fab>
+
 
         {/* Modal de Crear/Editar Curso */}
         <Dialog 
