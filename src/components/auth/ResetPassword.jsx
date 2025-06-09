@@ -24,6 +24,7 @@ import {
   Twitter,
 } from '@mui/icons-material';
 import authService from '../../services/authService';
+import utaImage from '../../assets/images/uta1.jpg';
 
 const validationSchema = Yup.object().shape({
   password: Yup.string()
@@ -117,11 +118,24 @@ const ResetPassword = () => {
               alignItems: 'center',
               color: 'white',
               p: 4,
-              backgroundImage: `
-                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)
-              `,
+              backgroundImage: `url(${utaImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundBlendMode: 'overlay',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.7) 0%, rgba(238, 85, 82, 0.8) 100%)',
+                zIndex: 1,
+              },
+              '& > *': {
+                position: 'relative',
+                zIndex: 2,
+              },
             }}
           >
             <Lock sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
@@ -248,11 +262,24 @@ const ResetPassword = () => {
               alignItems: 'center',
               color: 'white',
               p: 4,
-              backgroundImage: `
-                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)
-              `,
+              backgroundImage: `url(${utaImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundBlendMode: 'overlay',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.7) 0%, rgba(238, 85, 82, 0.8) 100%)',
+                zIndex: 1,
+              },
+              '& > *': {
+                position: 'relative',
+                zIndex: 2,
+              },
             }}
           >
             <CheckCircle sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
@@ -364,11 +391,24 @@ const ResetPassword = () => {
             alignItems: 'center',
             color: 'white',
             p: 4,
-            backgroundImage: `
-              radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-              linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)
-            `,
+            backgroundImage: `url(${utaImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundBlendMode: 'overlay',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.7) 0%, rgba(238, 85, 82, 0.8) 100%)',
+              zIndex: 1,
+            },
+            '& > *': {
+              position: 'relative',
+              zIndex: 2,
+            },
           }}
         >
           <Lock sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
