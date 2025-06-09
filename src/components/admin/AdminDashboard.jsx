@@ -13,7 +13,6 @@ import {
   School,
   RequestPage,
   TrendingUp,
-  Settings,
   VerifiedUser,
   ManageAccounts,
   ArrowForward
@@ -66,7 +65,7 @@ const AdminDashboard = () => {
       isRestricted: user?.rol !== 'MASTER'
     },
     {
-      title: 'Gestión Inscripciones',
+      title: 'Gestión',
       description: 'Administrar inscripciones',
       icon: <ManageAccounts />,
       path: '/admin/gestion-inscripciones',
@@ -77,13 +76,6 @@ const AdminDashboard = () => {
       description: 'Generar reportes del sistema',
       icon: <TrendingUp />,
       path: '/admin/reportes',
-      color: '#6d1313'
-    },
-    {
-      title: 'Configuración',
-      description: 'Configurar el sistema',
-      icon: <Settings />,
-      path: '/admin/configuracion',
       color: '#6d1313'
     }
   ].filter(action => !action.isRestricted);

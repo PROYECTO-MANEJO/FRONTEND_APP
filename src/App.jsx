@@ -29,7 +29,7 @@ import AdminEventos from './components/admin/AdminEventos';
 import CrearEventos from './components/admin/CrearEventos';
 import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
-import AdminConfiguracion from './components/admin/AdminConfiguracion';
+
 
 import HistorialReportesFinancieros from './components/admin/HistorialReportesFinancieros';
 
@@ -183,14 +183,7 @@ function App() {
               } 
             />
             
-            <Route 
-              path="/admin/configuracion" 
-              element={
-                <AdminRoute>
-                  <AdminConfiguracion />
-                </AdminRoute>
-              } 
-            />
+
             
             <Route 
               path="/admin/historial-reportes-financieros" 
