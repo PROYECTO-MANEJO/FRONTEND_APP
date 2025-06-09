@@ -14,8 +14,10 @@ import { School, Assignment } from '@mui/icons-material';
 import { cursoService } from '../../services/cursoService';
 import CursoCard from '../shared/CursoCard';
 import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 
 const CursosPage = () => {
+  const { getMainContentStyle } = useUserSidebarLayout();
   const [misCursos, setMisCursos] = useState([]);
   const [cursosDisponibles, setCursosDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,9 +51,16 @@ const CursosPage = () => {
 
   if (error) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <Typography color="error" variant="h6">{error}</Typography>
         </Box>
       </Box>
@@ -59,11 +68,14 @@ const CursosPage = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <UserSidebar />
       
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <Box sx={{ 
+        flexGrow: 1,
+        ...getMainContentStyle()
+      }}>
         <Container maxWidth="xl" sx={{ py: 4, px: 3 }}>
           {/* Header optimizado */}
           <Box sx={{ mb: 4, textAlign: 'center' }}>
@@ -149,6 +161,7 @@ const CursosPage = () => {
                       <Grid 
                         container 
                         spacing={{ xs: 2, sm: 3, md: 4 }}
+                        justifyContent="flex-start"
                       >
                         {misCursos.map(curso => (
                           <Grid 
@@ -158,6 +171,10 @@ const CursosPage = () => {
                             md={4} 
                             lg={3}
                             key={curso.id_cur}
+                            sx={{ 
+                              display: 'flex',
+                              justifyContent: 'center'
+                            }}
                           >
                             <CursoCard curso={curso} />
                           </Grid>
@@ -193,6 +210,7 @@ const CursosPage = () => {
                       <Grid 
                         container 
                         spacing={{ xs: 2, sm: 3, md: 4 }}
+                        justifyContent="flex-start"
                       >
                         {cursosDisponibles.map(curso => (
                           <Grid 
@@ -202,6 +220,10 @@ const CursosPage = () => {
                             md={4} 
                             lg={3}
                             key={curso.id_cur}
+                            sx={{ 
+                              display: 'flex',
+                              justifyContent: 'center'
+                            }}
                           >
                             <CursoCard curso={curso} />
                           </Grid>

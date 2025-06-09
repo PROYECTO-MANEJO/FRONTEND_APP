@@ -35,6 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
 
 const AREAS_EVENTO = [
@@ -55,6 +56,7 @@ const TIPOS_AUDIENCIA = [
 ];
 
 const CrearEventos = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const { id } = useParams(); // Para detectar si estamos editando
   const navigate = useNavigate();
   const isEditing = Boolean(id);
@@ -515,7 +517,7 @@ const CrearEventos = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ color: '#6d1313', fontWeight: 'bold', mb: 1 }}>

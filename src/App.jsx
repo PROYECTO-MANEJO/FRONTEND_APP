@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/theme';
 import { AuthProvider } from './context/AuthContext';
+import { SidebarProvider } from './context/SidebarContext';
+import { UserSidebarProvider } from './context/UserSidebarContext';
 
 // Auth components
 import Login from './components/auth/Login';
@@ -29,7 +31,7 @@ import AdminEventos from './components/admin/AdminEventos';
 import CrearEventos from './components/admin/CrearEventos';
 import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
-import AdminConfiguracion from './components/admin/AdminConfiguracion';
+
 
 import HistorialReportesFinancieros from './components/admin/HistorialReportesFinancieros';
 
@@ -45,7 +47,8 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
+        <SidebarProvider>
+          <Router>
           <Routes>
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -61,7 +64,9 @@ function App() {
               path="/dashboard" 
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <UserSidebarProvider>
+                    <Dashboard />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -70,7 +75,9 @@ function App() {
               path="/solicitudes" 
               element={
                 <ProtectedRoute>
-                  <SolicitudesUsuario />
+                  <UserSidebarProvider>
+                    <SolicitudesUsuario />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -79,7 +86,9 @@ function App() {
               path="/perfil" 
               element={
                 <ProtectedRoute>
-                  <UserProfile />
+                  <UserSidebarProvider>
+                    <UserProfile />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -183,14 +192,7 @@ function App() {
               } 
             />
             
-            <Route 
-              path="/admin/configuracion" 
-              element={
-                <AdminRoute>
-                  <AdminConfiguracion />
-                </AdminRoute>
-              } 
-            />
+
             
             <Route 
               path="/admin/historial-reportes-financieros" 
@@ -206,7 +208,9 @@ function App() {
               path="/cursos" 
               element={
                 <ProtectedRoute>
-                  <CursosPage />
+                  <UserSidebarProvider>
+                    <CursosPage />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -215,7 +219,9 @@ function App() {
               path="/eventos" 
               element={
                 <ProtectedRoute>
-                  <EventosPage />
+                  <UserSidebarProvider>
+                    <EventosPage />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -224,7 +230,9 @@ function App() {
               path="/mis-inscripciones" 
               element={
                 <ProtectedRoute>
-                  <MisInscripciones />
+                  <UserSidebarProvider>
+                    <MisInscripciones />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -233,7 +241,9 @@ function App() {
               path="/certificados" 
               element={
                 <ProtectedRoute>
-                  <MisCertificadosWrapper />
+                  <UserSidebarProvider>
+                    <MisCertificadosWrapper />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -242,6 +252,7 @@ function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>
+        </SidebarProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -44,10 +44,12 @@ import {
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import { inscripcionService } from '../../services/inscripcionService';
 import api from '../../services/api';
 
 const AdminInscripciones = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [tabValue, setTabValue] = useState(0);
   const [inscripcionesEventos, setInscripcionesEventos] = useState([]);
   const [inscripcionesCursos, setInscripcionesCursos] = useState([]);
@@ -312,7 +314,7 @@ const AdminInscripciones = () => {
     return (
       <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
         <AdminSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', ...getMainContentStyle() }}>
           <CircularProgress size={60} />
         </Box>
       </Box>
@@ -322,7 +324,7 @@ const AdminInscripciones = () => {
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
-      <Box sx={{ flexGrow: 1, p: 3, overflow: 'auto' }}>
+      <Box sx={{ flexGrow: 1, p: 3, overflow: 'auto', ...getMainContentStyle() }}>
         <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: '#1a1a1a' }}>
           📋 Gestión de Inscripciones
         </Typography>

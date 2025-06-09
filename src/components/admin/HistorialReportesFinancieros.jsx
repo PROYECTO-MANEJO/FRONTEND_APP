@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Stack
+  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Stack, Alert
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AddIcon from '@mui/icons-material/Add';
+import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
 
 const HistorialReportesFinancieros = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [searchParams] = useSearchParams();
   const [reportes, setReportes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [generandoReporte, setGenerandoReporte] = useState(false);
+  const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,13 +48,59 @@ const HistorialReportesFinancieros = () => {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       alert('No se pudo descargar el PDF');
     }
   };
 
+  const handleGenerarReporte = async () => {
+    setGenerandoReporte(true);
+    setMensaje({ tipo: '', texto: '' });
+    
+    try {
+      await api.post('/reportes/finanzas/pdf');
+      setMensaje({ 
+        tipo: 'success', 
+        texto: 'Reporte financiero generado exitosamente. Actualizando lista...' 
+      });
+      
+      // Recargar la lista de reportes después de generar uno nuevo
+      setTimeout(() => {
+        const tipo = searchParams.get('tipo');
+        if (tipo === 'FINANZAS') {
+          api.get(`/reportes?tipo=${tipo}`)
+            .then(res => {
+              setReportes(res.data.reportes || []);
+              setMensaje({ tipo: '', texto: '' });
+            })
+            .catch(() => {
+              setMensaje({ 
+                tipo: 'error', 
+                texto: 'Error al actualizar la lista de reportes' 
+              });
+            });
+        }
+      }, 1000);
+      
+    } catch {
+      setMensaje({ 
+        tipo: 'error', 
+        texto: 'Error al generar el reporte financiero' 
+      });
+    } finally {
+      setGenerandoReporte(false);
+    }
+  };
+
   if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+        <AdminSidebar />
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', ...getMainContentStyle() }}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
   }
 
   // Encuentra el último reporte (el más reciente)
@@ -57,7 +109,9 @@ const HistorialReportesFinancieros = () => {
     : null;
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <AdminSidebar />
+      <Box sx={{ flexGrow: 1, p: 4, ...getMainContentStyle() }}>
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <Button
           variant="outlined"
@@ -65,6 +119,15 @@ const HistorialReportesFinancieros = () => {
           onClick={() => navigate('/admin/reportes')}
         >
           Volver a Reportes
+        </Button>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={generandoReporte ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
+          onClick={handleGenerarReporte}
+          disabled={generandoReporte}
+        >
+          {generandoReporte ? 'Generando...' : 'Generar Nuevo Reporte'}
         </Button>
         <Button
           variant="contained"
@@ -76,6 +139,13 @@ const HistorialReportesFinancieros = () => {
           Descargar último PDF
         </Button>
       </Stack>
+
+      {mensaje.texto && (
+        <Alert severity={mensaje.tipo} sx={{ mb: 3 }}>
+          {mensaje.texto}
+        </Alert>
+      )}
+
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
         Historial de Reportes Financieros
       </Typography>
@@ -115,6 +185,7 @@ const HistorialReportesFinancieros = () => {
           </Table>
         </TableContainer>
       </Paper>
+      </Box>
     </Box>
   );
 };
