@@ -4,18 +4,18 @@ import { Formik, Form } from 'formik';
 import * as yup from 'yup';
 import {
   Box,
-  Card,
-  CardContent,
   TextField,
   Button,
   Typography,
   Alert,
-  Container,
-  Avatar,
   CircularProgress,
+  Paper,
+  Divider,
 } from '@mui/material';
 import {
   Email,
+  Facebook,
+  Twitter,
   School,
   ArrowBack,
 } from '@mui/icons-material';
@@ -64,38 +64,115 @@ const ForgotPassword = () => {
           padding: 2,
         }}
       >
-        <Container maxWidth="sm">
-          <Card elevation={3} sx={{ borderRadius: 3 }}>
-            <CardContent sx={{ p: 4, textAlign: 'center' }}>
-              <Avatar
+        <Paper
+          elevation={24}
+          sx={{
+            display: 'flex',
+            width: '100%',
+            maxWidth: 900,
+            minHeight: 550,
+            borderRadius: 0,
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+          }}
+        >
+          {/* Left Panel - Decorative */}
+          <Box
+            sx={{
+              flex: 1,
+              background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 50%, #dc3545 100%)',
+              position: 'relative',
+              display: { xs: 'none', md: 'flex' },
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: 'white',
+              p: 4,
+              backgroundImage: `
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)
+              `,
+            }}
+          >
+            <Email sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: 700,
+                mb: 2,
+                textAlign: 'center',
+                fontSize: { xs: '2rem', md: '3rem' },
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+              }}
+            >
+              ¡Perfecto!
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                textAlign: 'center',
+                opacity: 0.9,
+                lineHeight: 1.6,
+                maxWidth: 300,
+                fontSize: '1.1rem',
+              }}
+            >
+              Revisa tu correo electrónico para continuar con el proceso de recuperación
+            </Typography>
+          </Box>
+
+          {/* Right Panel - Success Message */}
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              p: { xs: 3, md: 5 },
+              backgroundColor: 'white',
+              textAlign: 'center',
+            }}
+          >
+            <Email sx={{ fontSize: 64, color: '#dc3545', mx: 'auto', mb: 3 }} />
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                color: '#2c3e50',
+                mb: 2,
+                fontSize: { xs: '1.8rem', md: '2.2rem' },
+              }}
+            >
+              Correo Enviado
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#7f8c8d', mb: 4, lineHeight: 1.6 }}>
+              Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña en breve.
+            </Typography>
+            <Link to="/login" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="contained"
+                startIcon={<ArrowBack />}
                 sx={{
-                  width: 64,
-                  height: 64,
-                  bgcolor: '#6d1313',
-                  mx: 'auto',
-                  mb: 2,
+                  py: 1.5,
+                  px: 4,
+                  borderRadius: 2,
+                  backgroundColor: '#dc3545',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  boxShadow: '0 4px 12px rgba(220, 53, 69, 0.3)',
+                  '&:hover': {
+                    backgroundColor: '#c82333',
+                    boxShadow: '0 6px 16px rgba(220, 53, 69, 0.4)',
+                  },
                 }}
               >
-                <Email fontSize="large" />
-              </Avatar>
-              <Typography variant="h5" gutterBottom>
-                Correo Enviado
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña en breve.
-              </Typography>
-              <Link to="/login">
-                <Button
-                  variant="contained"
-                  startIcon={<ArrowBack />}
-                  sx={{ mt: 2 }}
-                >
-                  Volver al Login
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </Container>
+                Volver al Login
+              </Button>
+            </Link>
+          </Box>
+        </Paper>
       </Box>
     );
   }
@@ -111,42 +188,146 @@ const ForgotPassword = () => {
         padding: 2,
       }}
     >
-      <Container maxWidth="sm">
-        <Card elevation={3} sx={{ borderRadius: 3 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar
+      <Paper
+        elevation={24}
+        sx={{
+          display: 'flex',
+          width: '100%',
+          maxWidth: 900,
+          minHeight: 550,
+                     borderRadius: 0,
+          overflow: 'hidden',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+        }}
+      >
+        {/* Left Panel - Decorative */}
+        <Box
+          sx={{
+            flex: 1,
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 50%, #dc3545 100%)',
+            position: 'relative',
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: 'white',
+            p: 4,
+            backgroundImage: `
+              radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+              linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)
+            `,
+          }}
+        >
+          <School sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
+          <Typography
+            variant="h2"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+              textAlign: 'center',
+              fontSize: { xs: '2rem', md: '3rem' },
+              textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+            }}
+          >
+            Recuperar
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              textAlign: 'center',
+              opacity: 0.9,
+              lineHeight: 1.6,
+              maxWidth: 300,
+              fontSize: '1.1rem',
+            }}
+          >
+            No te preocupes, te ayudamos a recuperar el acceso a tu cuenta de manera segura
+          </Typography>
+          
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="body2" sx={{ mb: 2, textAlign: 'center', opacity: 0.8 }}>
+              Conecta con redes sociales
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<Facebook />}
                 sx={{
-                  width: 64,
-                  height: 64,
-                  bgcolor: '#6d1313',
-                  mx: 'auto',
-                  mb: 2,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.3)',
+                  },
                 }}
               >
-                <School fontSize="large" />
-              </Avatar>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Recuperar Contraseña
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Ingresa tu correo institucional y te enviaremos instrucciones para restablecer tu contraseña.
-              </Typography>
+                Facebook
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Twitter />}
+                sx={{
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.3)',
+                  },
+                }}
+              >
+                Twitter
+              </Button>
             </Box>
+          </Box>
+        </Box>
 
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
-
-            <Formik
-              initialValues={initialValues}
-              validationSchema={validationSchema}
-              onSubmit={handleSubmit}
+        {/* Right Panel - Forgot Password Form */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            p: { xs: 3, md: 5 },
+            backgroundColor: 'white',
+          }}
+        >
+          <Box sx={{ mb: 4 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                color: '#2c3e50',
+                mb: 1,
+                fontSize: { xs: '1.8rem', md: '2.2rem' },
+              }}
             >
-              {({ values, errors, touched, handleChange, handleBlur }) => (
-                <Form>
+              Recuperar Contraseña
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#7f8c8d' }}>
+              Ingresa tu correo institucional y te enviaremos instrucciones
+            </Typography>
+          </Box>
+
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 0 }}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Form */}
+          <Formik
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+          >
+            {({ values, errors, touched, handleChange, handleBlur }) => (
+              <Form>
+                <Box>
                   <TextField
                     fullWidth
                     id="email"
@@ -160,7 +341,24 @@ const ForgotPassword = () => {
                     placeholder="tu@uta.edu.ec"
                     error={touched.email && !!errors.email}
                     helperText={touched.email && errors.email}
-                    sx={{ mb: 3 }}
+                    sx={{
+                      mb: 3,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 0,
+                        '& fieldset': {
+                          borderColor: '#e0e6ed',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#dc3545',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#dc3545',
+                        },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#dc3545',
+                      },
+                    }}
                   />
 
                   <Button
@@ -169,27 +367,41 @@ const ForgotPassword = () => {
                     variant="contained"
                     size="large"
                     disabled={isSubmitting}
-                    sx={{ 
-                      mb: 3, 
+                    sx={{
+                      mb: 3,
                       py: 1.5,
-                      backgroundColor: '#6d1313',
+                      borderRadius: 0,
+                      backgroundColor: '#dc3545',
+                      fontSize: '1.1rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      boxShadow: '0 4px 12px rgba(220, 53, 69, 0.3)',
                       '&:hover': {
-                        backgroundColor: '#5a1010',
+                        backgroundColor: '#c82333',
+                        boxShadow: '0 6px 16px rgba(220, 53, 69, 0.4)',
+                      },
+                      '&:disabled': {
+                        backgroundColor: '#f8d7da',
                       },
                     }}
-                    startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Email />}
                   >
-                    {isSubmitting ? 'Enviando...' : 'Enviar Instrucciones'}
+                    {isSubmitting ? (
+                      <CircularProgress size={24} color="inherit" />
+                    ) : (
+                      'Enviar Instrucciones'
+                    )}
                   </Button>
 
+                  <Divider sx={{ mb: 2 }} />
+
                   <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#7f8c8d' }}>
                       ¿Recordaste tu contraseña?{' '}
                       <Link
                         to="/login"
                         style={{
-                          color: '#6d1313',
-                          textDecoration: 'none',
+                          color: '#dc3545',
+                          textDecoration: 'underline',
                           fontWeight: 500,
                         }}
                       >
@@ -197,12 +409,12 @@ const ForgotPassword = () => {
                       </Link>
                     </Typography>
                   </Box>
-                </Form>
-              )}
-            </Formik>
-          </CardContent>
-        </Card>
-      </Container>
+                </Box>
+              </Form>
+            )}
+          </Formik>
+        </Box>
+      </Paper>
     </Box>
   );
 };
