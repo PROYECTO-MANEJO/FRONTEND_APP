@@ -38,6 +38,7 @@ import {
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
 import { carreraService } from '../../services/carreraService';
@@ -60,7 +61,8 @@ const validationSchema = Yup.object().shape({
 });
 
 const UserProfile = () => {
-  const { user, updateUser } = useAuth();
+  const { getMainContentStyle } = useUserSidebarLayout();
+  const { updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -382,9 +384,16 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <CircularProgress sx={{ color: '#6d1313' }} />
         </Box>
       </Box>
@@ -393,9 +402,16 @@ const UserProfile = () => {
 
   if (!userData) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <Alert severity="error">
             Error al cargar los datos del perfil
           </Alert>
@@ -416,11 +432,15 @@ const UserProfile = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <UserSidebar />
       
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, p: 3, overflow: 'auto' }}>
+      <Box sx={{ 
+        flexGrow: 1,
+        p: 3,
+        ...getMainContentStyle()
+      }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>

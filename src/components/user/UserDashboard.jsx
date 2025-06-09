@@ -19,8 +19,10 @@ import { cursoService } from '../../services/cursoService';
 import CursoCard from '../shared/CursoCard';
 import EventoCard from '../shared/EventoCard';
 import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 
 const UserDashboard = ({ user }) => {
+  const { getMainContentStyle } = useUserSidebarLayout();
   const [eventos, setEventos] = useState([]);
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,9 +51,16 @@ const UserDashboard = ({ user }) => {
 
   if (error) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <Typography color="error" variant="h6">{error}</Typography>
         </Box>
       </Box>
@@ -59,11 +68,14 @@ const UserDashboard = ({ user }) => {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <UserSidebar />
 
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <Box sx={{ 
+        flexGrow: 1,
+        ...getMainContentStyle()
+      }}>
         <Container maxWidth="xl" sx={{ py: 4, px: 3 }}>
           {/* Header del dashboard */}
           <Box sx={{ mb: 4, textAlign: 'center' }}>

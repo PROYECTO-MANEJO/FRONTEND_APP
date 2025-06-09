@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/theme';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
+import { UserSidebarProvider } from './context/UserSidebarContext';
 
 // Auth components
 import Login from './components/auth/Login';
@@ -63,7 +64,9 @@ function App() {
               path="/dashboard" 
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <UserSidebarProvider>
+                    <Dashboard />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -72,7 +75,9 @@ function App() {
               path="/solicitudes" 
               element={
                 <ProtectedRoute>
-                  <SolicitudesUsuario />
+                  <UserSidebarProvider>
+                    <SolicitudesUsuario />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -81,7 +86,9 @@ function App() {
               path="/perfil" 
               element={
                 <ProtectedRoute>
-                  <UserProfile />
+                  <UserSidebarProvider>
+                    <UserProfile />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -201,7 +208,9 @@ function App() {
               path="/cursos" 
               element={
                 <ProtectedRoute>
-                  <CursosPage />
+                  <UserSidebarProvider>
+                    <CursosPage />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -210,7 +219,9 @@ function App() {
               path="/eventos" 
               element={
                 <ProtectedRoute>
-                  <EventosPage />
+                  <UserSidebarProvider>
+                    <EventosPage />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -219,7 +230,9 @@ function App() {
               path="/mis-inscripciones" 
               element={
                 <ProtectedRoute>
-                  <MisInscripciones />
+                  <UserSidebarProvider>
+                    <MisInscripciones />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -228,7 +241,9 @@ function App() {
               path="/certificados" 
               element={
                 <ProtectedRoute>
-                  <MisCertificadosWrapper />
+                  <UserSidebarProvider>
+                    <MisCertificadosWrapper />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />

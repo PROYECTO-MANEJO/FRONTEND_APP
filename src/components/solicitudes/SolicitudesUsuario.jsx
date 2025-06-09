@@ -13,8 +13,10 @@ import {
 import CrearSolicitud from './CrearSolicitud';
 import MisSolicitudes from './MisSolicitudes';
 import UserSidebar from '../user/UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 
 const SolicitudesUsuario = () => {
+  const { getMainContentStyle } = useUserSidebarLayout();
   const [activeTab, setActiveTab] = useState(0);
 
   const handleTabChange = (event, newValue) => {
@@ -33,8 +35,7 @@ const SolicitudesUsuario = () => {
         component="main" 
         sx={{ 
           flexGrow: 1,
-          pl: { xs: 0, sm: 2 },
-          minHeight: '100vh'
+          ...getMainContentStyle()
         }}
       >
         {/* Main Content */}
