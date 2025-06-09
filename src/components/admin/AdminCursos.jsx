@@ -48,9 +48,11 @@ import {
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
 
 const AdminCursos = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -476,7 +478,7 @@ const AdminCursos = () => {
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, ...getMainContentStyle() }}>
         <Typography variant="h4" sx={{ mb: 1, fontWeight: 'bold', color: '#6d1313' }}>
           Gestión de Cursos
         </Typography>

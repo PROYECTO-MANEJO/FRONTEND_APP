@@ -22,6 +22,7 @@ import {
 import { School, Send } from '@mui/icons-material';
 import api from '../../services/api';
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import { useNavigate } from 'react-router-dom';
 
 const TIPOS_AUDIENCIA = [
@@ -31,6 +32,7 @@ const TIPOS_AUDIENCIA = [
 ];
 
 const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [categorias, setCategorias] = useState([]);
   const [organizadores, setOrganizadores] = useState([]);
   const [carreras, setCarreras] = useState([]);
@@ -505,7 +507,7 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
           <Box sx={{ mb: 4 }}>
             <Typography variant="h5" gutterBottom sx={{ color: '#6d1313', fontWeight: 'bold' }}>

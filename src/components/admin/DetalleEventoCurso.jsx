@@ -60,9 +60,11 @@ import {
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
 
 const DetalleEventoCurso = ({ item, onClose }) => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [loading, setLoading] = useState(true);
   const [detalles, setDetalles] = useState(null);
   const [inscripciones, setInscripciones] = useState([]);
@@ -373,7 +375,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
     return (
       <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <AdminSidebar />
-        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', ...getMainContentStyle() }}>
           <CircularProgress />
         </Box>
       </Box>
@@ -384,7 +386,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
     return (
       <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <AdminSidebar />
-        <Box sx={{ flexGrow: 1, p: 3 }}>
+        <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
           <Typography variant="h6" color="error">
             Error al cargar los detalles
           </Typography>
@@ -400,7 +402,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header con botón de regreso */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <IconButton onClick={onClose} sx={{ mr: 2 }}>

@@ -20,10 +20,12 @@ import {
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { AuthContext } from '../../context/AuthContext';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { getMainContentStyle } = useSidebarLayout();
 
 
   const quickActions = [
@@ -86,7 +88,7 @@ const AdminDashboard = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Box 

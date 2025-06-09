@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/theme';
 import { AuthProvider } from './context/AuthContext';
+import { SidebarProvider } from './context/SidebarContext';
 
 // Auth components
 import Login from './components/auth/Login';
@@ -45,7 +46,8 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
+        <SidebarProvider>
+          <Router>
           <Routes>
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -235,6 +237,7 @@ function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>
+        </SidebarProvider>
       </AuthProvider>
     </ThemeProvider>
   );

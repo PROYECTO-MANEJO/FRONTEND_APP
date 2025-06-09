@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 
 const reportTypes = [
   {
@@ -77,6 +78,7 @@ const crecimientoUsuarios = [
 
 const AdminReportes = () => {
   const [loading, setLoading] = useState(false);
+  const { getMainContentStyle } = useSidebarLayout();
   const navigate = useNavigate();
 
   const handleGenerar = async (tipo) => {
@@ -103,7 +105,7 @@ const AdminReportes = () => {
   return (
     <Box sx={{ display: 'flex' }}>
       <AdminSidebar />
-      <Box sx={{ flexGrow: 1, p: 4, background: '#fafbfc', minHeight: '100vh' }}>
+      <Box sx={{ flexGrow: 1, p: 4, background: '#fafbfc', minHeight: '100vh', ...getMainContentStyle() }}>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
           Reportes y Análisis
         </Typography>
