@@ -29,6 +29,8 @@ import {
   Timeline
 } from '@mui/icons-material';
 import AdminSidebar from './AdminSidebar';
+import { useNavigate } from 'react-router-dom';
+import api from '../../services/api'; // Asegúrate de que la ruta a tu archivo api.js sea correcta
 
 const AdminReportes = () => {
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,7 @@ const AdminReportes = () => {
     cursos: [],
     ingresos: []
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadReportData();
@@ -81,6 +84,41 @@ const AdminReportes = () => {
     }
   };
 
+  const handleVerHistorial = (tipo) => {
+    if (tipo === 'financiero') {
+      navigate('/admin/reportes/historial?tipo=FINANZAS');
+    } else if (tipo === 'usuarios') {
+      navigate('/admin/reportes/historial-usuarios?tipo=USUARIOS');
+    } else if (tipo === 'eventos') {
+      navigate('/admin/reportes/historial-eventos?tipo=EVENTOS');
+    } else if (tipo === 'cursos') {
+      navigate('/admin/reportes/historial-cursos?tipo=CURSOS');
+    }
+  };
+
+  const handleGenerar = async (tipo) => {
+    setLoading(true);
+    try {
+      if (tipo === 'financiero') {
+        await api.post('/reportes/finanzas/pdf');
+        navigate('/admin/reportes/historial?tipo=FINANZAS');
+      } else if (tipo === 'usuarios') {
+        await api.post('/reportes/usuarios/pdf');
+        navigate('/admin/reportes/historial-usuarios?tipo=USUARIOS');
+      } else if (tipo === 'eventos') {
+        await api.post('/reportes/eventos/pdf');
+        navigate('/admin/reportes/historial-eventos?tipo=EVENTOS');
+      } else if (tipo === 'cursos') {
+        await api.post('/reportes/cursos/pdf');
+        navigate('/admin/reportes/historial-cursos?tipo=CURSOS');
+      }
+    } catch (error) {
+      alert('Error al generar el reporte');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const stats = [
     {
       title: 'Ingresos Totales',
@@ -114,24 +152,28 @@ const AdminReportes = () => {
 
   const reportTypes = [
     {
+      key: 'usuarios',
       title: 'Reporte de Usuarios',
       description: 'Estadísticas detalladas de usuarios registrados',
       icon: <People />,
       color: '#3b82f6'
     },
     {
+      key: 'eventos',
       title: 'Reporte de Eventos',
       description: 'Análisis de eventos y participación',
       icon: <Event />,
       color: '#10b981'
     },
     {
+      key: 'cursos',
       title: 'Reporte de Cursos',
       description: 'Estadísticas de cursos y completación',
       icon: <School />,
       color: '#f59e0b'
     },
     {
+      key: 'financiero',
       title: 'Reporte Financiero',
       description: 'Análisis de ingresos y gastos',
       icon: <AttachMoney />,
@@ -223,14 +265,15 @@ const AdminReportes = () => {
                         </Typography>
                         <Button
                           variant="contained"
-                          startIcon={<Download />}
+                          startIcon={<Event />}
                           sx={{
                             bgcolor: report.color,
                             '&:hover': { bgcolor: report.color, opacity: 0.9 }
                           }}
                           fullWidth
+                          onClick={() => handleVerHistorial(report.key)}
                         >
-                          Descargar
+                          Ver Reportes
                         </Button>
                       </CardContent>
                     </Card>
@@ -378,4 +421,4 @@ const AdminReportes = () => {
   );
 };
 
-export default AdminReportes; 
+export default AdminReportes;

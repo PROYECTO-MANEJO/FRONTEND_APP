@@ -32,6 +32,7 @@ import AdminReportes from './components/admin/AdminReportes';
 import AdminConfiguracion from './components/admin/AdminConfiguracion';
 import AdminVerificacionDocumentos from './components/admin/AdminVerificacionDocumentos';
 import AdminGestionInscripciones from './components/admin/AdminGestionInscripciones';
+import HistorialReportesGenerales from './components/admin/HistorialReportesGenerales';
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
@@ -176,6 +177,31 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminConfiguracion />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/reportes/historial-usuarios" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesGenerales />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/reportes/historial-eventos" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesGenerales />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/reportes/historial-cursos" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesGenerales />
                 </AdminRoute>
               } 
             />
