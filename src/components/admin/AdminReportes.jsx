@@ -1,34 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Avatar,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip
+  Box, Typography, Grid, Card, CardContent, Avatar, Button, CircularProgress
 } from '@mui/material';
 import {
-  BarChart,
-  TrendingUp,
-  People,
-  Event,
-  School,
-  AttachMoney,
-  Download,
-  Assessment,
-  Timeline
+  People, Event, School, AttachMoney, Assessment
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import AdminSidebar from './AdminSidebar';
+
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api'; // Asegúrate de que la ruta a tu archivo api.js sea correcta
 
@@ -40,49 +20,70 @@ const AdminReportes = () => {
     cursos: [],
     ingresos: []
   });
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
+
+const reportTypes = [
+  {
+    tipo: 'usuarios',
+    title: 'Reporte de Usuarios',
+    description: 'Estadísticas detalladas de usuarios registrados',
+    icon: <People />,
+    color: '#3b82f6',
+    btnColor: 'primary'
+  },
+  {
+    tipo: 'eventos',
+    title: 'Reporte de Eventos',
+    description: 'Análisis de eventos y participación',
+    icon: <Event />,
+    color: '#10b981',
+    btnColor: 'success'
+  },
+  {
+    tipo: 'cursos',
+    title: 'Reporte de Cursos',
+    description: 'Estadísticas de cursos y completación',
+    icon: <School />,
+    color: '#f59e0b',
+    btnColor: 'warning'
+  },
+  {
+    tipo: 'financiero',
+    title: 'Reportes Financieros',
+    description: 'Ver historial y generar reportes de ingresos',
+    icon: <AttachMoney />,
+    color: '#ef4444',
+    btnColor: 'error'
+  }
+];
+
+const AdminReportes = () => {
+  const [loading, setLoading] = useState(false);
+  const { getMainContentStyle } = useSidebarLayout();
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadReportData();
-  }, []);
+  const handleGenerar = async (tipo) => {
+    if (tipo === 'financiero') {
+      // Solo navegar al historial sin generar reporte automáticamente
+      navigate('/admin/reportes/historial?tipo=FINANZAS');
+      return;
+    }
 
-  const loadReportData = async () => {
+    // Para el resto de reportes, mantener el comportamiento actual
+    setLoading(true);
     try {
-      setLoading(true);
-      // Aquí irían las llamadas reales a la API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Datos simulados
-      setReportData({
-        usuarios: [
-          { mes: 'Enero', total: 120, nuevos: 25 },
-          { mes: 'Febrero', total: 145, nuevos: 30 },
-          { mes: 'Marzo', total: 180, nuevos: 35 },
-          { mes: 'Abril', total: 210, nuevos: 40 },
-          { mes: 'Mayo', total: 250, nuevos: 45 }
-        ],
-        eventos: [
-          { nombre: 'Conferencia Tech 2024', inscritos: 150, ingresos: 7500 },
-          { nombre: 'Workshop Web Dev', inscritos: 35, ingresos: 1050 },
-          { nombre: 'Seminario Marketing', inscritos: 80, ingresos: 3200 }
-        ],
-        cursos: [
-          { nombre: 'JavaScript Avanzado', estudiantes: 45, completados: 38 },
-          { nombre: 'React Fundamentals', estudiantes: 60, completados: 52 },
-          { nombre: 'Node.js Backend', estudiantes: 30, completados: 25 }
-        ],
-        ingresos: [
-          { concepto: 'Eventos', monto: 11750, porcentaje: 65 },
-          { concepto: 'Cursos', monto: 5250, porcentaje: 29 },
-          { concepto: 'Otros', monto: 1000, porcentaje: 6 }
-        ]
-      });
-    } catch (error) {
-      console.error('Error al cargar datos de reportes:', error);
+      const res = await api.post('/reportes/generar', { tipo });
+      if (res.data && res.data.data && res.data.data.id) {
+        navigate(`/admin/reportes/${res.data.data.id}`);
+      }
+    } catch {
+      alert('Error al generar el reporte');
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleVerHistorial = (tipo) => {
     if (tipo === 'financiero') {
@@ -182,7 +183,7 @@ const AdminReportes = () => {
   ];
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex' }}>
       <AdminSidebar />
       
       <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
@@ -382,40 +383,47 @@ const AdminReportes = () => {
                 </Paper>
               </Grid>
 
-              {/* Crecimiento de usuarios */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={2} sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <TrendingUp sx={{ mr: 2, color: '#7c3aed' }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Crecimiento de Usuarios
-                    </Typography>
-                  </Box>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Mes</TableCell>
-                          <TableCell align="right">Total</TableCell>
-                          <TableCell align="right">Nuevos</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {reportData.usuarios.map((usuario, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{usuario.mes}</TableCell>
-                            <TableCell align="right">{usuario.total}</TableCell>
-                            <TableCell align="right">+{usuario.nuevos}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Paper>
-              </Grid>
+      <Box sx={{ flexGrow: 1, p: 4, background: '#fafbfc', minHeight: '100vh', ...getMainContentStyle() }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+          Reportes y Análisis
+        </Typography>
+        <Typography variant="subtitle1" sx={{ mb: 4 }}>
+          Genera reportes detallados del sistema
+        </Typography>
+
+
+        {/* Generar Reportes */}
+        <Grid container spacing={3} sx={{ maxWidth: 1200, mx: 'auto' }}>
+          {reportTypes.map((report) => (
+            <Grid item xs={12} sm={6} md={3} key={report.tipo}>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ textAlign: 'center', p: 3, flexGrow: 1 }}>
+                  <Avatar sx={{ bgcolor: report.color, width: 64, height: 64, mx: 'auto', mb: 2 }}>
+                    {report.icon}
+                  </Avatar>
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                    {report.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
+                    {report.description}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color={report.btnColor}
+                    fullWidth
+                    disabled={loading && report.tipo !== 'financiero'}
+                    onClick={() => handleGenerar(report.tipo)}
+                    startIcon={<Assessment />}
+                    sx={{ mt: 'auto' }}
+                  >
+                    {loading && report.tipo !== 'financiero' ? <CircularProgress size={24} /> : 
+                     report.tipo === 'financiero' ? 'Ver Historial' : 'Generar'}
+                  </Button>
+                </CardContent>
+              </Card>
             </Grid>
-          </>
-        )}
+          ))}
+        </Grid>
       </Box>
     </Box>
   );

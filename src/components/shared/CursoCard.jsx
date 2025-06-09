@@ -28,6 +28,7 @@ import {
 import ModalInscripcion from './ModalInscripcion';
 import EstadoInscripcion from './EstadoInscripcion';
 import { useInscripciones } from '../../hooks/useInscripciones';
+import { useAuth } from '../../context/AuthContext';
 
 const CursoCard = ({ curso }) => {
   const [open, setOpen] = useState(false);
@@ -35,6 +36,9 @@ const CursoCard = ({ curso }) => {
   
   // Hook para manejar inscripciones (solo si no es "mis cursos")
   const { obtenerEstadoCurso, cargarInscripciones } = useInscripciones();
+  
+  // Hook para obtener información del usuario y documentos
+  const { user } = useAuth();
   
   // Verificar si este es un curso de "mis cursos" (tiene estado_inscripcion)
   const esMiCurso = Boolean(curso.estado_inscripcion);
@@ -51,6 +55,17 @@ const CursoCard = ({ curso }) => {
         fechaAprobacion: curso.fecha_aprobacion
       }
     : obtenerEstadoCurso(curso.id_cur);
+
+  // ✅ VERIFICAR DOCUMENTOS - OBLIGATORIO PARA TODAS LAS INSCRIPCIONES
+  const isEstudiante = user?.rol === 'ESTUDIANTE';
+  const documentosCompletos = user?.documentos ? (
+    isEstudiante 
+      ? (user.documentos.cedula_subida && user.documentos.matricula_subida)
+      : user.documentos.cedula_subida
+  ) : false;
+  
+  const documentosVerificados = user?.documentos?.documentos_verificados || false;
+  const puedeInscribirse = documentosCompletos && documentosVerificados;
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -110,7 +125,12 @@ const CursoCard = ({ curso }) => {
   return (
     <>
       <Card sx={{ 
-        height: '100%', 
+        height: '300px',
+        minHeight: '300px',
+        maxHeight: '300px',
+        width: '100%',
+        minWidth: '400px',
+        maxWidth: '400px',
         display: 'flex', 
         flexDirection: 'column',
         transition: 'transform 0.2s, box-shadow 0.2s',
@@ -120,103 +140,106 @@ const CursoCard = ({ curso }) => {
           boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
         }
       }}>
-        <CardContent sx={{ flexGrow: 1, p: 2 }}>
-          {/* Header con estado e inscripción */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+        <CardContent sx={{ 
+          p: 2.5, 
+          display: 'flex', 
+          flexDirection: 'column',
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Chips de CURSO y ESTADO */}
+          <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
             <Chip 
-              label={estadoCurso} 
-              color={getEstadoColor(estadoCurso)}
-              size="small"
-              sx={{ fontWeight: 600 }}
+              label="CURSO" 
+              size="small" 
+              icon={<School sx={{ fontSize: '0.7rem' }} />}
+              sx={{ 
+                bgcolor: '#2e7d32', 
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.7rem',
+                height: '20px'
+              }}
             />
             {estadoInscripcion && (
-              <EstadoInscripcion estado={estadoInscripcion.estado} size="small" />
+              <EstadoInscripcion 
+                estado={estadoInscripcion.estado} 
+                size="small" 
+              />
             )}
           </Box>
 
-          {/* Título del curso */}
-          <Typography variant="h6" sx={{ 
-            fontWeight: 'bold', 
-            mb: 1, 
-            lineHeight: 1.2,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical'
-          }}>
+          {/* Título - altura controlada */}
+          <Typography 
+            variant="h6" 
+            component="h3"
+            sx={{ 
+              fontWeight: 600, 
+              color: 'text.primary',
+              fontSize: '1rem',
+              lineHeight: 1.2,
+              mb: 1,
+              height: '2.4rem', // ALTURA FIJA
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
             {curso.nom_cur}
           </Typography>
 
-          {/* Descripción */}
-          <Typography variant="body2" color="text.secondary" sx={{ 
-            mb: 2,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical'
-          }}>
+          {/* Descripción - altura controlada */}
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              fontSize: '0.825rem',
+              lineHeight: 1.3,
+              mb: 1.5,
+              height: '3.9rem', // ALTURA FIJA
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
             {curso.des_cur}
           </Typography>
 
-          {/* Información básica */}
-          <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <CalendarToday sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-              <Typography variant="body2" color="text.secondary">
-                {formatearFecha(curso.fec_ini_cur)}
-                {curso.fec_fin_cur && curso.fec_fin_cur !== curso.fec_ini_cur && 
-                  ` - ${formatearFecha(curso.fec_fin_cur)}`
-                }
+          {/* Información compacta */}
+          <Box sx={{ mb: 'auto' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
+              <strong>Fecha:</strong> {new Date(curso.fec_ini_cur).toLocaleDateString()}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
+              <strong>Duración:</strong> {curso.dur_cur} horas
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
+              <strong>Precio:</strong> {curso.es_gratuito ? 'Gratuito' : `$${curso.precio}`}
+            </Typography>
+            {curso.organizador_nombre && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
+                <strong>Organizador:</strong> {curso.organizador_nombre}
               </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Schedule sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-              <Typography variant="body2" color="text.secondary">
-                {curso.dur_cur} horas totales
+            )}
+            {curso.carreras && curso.carreras.length > 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                <strong>Carreras:</strong> {curso.carreras.length > 1 ? `${curso.carreras.length} carreras` : curso.carreras[0].nombre}
               </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Category sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-              <Typography variant="body2" color="text.secondary">
-                {curso.categoria_nombre || 'Sin categoría'}
+            )}
+            {curso.tipo_audiencia_cur === 'PUBLICO_GENERAL' && (
+              <Typography variant="body2" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                ✨ Abierto al público general
               </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-              <Typography variant="body2" color="text.secondary">
-                {curso.es_gratuito ? 'Gratuito' : `$${curso.precio}`}
+            )}
+            {curso.tipo_audiencia_cur === 'TODAS_CARRERAS' && (
+              <Typography variant="body2" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                🎓 Todas las carreras
               </Typography>
-            </Box>
+            )}
           </Box>
-
-          {/* Carreras habilitadas (chips) */}
-          {curso.carreras && curso.carreras.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                {curso.carreras.slice(0, 2).map((carrera, index) => (
-                  <Chip 
-                    key={index} 
-                    label={carrera.nombre} 
-                    size="small" 
-                    color="primary" 
-                    variant="outlined" 
-                  />
-                ))}
-                {curso.carreras.length > 2 && (
-                  <Chip 
-                    label={`+${curso.carreras.length - 2} más`} 
-                    size="small" 
-                    variant="outlined" 
-                  />
-                )}
-              </Box>
-            </Box>
-          )}
         </CardContent>
 
         {/* Footer con botón */}
@@ -228,11 +251,11 @@ const CursoCard = ({ curso }) => {
             startIcon={<InfoOutlined />}
             onClick={handleOpen}
             sx={{
-              borderColor: '#b91c1c',
-              color: '#b91c1c',
+              borderColor: '#2e7d32',
+              color: '#2e7d32',
               '&:hover': {
-                borderColor: '#991b1b',
-                backgroundColor: '#fef2f2',
+                borderColor: '#1b5e20',
+                backgroundColor: '#f1f8e9',
               },
               textTransform: 'none',
               fontWeight: 500,
@@ -413,19 +436,43 @@ const CursoCard = ({ curso }) => {
                 {curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && 'Carreras Específicas'}
               </Typography>
 
-              {curso.requiere_verificacion_docs && (
-                <Box>
-                  <Typography variant="subtitle2" color="primary" gutterBottom>
-                    Requisitos
-                  </Typography>
+              {/* ✅ REQUISITOS DE DOCUMENTOS - OBLIGATORIOS PARA TODOS */}
+              <Box>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Requisitos de Inscripción
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Chip 
-                    label="Requiere verificación de documentos" 
-                    color="warning" 
+                    label="📄 Verificación de documentos obligatoria" 
+                    color="error"
                     variant="outlined"
                     size="small"
                   />
+                  {!puedeInscribirse && !esMiCurso && (
+                    <Box sx={{ p: 1.5, bgcolor: 'warning.light', borderRadius: 1 }}>
+                      <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 600 }}>
+                        ⚠️ Para inscribirte necesitas:
+                      </Typography>
+                      <Typography variant="body2" color="warning.dark">
+                        • {!documentosCompletos ? `Subir tu cédula${isEstudiante ? ' y matrícula' : ''}` : '✓ Documentos subidos'}
+                      </Typography>
+                      <Typography variant="body2" color="warning.dark">
+                        • {!documentosVerificados ? 'Verificación por administrador' : '✓ Documentos verificados'}
+                      </Typography>
+                      <Typography variant="caption" color="warning.dark" sx={{ mt: 0.5, display: 'block' }}>
+                        Ve a tu perfil para gestionar tus documentos.
+                      </Typography>
+                    </Box>
+                  )}
+                  {puedeInscribirse && !esMiCurso && (
+                    <Box sx={{ p: 1, bgcolor: 'success.light', borderRadius: 1 }}>
+                      <Typography variant="body2" color="success.dark" sx={{ fontWeight: 600 }}>
+                        ✅ Cumples con todos los requisitos
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
-              )}
+              </Box>
             </Box>
           </Box>
         </DialogContent>
@@ -444,10 +491,21 @@ const CursoCard = ({ curso }) => {
             <Button
               onClick={handleInscripcionOpen}
               variant="contained"
+              disabled={!puedeInscribirse}
               startIcon={<School />}
-              sx={{ borderRadius: 2, flex: 1 }}
+              sx={{ 
+                borderRadius: 2, 
+                flex: 1,
+                ...(puedeInscribirse ? {} : {
+                  bgcolor: 'grey.400',
+                  color: 'grey.600',
+                  '&:hover': {
+                    bgcolor: 'grey.400'
+                  }
+                })
+              }}
             >
-              Inscribirse
+              {puedeInscribirse ? 'Inscribirse' : 'Documentos Requeridos'}
             </Button>
           )}
         </DialogActions>

@@ -36,10 +36,12 @@ import {
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import DetalleEventoCurso from './DetalleEventoCurso';
 import api from '../../services/api';
 
 const AdminGestionInscripciones = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
@@ -210,7 +212,7 @@ const AdminGestionInscripciones = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#333', mb: 1 }}>

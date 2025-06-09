@@ -80,9 +80,14 @@ const mejorarMensajeError = (errorMessage) => {
       mensaje: 'Como usuario externo, solo puedes inscribirte en cursos abiertos al público general. Este curso es exclusivo para estudiantes de carreras específicas.',
       tipo: 'warning'
     },
-    'Debes tener los documentos verificados para inscribirte': {
+    'Debes tener tus documentos verificados por un administrador antes de poder inscribirte': {
       titulo: '📄 Documentos No Verificados',
-      mensaje: 'Este curso requiere que tengas tus documentos académicos verificados. Contacta al administrador para completar este proceso.',
+      mensaje: 'Para inscribirte en cualquier evento o curso, necesitas tener tus documentos (cédula y matrícula si eres estudiante) verificados por un administrador. Ve a tu perfil para subirlos.',
+      tipo: 'warning'
+    },
+    'Debes subir todos los documentos requeridos': {
+      titulo: '📤 Documentos Incompletos',
+      mensaje: 'Antes de inscribirte, debes subir todos los documentos requeridos (cédula y matrícula si eres estudiante) en tu perfil.',
       tipo: 'warning'
     },
     'Este curso no está habilitado para tu carrera': {
@@ -176,7 +181,7 @@ const ModalInscripcion = ({
     }
 
     // Verificar que tengamos el ID del usuario
-    const userId = user?.id;
+    const userId = user?.id_usu;
     if (!userId) {
       setError(mejorarMensajeError('Cuenta no encontrada'));
       return;

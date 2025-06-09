@@ -26,8 +26,11 @@ import {
   Assignment as AssignmentIcon
 } from '@mui/icons-material';
 import { obtenerParticipacionesTerminadas, descargarCertificado } from '../../services/certificadoService';
+import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 
 const MisCertificados = () => {
+  const { getMainContentStyle } = useUserSidebarLayout();
   const [participaciones, setParticipaciones] = useState({ eventos: [], cursos: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

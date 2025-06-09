@@ -34,8 +34,10 @@ import {
 } from '@mui/icons-material';
 import { documentService } from '../../services/documentService';
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 
 const AdminVerificacionDocumentos = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [tabValue, setTabValue] = useState(0);
   const [documentData, setDocumentData] = useState({
     estudiantes: [],
@@ -286,7 +288,7 @@ const AdminVerificacionDocumentos = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header */}
         <Box 
           sx={{

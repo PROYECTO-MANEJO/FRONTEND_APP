@@ -22,10 +22,12 @@ import {
   Description
 } from '@mui/icons-material';
 import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 import EstadoInscripcion from '../shared/EstadoInscripcion';
 import { useInscripciones } from '../../hooks/useInscripciones';
 
 const MisInscripciones = () => {
+  const { getMainContentStyle } = useUserSidebarLayout();
   const { 
     inscripcionesEventos, 
     inscripcionesCursos, 
@@ -35,9 +37,16 @@ const MisInscripciones = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <CircularProgress size={60} sx={{ color: '#b91c1c' }} />
         </Box>
       </Box>
@@ -46,9 +55,16 @@ const MisInscripciones = () => {
 
   if (error) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <Alert severity="error" sx={{ maxWidth: 500 }}>
             Error al cargar tus inscripciones: {error}
           </Alert>
@@ -60,11 +76,15 @@ const MisInscripciones = () => {
   const totalInscripciones = inscripcionesEventos.length + inscripcionesCursos.length;
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <UserSidebar />
       
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <Box sx={{ 
+        flexGrow: 1,
+        p: 3,
+        ...getMainContentStyle()
+      }}>
         <Container maxWidth="xl" sx={{ py: 4, px: 3 }}>
           {/* Header */}
           <Box sx={{ mb: 4, textAlign: 'center' }}>

@@ -45,8 +45,10 @@ import {
 } from '@mui/icons-material';
 import solicitudesService from '../../services/solicitudesService';
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 
 const AdminSolicitudes = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -429,7 +431,7 @@ const AdminSolicitudes = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#6d1313', fontWeight: 'bold' }}>
