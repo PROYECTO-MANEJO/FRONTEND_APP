@@ -43,7 +43,8 @@ import {
   Person,
   Save,
   Cancel,
-  Info
+  Info,
+  AttachMoney
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -88,6 +89,8 @@ const AdminEventos = () => {
     ced_org_eve: '',
     capacidad_max_eve: '',
     tipo_audiencia_eve: '',
+    es_gratuito: true,
+    precio: '',
     carreras_seleccionadas: []
   });
 
@@ -168,7 +171,10 @@ const AdminEventos = () => {
       
       // Calcular estadísticas
       const totalEventos = eventosData.length;
-      const eventosActivos = eventosData.filter(e => e.est_eve === 'ACTIVO' || !e.est_eve).length;
+      const eventosActivos = eventosData.filter(e => {
+        const estado = obtenerEstadoEvento(e.fec_ini_eve, e.fec_fin_eve);
+        return estado === 'EN_CURSO' || estado === 'PROXIMAMENTE';
+      }).length;
       const totalInscripciones = eventosData.reduce((sum, e) => sum + (e.total_inscripciones || 0), 0);
       const capacidadTotal = eventosData.reduce((sum, e) => sum + parseInt(e.capacidad_max_eve || 0), 0);
       
@@ -256,6 +262,8 @@ const AdminEventos = () => {
         ced_org_eve: eventoData.ced_org_eve || '',
         capacidad_max_eve: eventoData.capacidad_max_eve || '',
         tipo_audiencia_eve: eventoData.tipo_audiencia_eve || '',
+        es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
+        precio: eventoData.precio || '',
         carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : []
       });
     } else {
@@ -274,6 +282,8 @@ const AdminEventos = () => {
         ced_org_eve: '',
         capacidad_max_eve: '',
         tipo_audiencia_eve: '',
+        es_gratuito: true,
+        precio: '',
         carreras_seleccionadas: []
       });
     }
@@ -312,6 +322,20 @@ const AdminEventos = () => {
       nuevosErrores.carreras_seleccionadas = 'Debe seleccionar al menos una carrera';
     }
 
+    // Validar configuración de precio
+    if (!evento.es_gratuito) {
+      if (!evento.precio || evento.precio === '') {
+        nuevosErrores.precio = 'El precio es obligatorio para eventos pagados';
+      } else {
+        const precio = parseFloat(evento.precio);
+        if (isNaN(precio) || precio <= 0) {
+          nuevosErrores.precio = 'El precio debe ser un número mayor a 0';
+        } else if (precio > 10000) {
+          nuevosErrores.precio = 'El precio no puede exceder $10,000';
+        }
+      }
+    }
+
     if (Object.keys(nuevosErrores).length > 0) {
       setErrors(nuevosErrores);
       return;
@@ -333,7 +357,9 @@ const AdminEventos = () => {
         ubi_eve: evento.ubi_eve.trim(),
         ced_org_eve: evento.ced_org_eve,
         capacidad_max_eve: parseInt(evento.capacidad_max_eve),
-        tipo_audiencia_eve: evento.tipo_audiencia_eve
+        tipo_audiencia_eve: evento.tipo_audiencia_eve,
+        es_gratuito: evento.es_gratuito,
+        precio: evento.es_gratuito ? null : parseFloat(evento.precio)
       };
 
       let eventoId;
@@ -433,12 +459,28 @@ const AdminEventos = () => {
     }
   };
 
+  // Función auxiliar para obtener el estado del evento
+  const obtenerEstadoEvento = (fechaInicio, fechaFin) => {
+    const hoy = new Date();
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    
+    if (hoy < inicio) return 'PROXIMAMENTE';
+    if (hoy >= inicio && hoy <= fin) return 'EN_CURSO';
+    if (hoy > fin) return 'FINALIZADO';
+    return 'INDETERMINADO';
+  };
+
   const getEstadoColor = (estado) => {
     switch (estado) {
-      case 'ACTIVO':
+      case 'EN_CURSO':
         return '#10b981';
       case 'FINALIZADO':
         return '#6b7280';
+      case 'PROXIMAMENTE':
+        return '#f59e0b';
+      case 'ACTIVO':
+        return '#10b981';
       case 'CANCELADO':
         return '#ef4444';
       default:
@@ -650,10 +692,10 @@ const AdminEventos = () => {
                         {evento.nom_eve}
                       </Typography>
                       <Chip
-                        label={evento.est_eve || 'ACTIVO'}
+                        label={obtenerEstadoEvento(evento.fec_ini_eve, evento.fec_fin_eve)}
                         size="small"
                         sx={{
-                          bgcolor: getEstadoColor(evento.est_eve),
+                          bgcolor: getEstadoColor(obtenerEstadoEvento(evento.fec_ini_eve, evento.fec_fin_eve)),
                           color: 'white',
                           fontWeight: 500,
                           ml: 1
@@ -718,6 +760,20 @@ const AdminEventos = () => {
                         <Typography variant="body2" color="text.secondary">
                           {evento.organizador_nombre || 'Sin organizador'}
                         </Typography>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {evento.es_gratuito ? 'Gratuito' : `$${evento.precio || '0'}`}
+                        </Typography>
+                        <Chip 
+                          label={evento.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                          size="small"
+                          color={evento.es_gratuito ? 'success' : 'warning'}
+                          variant="outlined"
+                          sx={{ ml: 1, fontSize: '0.7rem' }}
+                        />
                       </Box>
                     </Box>
 
@@ -1121,6 +1177,75 @@ const AdminEventos = () => {
                       </FormControl>
                     </Grid>
                   )}
+                </Grid>
+              </Grid>
+
+              {/* Configuración de Precio */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                  <AttachMoney sx={{ mr: 1 }} />
+                  Configuración de Precio
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <FormControl error={!!errors.es_gratuito}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Checkbox
+                          checked={evento.es_gratuito}
+                          onChange={(e) => {
+                            const isGratuito = e.target.checked;
+                            setEvento(prev => ({ 
+                              ...prev, 
+                              es_gratuito: isGratuito,
+                              precio: isGratuito ? '' : prev.precio
+                            }));
+                          }}
+                          sx={{ 
+                            color: '#6d1313',
+                            '&.Mui-checked': { color: '#6d1313' }
+                          }}
+                        />
+                        <Typography variant="body1">
+                          Evento gratuito (sin costo para los participantes)
+                        </Typography>
+                      </Box>
+                      {errors.es_gratuito && <FormHelperText>{errors.es_gratuito}</FormHelperText>}
+                    </FormControl>
+                  </Grid>
+
+                  {!evento.es_gratuito && (
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Precio (USD)"
+                        value={evento.precio}
+                        onChange={(e) => setEvento(prev => ({ ...prev, precio: e.target.value }))}
+                        error={!!errors.precio}
+                        helperText={errors.precio || 'Ingrese el precio del evento en dólares'}
+                        inputProps={{ 
+                          min: 0.01, 
+                          max: 10000,
+                          step: 0.01
+                        }}
+                        InputProps={{
+                          startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>$</Typography>
+                        }}
+                        required
+                      />
+                    </Grid>
+                  )}
+
+                  <Grid item xs={12}>
+                    <Alert severity={evento.es_gratuito ? "success" : "info"}>
+                      {evento.es_gratuito 
+                        ? "Este evento será gratuito. Los estudiantes podrán inscribirse sin necesidad de proporcionar información de pago."
+                        : "Este evento es pagado. Los estudiantes deberán proporcionar el método de pago y el comprobante al inscribirse."
+                      }
+                    </Alert>
+                  </Grid>
                 </Grid>
               </Grid>
             </Grid>

@@ -155,13 +155,19 @@ export const AuthProvider = ({ children }) => {
     return state.user?.rol === 'ADMINISTRADOR' || state.user?.rol === 'MASTER';
   };
 
+  // Verificar si es MASTER
+  const isMaster = () => {
+    return state.user?.rol === 'MASTER';
+  };
+
   const value = {
     ...state,
     login,
     register,
     logout,
     clearError,
-    isAdmin
+    isAdmin,
+    isMaster
   };
 
   return (

@@ -11,12 +11,15 @@ import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
+import MasterRoute from './components/auth/MasterRoute';
 
 // User components
 import Dashboard from './components/user/Dashboard';
 import CursosPage from './components/user/CursosPage';
 import EventosPage from './components/user/EventosPage';
 import UserProfile from './components/user/UserProfile';
+import MisInscripciones from './components/user/MisInscripciones';
+import MisCertificadosWrapper from './components/user/MisCertificadosWrapper';
 
 // Admin components
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -24,10 +27,15 @@ import AdminSolicitudes from './components/admin/AdminSolicitudes';
 import AdminUsuarios from './components/admin/AdminUsuarios';
 import AdminEventos from './components/admin/AdminEventos';
 import CrearEventos from './components/admin/CrearEventos';
-import CrearCursos from './components/admin/CrearCursos';
+import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
 import AdminConfiguracion from './components/admin/AdminConfiguracion';
+
 import HistorialReportesFinancieros from './components/admin/HistorialReportesFinancieros';
+
+import AdminVerificacionDocumentos from './components/admin/AdminVerificacionDocumentos';
+import AdminGestionInscripciones from './components/admin/AdminGestionInscripciones';
+
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
@@ -96,6 +104,15 @@ function App() {
             />
             
             <Route 
+              path="/admin/verificacion-documentos" 
+              element={
+                <MasterRoute>
+                  <AdminVerificacionDocumentos />
+                </MasterRoute>
+              } 
+            />
+            
+            <Route 
               path="/admin/eventos" 
               element={
                 <AdminRoute>
@@ -126,7 +143,16 @@ function App() {
               path="/admin/cursos" 
               element={
                 <AdminRoute>
-                  <CrearCursos />
+                  <AdminCursos />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/gestion-inscripciones" 
+              element={
+                <AdminRoute>
+                  <AdminGestionInscripciones />
                 </AdminRoute>
               } 
             />
@@ -190,6 +216,24 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EventosPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/mis-inscripciones" 
+              element={
+                <ProtectedRoute>
+                  <MisInscripciones />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/certificados" 
+              element={
+                <ProtectedRoute>
+                  <MisCertificadosWrapper />
                 </ProtectedRoute>
               } 
             />

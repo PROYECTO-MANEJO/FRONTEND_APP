@@ -10,119 +10,222 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  Chip
+  Chip,
+  IconButton
 } from '@mui/material';
 import { 
   InfoOutlined, 
   Close,
-  School
+  School,
+  CalendarToday,
+  Schedule,
+  Category,
+  Person,
+  People,
+  LocationOn,
+  AttachMoney
 } from '@mui/icons-material';
+import ModalInscripcion from './ModalInscripcion';
+import EstadoInscripcion from './EstadoInscripcion';
+import { useInscripciones } from '../../hooks/useInscripciones';
 
 const CursoCard = ({ curso }) => {
   const [open, setOpen] = useState(false);
+  const [inscripcionOpen, setInscripcionOpen] = useState(false);
+  
+  // Hook para manejar inscripciones (solo si no es "mis cursos")
+  const { obtenerEstadoCurso, cargarInscripciones } = useInscripciones();
+  
+  // Verificar si este es un curso de "mis cursos" (tiene estado_inscripcion)
+  const esMiCurso = Boolean(curso.estado_inscripcion);
+  
+  // Si es "mi curso", usar la información del curso, si no, usar el hook
+  const estadoInscripcion = esMiCurso 
+    ? {
+        inscrito: true,
+        estado: curso.estado_inscripcion,
+        fechaInscripcion: curso.fecha_inscripcion,
+        metodoPago: curso.metodo_pago,
+        valorPagado: curso.valor_pagado,
+        enlacePago: curso.enlace_pago,
+        fechaAprobacion: curso.fecha_aprobacion
+      }
+    : obtenerEstadoCurso(curso.id_cur);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+  
+  const handleInscripcionOpen = () => setInscripcionOpen(true);
+  const handleInscripcionClose = () => setInscripcionOpen(false);
+  
+  const handleInscripcionExitosa = () => {
+    // Recargar inscripciones después de una inscripción exitosa
+    if (!esMiCurso) {
+      cargarInscripciones();
+    }
+    console.log('Inscripción exitosa en curso:', curso.nom_cur);
+  };
+
+  // Función para determinar el color del estado del curso
+  const getEstadoColor = (estado) => {
+    switch (estado) {
+      case 'PRÓXIMAMENTE':
+        return 'info';
+      case 'EN CURSO':
+        return 'success';
+      case 'FINALIZADO':
+        return 'default';
+      default:
+        return 'primary';
+    }
+  };
+
+  // Función para formatear fechas
+  const formatearFecha = (fecha) => {
+    if (!fecha) return 'No especificada';
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Calcular el estado del curso basado en fechas
+  const calcularEstadoCurso = (fechaInicio, fechaFin) => {
+    const hoy = new Date();
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+
+    if (hoy < inicio) {
+      return 'PRÓXIMAMENTE';
+    } else if (hoy >= inicio && hoy <= fin) {
+      return 'EN CURSO';
+    } else {
+      return 'FINALIZADO';
+    }
+  };
+
+  const estadoCurso = curso.estado || calcularEstadoCurso(curso.fec_ini_cur, curso.fec_fin_cur);
 
   return (
     <>
-      {/* ✅ CARD IDÉNTICA A EVENTO */}
-      <Card 
-        elevation={2}
-        sx={{ 
-          borderRadius: 3,
-          transition: 'all 0.2s ease-in-out',
-          height: '300px', // ALTURA ABSOLUTA FIJA - IGUAL QUE EVENTOS
-          minHeight: '300px', // ALTURA MÍNIMA
-          maxHeight: '300px', // ALTURA MÁXIMA
-          display: 'flex',
-          width: '450px',
-          flexDirection: 'column',
-          position: 'relative',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: 4,
-          },
-        }}
-      >
-        <CardContent sx={{ 
-          p: 2.5, // MISMO PADDING QUE EVENTOS
-          display: 'flex', 
-          flexDirection: 'column',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Chip de CURSO - IGUAL QUE EVENTOS */}
-          <Chip 
-            label="CURSO" 
-            size="small" 
-            icon={<School sx={{ fontSize: '0.7rem' }} />}
-            sx={{ 
-              bgcolor: '#b91c1c', // MISMO COLOR QUE EVENTOS
-              color: 'white',
-              fontWeight: 600,
-              fontSize: '0.7rem',
-              height: '20px',
-              mb: 1,
-              alignSelf: 'flex-start'
-            }} 
-          />
+      <Card sx={{ 
+        height: '100%', 
+        display: 'flex', 
+        flexDirection: 'column',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        cursor: 'pointer',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+        }
+      }}>
+        <CardContent sx={{ flexGrow: 1, p: 2 }}>
+          {/* Header con estado e inscripción */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+            <Chip 
+              label={estadoCurso} 
+              color={getEstadoColor(estadoCurso)}
+              size="small"
+              sx={{ fontWeight: 600 }}
+            />
+            {estadoInscripcion && (
+              <EstadoInscripcion estado={estadoInscripcion.estado} size="small" />
+            )}
+          </Box>
 
-          {/* Título - ALTURA CONTROLADA IGUAL QUE EVENTOS */}
-          <Typography 
-            variant="h6" 
-            component="h3"
-            sx={{ 
-              fontWeight: 600, 
-              color: 'text.primary',
-              fontSize: '1rem', // MISMO TAMAÑO QUE EVENTOS
-              lineHeight: 1.2,
-              mb: 1,
-              height: '2.4rem', // ALTURA FIJA IGUAL QUE EVENTOS
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
+          {/* Título del curso */}
+          <Typography variant="h6" sx={{ 
+            fontWeight: 'bold', 
+            mb: 1, 
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical'
+          }}>
             {curso.nom_cur}
           </Typography>
-          
-          {/* Descripción - ALTURA CONTROLADA IGUAL QUE EVENTOS */}
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            sx={{ 
-              fontSize: '0.825rem', // MISMO TAMAÑO QUE EVENTOS
-              lineHeight: 1.3,
-              mb: 1.5,
-              height: '3.9rem', // ALTURA FIJA IGUAL QUE EVENTOS
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
+
+          {/* Descripción */}
+          <Typography variant="body2" color="text.secondary" sx={{ 
+            mb: 2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical'
+          }}>
             {curso.des_cur}
           </Typography>
 
-          {/* Información compacta - IGUAL QUE EVENTOS */}
-          <Box sx={{ mb: 'auto' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
-              <strong>Fecha:</strong> {new Date(curso.fec_ini_cur).toLocaleDateString()}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-              <strong>Duración:</strong> {curso.dur_cur} horas
-            </Typography>
+          {/* Información básica */}
+          <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <CalendarToday sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary">
+                {formatearFecha(curso.fec_ini_cur)}
+                {curso.fec_fin_cur && curso.fec_fin_cur !== curso.fec_ini_cur && 
+                  ` - ${formatearFecha(curso.fec_fin_cur)}`
+                }
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Schedule sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary">
+                {curso.dur_cur} horas totales
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Category sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary">
+                {curso.categoria_nombre || 'Sin categoría'}
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary">
+                {curso.es_gratuito ? 'Gratuito' : `$${curso.precio}`}
+              </Typography>
+            </Box>
           </Box>
 
-          {/* Botón en el fondo - IDÉNTICO A EVENTOS */}
+          {/* Carreras habilitadas (chips) */}
+          {curso.carreras && curso.carreras.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                {curso.carreras.slice(0, 2).map((carrera, index) => (
+                  <Chip 
+                    key={index} 
+                    label={carrera.nombre} 
+                    size="small" 
+                    color="primary" 
+                    variant="outlined" 
+                  />
+                ))}
+                {curso.carreras.length > 2 && (
+                  <Chip 
+                    label={`+${curso.carreras.length - 2} más`} 
+                    size="small" 
+                    variant="outlined" 
+                  />
+                )}
+              </Box>
+            </Box>
+          )}
+        </CardContent>
+
+        {/* Footer con botón */}
+        <Box sx={{ p: 2, pt: 0 }}>
           <Button
             variant="outlined"
             fullWidth
             size="small"
-            startIcon={<InfoOutlined sx={{ fontSize: '0.9rem' }} />}
+            startIcon={<InfoOutlined />}
             onClick={handleOpen}
             sx={{
               borderColor: '#b91c1c',
@@ -134,91 +237,86 @@ const CursoCard = ({ curso }) => {
               textTransform: 'none',
               fontWeight: 500,
               fontSize: '0.8rem',
-              height: '32px',
-              mt: 'auto'
+              height: '32px'
             }}
           >
             Ver Detalles
           </Button>
-        </CardContent>
+        </Box>
       </Card>
 
-      {/* ✅ DIALOG MEJORADO IGUAL QUE EVENTOS */}
-      <Dialog 
-        open={open} 
-        onClose={handleClose} 
-        maxWidth="sm" 
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2 }
-        }}
-      >
+      {/* Modal de detalles */}
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" component="span">
-            {curso.nom_cur}
-          </Typography>
-          <Button
-            onClick={handleClose}
-            color="inherit"
-            size="small"
-            sx={{ minWidth: 'auto', p: 1 }}
-          >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <School color="primary" />
+            <Typography variant="h6">
+              Detalles del Curso
+            </Typography>
+          </Box>
+          <IconButton onClick={handleClose} size="small">
             <Close />
-          </Button>
+          </IconButton>
         </DialogTitle>
         
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Título y estado */}
             <Box>
-              <Typography variant="subtitle2" color="primary" gutterBottom>
-                Descripción
-              </Typography>
-              <Typography variant="body2">
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Typography variant="h5" color="primary" sx={{ fontWeight: 600, flex: 1 }}>
+                  {curso.nom_cur}
+                </Typography>
+                <Chip 
+                  label={estadoCurso} 
+                  color={getEstadoColor(estadoCurso)}
+                  sx={{ fontWeight: 600 }}
+                />
+              </Box>
+              
+              <Typography variant="body1" color="text.secondary" paragraph>
                 {curso.des_cur}
               </Typography>
             </Box>
-            
+
             <Divider />
-            
-            {/* Chips como en eventos */}
-            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-              <Chip label={`Duración: ${curso.dur_cur} horas`} color="primary" variant="outlined" />
-              {curso.tipo_audiencia_cur && (
-                <Chip label={`Audiencia: ${curso.tipo_audiencia_cur.replace('_', ' ')}`} color="secondary" variant="outlined" />
-              )}
-            </Box>
-            
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <Box>
-                <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Fecha de Inicio
-                </Typography>
-                <Typography variant="body2">
-                  {new Date(curso.fec_ini_cur).toLocaleDateString()}
-                </Typography>
-              </Box>
+
+            {/* Información principal */}
+            <Box>
+              <Typography variant="h6" color="primary" gutterBottom>
+                Información del Curso
+              </Typography>
               
-              <Box>
-                <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Fecha de Fin
-                </Typography>
-                <Typography variant="body2">
-                  {curso.fec_fin_cur ? new Date(curso.fec_fin_cur).toLocaleDateString() : 'No especificada'}
-                </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+                <Box>
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Fecha de Inicio
+                  </Typography>
+                  <Typography variant="body2">
+                    {formatearFecha(curso.fec_ini_cur)}
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Fecha de Fin
+                  </Typography>
+                  <Typography variant="body2">
+                    {formatearFecha(curso.fec_fin_cur)}
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
-            
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <Box>
-                <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Duración Total
-                </Typography>
-                <Typography variant="body2">
-                  {curso.dur_cur} horas
-                </Typography>
-              </Box>
-              
-              {curso.capacidad_max_cur && (
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+                <Box>
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Duración Total
+                  </Typography>
+                  <Typography variant="body2">
+                    {curso.dur_cur} horas
+                  </Typography>
+                </Box>
+                
                 <Box>
                   <Typography variant="subtitle2" color="primary" gutterBottom>
                     Capacidad Máxima
@@ -227,33 +325,144 @@ const CursoCard = ({ curso }) => {
                     {curso.capacidad_max_cur} estudiantes
                   </Typography>
                 </Box>
-              )}
-            </Box>
-            
-            {curso.tipo_audiencia_cur && (
+              </Box>
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+                <Box>
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Categoría
+                  </Typography>
+                  <Typography variant="body2">
+                    {curso.categoria_nombre || 'Sin categoría'}
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Organizador
+                  </Typography>
+                  <Typography variant="body2">
+                    {curso.organizador_nombre || 'Sin organizador'}
+                  </Typography>
+                </Box>
+              </Box>
+
               <Box>
                 <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Tipo de Audiencia
+                  Costo
                 </Typography>
-                <Typography variant="body2">
-                  {curso.tipo_audiencia_cur.replace('_', ' ')}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2">
+                    {curso.es_gratuito ? 'Gratuito' : `$${curso.precio} USD`}
+                  </Typography>
+                  <Chip 
+                    label={curso.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                    size="small"
+                    color={curso.es_gratuito ? 'success' : 'warning'}
+                    variant="outlined"
+                  />
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Carreras habilitadas */}
+            {curso.carreras && curso.carreras.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Carreras Habilitadas
                 </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {curso.carreras.map((carrera, index) => (
+                    <Chip 
+                      key={index} 
+                      label={carrera.nombre} 
+                      size="small" 
+                      color="success" 
+                      variant="outlined" 
+                    />
+                  ))}
+                </Box>
               </Box>
             )}
+
+            {/* Estado de inscripción para "mis cursos" */}
+            {esMiCurso && estadoInscripcion && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Estado de tu Inscripción
+                </Typography>
+                <EstadoInscripcion 
+                  estado={estadoInscripcion.estado} 
+                  size="large" 
+                  showDetails={true}
+                  estadoData={estadoInscripcion}
+                />
+              </Box>
+            )}
+
+            <Divider />
+
+            {/* Información adicional */}
+            <Box>
+              <Typography variant="subtitle2" color="primary" gutterBottom>
+                Tipo de Audiencia
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                {curso.tipo_audiencia_cur === 'PUBLICO_GENERAL' && 'Público General'}
+                {curso.tipo_audiencia_cur === 'TODAS_CARRERAS' && 'Todas las Carreras'}
+                {curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && 'Carreras Específicas'}
+              </Typography>
+
+              {curso.requiere_verificacion_docs && (
+                <Box>
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Requisitos
+                  </Typography>
+                  <Chip 
+                    label="Requiere verificación de documentos" 
+                    color="warning" 
+                    variant="outlined"
+                    size="small"
+                  />
+                </Box>
+              )}
+            </Box>
           </Box>
         </DialogContent>
         
-        <DialogActions sx={{ p: 3 }}>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
           <Button 
             onClick={handleClose} 
-            variant="contained" 
-            fullWidth
-            sx={{ borderRadius: 2 }}
+            variant="outlined"
+            sx={{ borderRadius: 2, flex: 1 }}
           >
             Cerrar
           </Button>
+          
+          {/* Botón de inscripción solo si no está inscrito */}
+          {!estadoInscripcion && (
+            <Button
+              onClick={handleInscripcionOpen}
+              variant="contained"
+              startIcon={<School />}
+              sx={{ borderRadius: 2, flex: 1 }}
+            >
+              Inscribirse
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
+
+      {/* Modal de Inscripción - solo para cursos disponibles */}
+      {!esMiCurso && (
+        <ModalInscripcion
+          open={inscripcionOpen}
+          onClose={handleInscripcionClose}
+          tipo="curso"
+          item={curso}
+          onInscripcionExitosa={handleInscripcionExitosa}
+        />
+      )}
     </>
   );
 };
