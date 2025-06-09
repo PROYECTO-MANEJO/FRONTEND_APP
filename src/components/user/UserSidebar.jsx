@@ -171,7 +171,7 @@ const UserSidebar = () => {
             </Avatar>
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                {user?.nombre} {user?.apellido}
+                {user?.nom_usu1} {user?.ape_usu1}
               </Typography>
               <Typography variant="caption" sx={{ opacity: 0.8 }}>
                 {user?.rol}

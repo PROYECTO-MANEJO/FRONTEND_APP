@@ -114,7 +114,7 @@ const UserDashboard = () => {
                 fontSize: { xs: '2rem', md: '3rem' }
               }}
             >
-              ¡Bienvenido, {user?.nombre}!
+              ¡Bienvenido, {user?.nom_usu1}!
             </Typography>
             <Typography 
               variant="h6" 

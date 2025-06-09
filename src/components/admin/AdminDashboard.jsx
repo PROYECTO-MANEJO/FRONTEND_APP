@@ -102,7 +102,7 @@ const AdminDashboard = () => {
             }}
           >
             <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
-              ¡Bienvenido, {user?.nombre}!
+              ¡Bienvenido, {user?.nom_usu1}!
             </Typography>
             <Typography variant="h6" sx={{ opacity: 0.9 }}>
               Panel de Administración - Sistema de Gestión

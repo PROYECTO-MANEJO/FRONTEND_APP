@@ -188,7 +188,7 @@ const AdminSidebar = () => {
             </Avatar>
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                {user?.nombre} {user?.apellido}
+                {user?.nom_usu1} {user?.ape_usu1}
               </Typography>
               <Typography variant="caption" sx={{ opacity: 0.8 }}>
                 {user?.rol}
@@ -197,7 +197,7 @@ const AdminSidebar = () => {
           </Box>
         ) : (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-            <Tooltip title={`${user?.nombre} ${user?.apellido} (${user?.rol})`} placement="right">
+            <Tooltip title={`${user?.nom_usu1} ${user?.ape_usu1} (${user?.rol})`} placement="right">
               <Avatar 
                 sx={{ 
                   width: 32, 

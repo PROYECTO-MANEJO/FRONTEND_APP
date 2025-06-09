@@ -818,7 +818,7 @@ const UserProfile = () => {
                     <Typography variant="body2">
                       Tus documentos están siendo revisados por un administrador. Una vez verificados, podrás inscribirte en eventos y cursos.
                       {documentStatus.fecha_subida && (
-                        <> Subidos el: {new Date(documentStatus.fecha_subida).toLocaleDateString()}</>
+                        <> Subidos el: {documentStatus.fecha_subida ? new Date(documentStatus.fecha_subida).toLocaleDateString() : 'Fecha no disponible'}</>
                       )}
                     </Typography>
                   )}
@@ -849,7 +849,7 @@ const UserProfile = () => {
                               </Typography>
                             </Box>
                             <Typography variant="caption" color="text.secondary">
-                              Subido: {new Date(documentStatus.cedula_fecha_subida).toLocaleDateString()}
+                              Subido: {documentStatus.fecha_subida ? new Date(documentStatus.fecha_subida).toLocaleDateString() : 'Fecha no disponible'}
                             </Typography>
                           </Box>
                         ) : (
@@ -889,7 +889,10 @@ const UserProfile = () => {
                             size="small" 
                             color="error" 
                             onClick={() => deleteDocument('cedula')}
-                            disabled={deleting}
+                            disabled={deleting || documentStatus?.documentos_verificados}
+                            sx={{ 
+                              display: documentStatus?.documentos_verificados ? 'none' : 'inline-flex'
+                            }}
                           >
                             Eliminar
                           </Button>
@@ -917,7 +920,7 @@ const UserProfile = () => {
                                 </Typography>
                               </Box>
                               <Typography variant="caption" color="text.secondary">
-                                Subido: {new Date(documentStatus.matricula_fecha_subida).toLocaleDateString()}
+                                Subido: {documentStatus.fecha_subida ? new Date(documentStatus.fecha_subida).toLocaleDateString() : 'Fecha no disponible'}
                               </Typography>
                             </Box>
                           ) : (
@@ -957,7 +960,10 @@ const UserProfile = () => {
                               size="small" 
                               color="error" 
                               onClick={() => deleteDocument('matricula')}
-                              disabled={deleting}
+                              disabled={deleting || documentStatus?.documentos_verificados}
+                              sx={{ 
+                                display: documentStatus?.documentos_verificados ? 'none' : 'inline-flex'
+                              }}
                             >
                               Eliminar
                             </Button>
