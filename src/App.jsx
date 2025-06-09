@@ -19,6 +19,7 @@ import CursosPage from './components/user/CursosPage';
 import EventosPage from './components/user/EventosPage';
 import UserProfile from './components/user/UserProfile';
 import MisInscripciones from './components/user/MisInscripciones';
+import MisCertificadosWrapper from './components/user/MisCertificadosWrapper';
 
 // Admin components
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -203,6 +204,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MisInscripciones />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/certificados" 
+              element={
+                <ProtectedRoute>
+                  <MisCertificadosWrapper />
                 </ProtectedRoute>
               } 
             />
