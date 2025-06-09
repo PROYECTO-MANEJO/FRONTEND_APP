@@ -27,13 +27,13 @@ const HistorialReportesFinancieros = () => {
 
   const handleDescargarPDF = async (id, nombreArchivo = 'reporte_financiero.pdf') => {
     try {
-      const res = await fetch(`/api/reportes/download/${id}`, {
+      const res = await api.get(`/reportes/download/${id}`, {
+        responseType: 'blob',
         headers: {
-          'x-token': localStorage.getItem('token'), // Ajusta según dónde guardes tu token
+          'x-token': localStorage.getItem('token'),
         }
       });
-      if (!res.ok) throw new Error('Error al descargar');
-      const blob = await res.blob();
+      const blob = res.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
