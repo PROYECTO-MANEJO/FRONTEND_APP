@@ -17,7 +17,8 @@ import {
   School,
   Event,
   AccountCircle,
-  ListAlt
+  ListAlt,
+  CardMembership
 } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
@@ -39,6 +40,7 @@ const UserSidebar = () => {
     { text: 'Mis Cursos', icon: <School />, path: '/cursos' },
     { text: 'Mis Eventos', icon: <Event />, path: '/eventos' },
     { text: 'Mis Inscripciones', icon: <ListAlt />, path: '/mis-inscripciones' },
+    { text: 'Mis Certificados', icon: <CardMembership />, path: '/certificados' },
     { text: 'Solicitudes', icon: <Assignment />, path: '/solicitudes' },
     { text: 'Mi Perfil', icon: <AccountCircle />, path: '/perfil' },
   ];
