@@ -78,6 +78,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
   const [asistencias, setAsistencias] = useState({});
   const [editingCalificacion, setEditingCalificacion] = useState(null);
   const [loadingCalificaciones, setLoadingCalificaciones] = useState(false);
+  const [participacionesExistentes, setParticipacionesExistentes] = useState({});
   
   // Estados para acciones
   const [loadingAction, setLoadingAction] = useState(false);
@@ -90,6 +91,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
 
   useEffect(() => {
     cargarDetalles();
+    cargarParticipacionesExistentes();
   }, [item]);
 
   useEffect(() => {
@@ -118,6 +120,54 @@ const DetalleEventoCurso = ({ item, onClose }) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cargarParticipacionesExistentes = async () => {
+    try {
+      const endpoint = item.tipo === 'EVENTO'
+        ? `/administracion/evento/${item.id_eve}/participaciones`
+        : `/administracion/curso/${item.id_cur}/participaciones`;
+
+      const response = await api.get(endpoint);
+
+      if (response.data.success) {
+        const participacionesMap = {};
+        response.data.data.forEach(participacion => {
+          const inscripcionId = item.tipo === 'EVENTO' 
+            ? participacion.id_ins_per 
+            : participacion.id_ins_cur_per;
+          
+          participacionesMap[inscripcionId] = {
+            asistencia: item.tipo === 'EVENTO' 
+              ? participacion.asi_par 
+              : parseFloat(participacion.asistencia_porcentaje),
+            nota: item.tipo === 'CURSO' ? parseFloat(participacion.nota_final) : null,
+            aprobado: participacion.aprobado,
+            fecha_evaluacion: participacion.fec_evaluacion || participacion.fecha_evaluacion
+          };
+        });
+        
+        setParticipacionesExistentes(participacionesMap);
+        
+        // Pre-cargar los valores en los estados de asistencia y calificaciones
+        Object.keys(participacionesMap).forEach(inscripcionId => {
+          const participacion = participacionesMap[inscripcionId];
+          setAsistencias(prev => ({
+            ...prev,
+            [inscripcionId]: participacion.asistencia
+          }));
+          
+          if (item.tipo === 'CURSO' && participacion.nota !== null) {
+            setCalificaciones(prev => ({
+              ...prev,
+              [inscripcionId]: participacion.nota
+            }));
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error al cargar participaciones existentes:', error);
     }
   };
 
@@ -357,6 +407,8 @@ const DetalleEventoCurso = ({ item, onClose }) => {
           severity: 'success'
         });
         setEditingCalificacion(null);
+        // Recargar participaciones para mostrar el estado actualizado
+        cargarParticipacionesExistentes();
       }
     } catch (error) {
       console.error('Error al guardar participación:', error);
@@ -660,43 +712,82 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <TextField
-                            type="number"
-                            size="small"
-                            placeholder="0-100%"
-                            value={asistencias[inscripcion.id_inscripcion] || ''}
-                            onChange={(e) => handleAsistenciaChange(inscripcion.id_inscripcion, e.target.value)}
-                            inputProps={{ min: 0, max: 100 }}
-                            sx={{ width: 100 }}
-                            InputProps={{
-                              endAdornment: <Typography variant="caption">%</Typography>
-                            }}
-                          />
-                        </TableCell>
-                        {item.tipo === 'CURSO' && (
-                          <TableCell>
+                          {participacionesExistentes[inscripcion.id_inscripcion] ? (
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
+                                {participacionesExistentes[inscripcion.id_inscripcion].asistencia}%
+                              </Typography>
+                              <Chip 
+                                label={participacionesExistentes[inscripcion.id_inscripcion].aprobado ? 'Aprobado' : 'Reprobado'}
+                                size="small"
+                                color={participacionesExistentes[inscripcion.id_inscripcion].aprobado ? 'success' : 'error'}
+                                sx={{ mt: 0.5 }}
+                              />
+                            </Box>
+                          ) : (
                             <TextField
                               type="number"
                               size="small"
-                              placeholder="0-100"
-                              value={calificaciones[inscripcion.id_inscripcion] || ''}
-                              onChange={(e) => handleCalificacionChange(inscripcion.id_inscripcion, e.target.value)}
+                              placeholder="0-100%"
+                              value={asistencias[inscripcion.id_inscripcion] || ''}
+                              onChange={(e) => handleAsistenciaChange(inscripcion.id_inscripcion, e.target.value)}
                               inputProps={{ min: 0, max: 100 }}
                               sx={{ width: 100 }}
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">%</Typography>
+                              }}
                             />
+                          )}
+                        </TableCell>
+                        {item.tipo === 'CURSO' && (
+                          <TableCell>
+                            {participacionesExistentes[inscripcion.id_inscripcion] ? (
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
+                                  {participacionesExistentes[inscripcion.id_inscripcion].nota}/100
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Registrado el {new Date(participacionesExistentes[inscripcion.id_inscripcion].fecha_evaluacion).toLocaleDateString('es-ES')}
+                                </Typography>
+                              </Box>
+                            ) : (
+                              <TextField
+                                type="number"
+                                size="small"
+                                placeholder="0-100"
+                                value={calificaciones[inscripcion.id_inscripcion] || ''}
+                                onChange={(e) => handleCalificacionChange(inscripcion.id_inscripcion, e.target.value)}
+                                inputProps={{ min: 0, max: 100 }}
+                                sx={{ width: 100 }}
+                              />
+                            )}
                           </TableCell>
                         )}
                         <TableCell>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={editingCalificacion === inscripcion.id_inscripcion ? <CircularProgress size={16} /> : <Save />}
-                            onClick={() => guardarCalificacion(inscripcion.id_inscripcion)}
-                            disabled={loadingCalificaciones && editingCalificacion === inscripcion.id_inscripcion}
-                            sx={{ bgcolor: '#6d1313', '&:hover': { bgcolor: '#5a0f0f' } }}
-                          >
-                            Guardar
-                          </Button>
+                          {participacionesExistentes[inscripcion.id_inscripcion] ? (
+                            <Box>
+                              <Chip 
+                                label="Registrado" 
+                                size="small" 
+                                color="success" 
+                                variant="outlined"
+                              />
+                              <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                                {new Date(participacionesExistentes[inscripcion.id_inscripcion].fecha_evaluacion).toLocaleDateString('es-ES')}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={editingCalificacion === inscripcion.id_inscripcion ? <CircularProgress size={16} /> : <Save />}
+                              onClick={() => guardarCalificacion(inscripcion.id_inscripcion)}
+                              disabled={loadingCalificaciones && editingCalificacion === inscripcion.id_inscripcion}
+                              sx={{ bgcolor: '#6d1313', '&:hover': { bgcolor: '#5a0f0f' } }}
+                            >
+                              Guardar
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
