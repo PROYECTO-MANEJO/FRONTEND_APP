@@ -37,8 +37,8 @@ const reportTypes = [
   },
   {
     tipo: 'financiero',
-    title: 'Reporte Financiero',
-    description: 'Análisis de ingresos y gastos',
+    title: 'Reportes Financieros',
+    description: 'Ver historial y generar reportes de ingresos',
     icon: <AttachMoney />,
     color: '#ef4444',
     btnColor: 'error'
@@ -51,18 +51,18 @@ const AdminReportes = () => {
   const navigate = useNavigate();
 
   const handleGenerar = async (tipo) => {
+    if (tipo === 'financiero') {
+      // Solo navegar al historial sin generar reporte automáticamente
+      navigate('/admin/reportes/historial?tipo=FINANZAS');
+      return;
+    }
+
+    // Para el resto de reportes, mantener el comportamiento actual
     setLoading(true);
     try {
-      if (tipo === 'financiero') {
-        // Genera el PDF financiero y luego navega al historial de reportes financieros
-        await api.post('/reportes/finanzas/pdf');
-        navigate('/admin/reportes/historial?tipo=FINANZAS');
-      } else {
-        // Deja el resto igual para otros reportes
-        const res = await api.post('/reportes/generar', { tipo });
-        if (res.data && res.data.data && res.data.data.id) {
-          navigate(`/admin/reportes/${res.data.data.id}`);
-        }
+      const res = await api.post('/reportes/generar', { tipo });
+      if (res.data && res.data.data && res.data.data.id) {
+        navigate(`/admin/reportes/${res.data.data.id}`);
       }
     } catch {
       alert('Error al generar el reporte');
@@ -101,12 +101,13 @@ const AdminReportes = () => {
                     variant="contained"
                     color={report.btnColor}
                     fullWidth
-                    disabled={loading}
+                    disabled={loading && report.tipo !== 'financiero'}
                     onClick={() => handleGenerar(report.tipo)}
                     startIcon={<Assessment />}
                     sx={{ mt: 'auto' }}
                   >
-                    {loading ? <CircularProgress size={24} /> : 'Generar'}
+                    {loading && report.tipo !== 'financiero' ? <CircularProgress size={24} /> : 
+                     report.tipo === 'financiero' ? 'Ver Historial' : 'Generar'}
                   </Button>
                 </CardContent>
               </Card>
