@@ -3,6 +3,20 @@ import api from './api';
 const BASE_URL = '/users';
 
 export const documentService = {
+  // ✅ FUNCIONES PARA USUARIOS
+  
+  // Obtener estado de documentos del usuario actual
+  getDocumentStatus: async () => {
+    try {
+      const response = await api.get(`${BASE_URL}/document-status`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error obteniendo estado:', error);
+      throw error;
+    }
+  },
+
+  // Subir documentos
   uploadDocuments: async (formData) => {
     try {
       console.log('📤 Enviando FormData al servidor...');
@@ -22,18 +36,8 @@ export const documentService = {
     }
   },
 
-  getDocumentStatus: async () => {
-    try {
-      const response = await api.get(`${BASE_URL}/document-status`);
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error obteniendo estado:', error);
-      throw error;
-    }
-  },
-
-  // ✅ NUEVA FUNCIÓN: Eliminar documentos
-  deleteDocuments: async (tipo) => {
+  // Eliminar documento
+  deleteDocument: async (tipo) => {
     try {
       console.log('🗑️ Eliminando documentos tipo:', tipo);
       
@@ -48,30 +52,59 @@ export const documentService = {
     }
   },
 
-  // ✅ NUEVAS FUNCIONES PARA VERIFICACIÓN DE DOCUMENTOS
-  // Obtener usuarios con documentos pendientes de verificación
-  getPendingDocuments: async () => {
-    const response = await api.get(`${BASE_URL}/pending-documents`);
-    return response.data;
+  // Descargar documento del usuario actual
+  downloadDocument: async (tipo) => {
+    try {
+      const response = await api.get(`${BASE_URL}/download-document/${tipo}`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al descargar documento');
+    }
   },
 
-  // Descargar documento específico de un usuario
+  // ✅ FUNCIONES PARA ADMINISTRADORES
+  
+  // Obtener usuarios con documentos pendientes de verificación
+  getPendingDocuments: async () => {
+    try {
+      const response = await api.get(`${BASE_URL}/pending-documents`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener usuarios pendientes');
+    }
+  },
+
+  // Descargar documento específico de un usuario (admin)
   downloadUserDocument: async (userId, documentType) => {
-    const response = await api.get(`${BASE_URL}/download-document/${userId}/${documentType}`, {
-      responseType: 'blob'
-    });
-    return response;
+    try {
+      const response = await api.get(`${BASE_URL}/download-user-document/${userId}/${documentType}`, {
+        responseType: 'blob'
+      });
+      return response;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al descargar documento');
+    }
   },
 
   // Aprobar documentos de un usuario
   approveUserDocuments: async (userId) => {
-    const response = await api.put(`${BASE_URL}/approve-documents/${userId}`);
-    return response.data;
+    try {
+      const response = await api.put(`${BASE_URL}/approve-documents/${userId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al aprobar documentos');
+    }
   },
 
   // Rechazar documentos de un usuario
   rejectUserDocuments: async (userId) => {
-    const response = await api.put(`${BASE_URL}/reject-documents/${userId}`);
-    return response.data;
+    try {
+      const response = await api.put(`${BASE_URL}/reject-documents/${userId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al rechazar documentos');
+    }
   }
 };

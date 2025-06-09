@@ -28,6 +28,7 @@ import {
 import ModalInscripcion from './ModalInscripcion';
 import EstadoInscripcion from './EstadoInscripcion';
 import { useInscripciones } from '../../hooks/useInscripciones';
+import { useAuth } from '../../context/AuthContext';
 
 const CursoCard = ({ curso }) => {
   const [open, setOpen] = useState(false);
@@ -35,6 +36,9 @@ const CursoCard = ({ curso }) => {
   
   // Hook para manejar inscripciones (solo si no es "mis cursos")
   const { obtenerEstadoCurso, cargarInscripciones } = useInscripciones();
+  
+  // Hook para obtener información del usuario y documentos
+  const { user } = useAuth();
   
   // Verificar si este es un curso de "mis cursos" (tiene estado_inscripcion)
   const esMiCurso = Boolean(curso.estado_inscripcion);
@@ -51,6 +55,17 @@ const CursoCard = ({ curso }) => {
         fechaAprobacion: curso.fecha_aprobacion
       }
     : obtenerEstadoCurso(curso.id_cur);
+
+  // ✅ VERIFICAR DOCUMENTOS - OBLIGATORIO PARA TODAS LAS INSCRIPCIONES
+  const isEstudiante = user?.rol === 'ESTUDIANTE';
+  const documentosCompletos = user?.documentos ? (
+    isEstudiante 
+      ? (user.documentos.cedula_subida && user.documentos.matricula_subida)
+      : user.documentos.cedula_subida
+  ) : false;
+  
+  const documentosVerificados = user?.documentos?.documentos_verificados || false;
+  const puedeInscribirse = documentosCompletos && documentosVerificados;
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -421,19 +436,43 @@ const CursoCard = ({ curso }) => {
                 {curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && 'Carreras Específicas'}
               </Typography>
 
-              {curso.requiere_verificacion_docs && (
-                <Box>
-                  <Typography variant="subtitle2" color="primary" gutterBottom>
-                    Requisitos
-                  </Typography>
+              {/* ✅ REQUISITOS DE DOCUMENTOS - OBLIGATORIOS PARA TODOS */}
+              <Box>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Requisitos de Inscripción
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Chip 
-                    label="Requiere verificación de documentos" 
-                    color="warning" 
+                    label="📄 Verificación de documentos obligatoria" 
+                    color="error"
                     variant="outlined"
                     size="small"
                   />
+                  {!puedeInscribirse && !esMiCurso && (
+                    <Box sx={{ p: 1.5, bgcolor: 'warning.light', borderRadius: 1 }}>
+                      <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 600 }}>
+                        ⚠️ Para inscribirte necesitas:
+                      </Typography>
+                      <Typography variant="body2" color="warning.dark">
+                        • {!documentosCompletos ? `Subir tu cédula${isEstudiante ? ' y matrícula' : ''}` : '✓ Documentos subidos'}
+                      </Typography>
+                      <Typography variant="body2" color="warning.dark">
+                        • {!documentosVerificados ? 'Verificación por administrador' : '✓ Documentos verificados'}
+                      </Typography>
+                      <Typography variant="caption" color="warning.dark" sx={{ mt: 0.5, display: 'block' }}>
+                        Ve a tu perfil para gestionar tus documentos.
+                      </Typography>
+                    </Box>
+                  )}
+                  {puedeInscribirse && !esMiCurso && (
+                    <Box sx={{ p: 1, bgcolor: 'success.light', borderRadius: 1 }}>
+                      <Typography variant="body2" color="success.dark" sx={{ fontWeight: 600 }}>
+                        ✅ Cumples con todos los requisitos
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
-              )}
+              </Box>
             </Box>
           </Box>
         </DialogContent>
@@ -452,10 +491,21 @@ const CursoCard = ({ curso }) => {
             <Button
               onClick={handleInscripcionOpen}
               variant="contained"
+              disabled={!puedeInscribirse}
               startIcon={<School />}
-              sx={{ borderRadius: 2, flex: 1 }}
+              sx={{ 
+                borderRadius: 2, 
+                flex: 1,
+                ...(puedeInscribirse ? {} : {
+                  bgcolor: 'grey.400',
+                  color: 'grey.600',
+                  '&:hover': {
+                    bgcolor: 'grey.400'
+                  }
+                })
+              }}
             >
-              Inscribirse
+              {puedeInscribirse ? 'Inscribirse' : 'Documentos Requeridos'}
             </Button>
           )}
         </DialogActions>

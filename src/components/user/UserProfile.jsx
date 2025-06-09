@@ -22,7 +22,8 @@ import {
   CardActions,
   LinearProgress,
   IconButton,
-  Container
+  Container,
+  AlertTitle
 } from '@mui/material';
 import {
   Person,
@@ -131,6 +132,11 @@ const UserProfile = () => {
       setDocumentLoading(true);
       const response = await documentService.getDocumentStatus();
       setDocumentStatus(response.data);
+      
+      // También actualizar userData con información fresca
+      const userResponse = await userService.getProfile();
+      setUserData(userResponse);
+      updateUser(userResponse);
     } catch (error) {
       console.error('Error cargando estado de documentos:', error);
     } finally {
@@ -777,9 +783,47 @@ const UserProfile = () => {
           {/* TAB 2: Documentos */}
           {tabValue === 1 && (
             <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-                Gestión de Documentos
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Gestión de Documentos
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={loadDocumentStatus}
+                  disabled={documentLoading}
+                  sx={{ textTransform: 'none' }}
+                >
+                  {documentLoading ? 'Actualizando...' : '🔄 Actualizar Estado'}
+                </Button>
+              </Box>
+              
+              {/* Estado de Verificación */}
+              {documentStatus && (
+                <Alert 
+                  severity={documentStatus.documentos_verificados ? "success" : "warning"}
+                  sx={{ mb: 3 }}
+                >
+                  <AlertTitle>
+                    {documentStatus.documentos_verificados ? "✅ Documentos Verificados" : "⏳ Documentos Pendientes de Verificación"}
+                  </AlertTitle>
+                  {documentStatus.documentos_verificados ? (
+                    <Typography variant="body2">
+                      Tus documentos han sido verificados por un administrador. ¡Ya puedes inscribirte en eventos y cursos!
+                      {documentStatus.fecha_verificacion && (
+                        <> Verificados el: {new Date(documentStatus.fecha_verificacion).toLocaleDateString()}</>
+                      )}
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2">
+                      Tus documentos están siendo revisados por un administrador. Una vez verificados, podrás inscribirte en eventos y cursos.
+                      {documentStatus.fecha_subida && (
+                        <> Subidos el: {new Date(documentStatus.fecha_subida).toLocaleDateString()}</>
+                      )}
+                    </Typography>
+                  )}
+                </Alert>
+              )}
               
               {documentLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>

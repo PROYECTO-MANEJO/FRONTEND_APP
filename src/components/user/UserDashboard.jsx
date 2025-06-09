@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   Typography,
   Box,
@@ -6,12 +6,21 @@ import {
   CircularProgress,
   Paper,
   Container,
-  Button
+  Button,
+  Alert,
+  AlertTitle,
+  Chip
 } from '@mui/material';
 import { 
   ArrowForward,
   Event,
-  School
+  School,
+  ListAlt,
+  CardMembership,
+  Assignment,
+  CheckCircle,
+  Person,
+  Refresh
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { eventoService } from '../../services/eventoService';
@@ -20,13 +29,17 @@ import CursoCard from '../shared/CursoCard';
 import EventoCard from '../shared/EventoCard';
 import UserSidebar from './UserSidebar';
 import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
+import { AuthContext } from '../../context/AuthContext';
+import { userService } from '../../services/userService';
 
-const UserDashboard = ({ user }) => {
+const UserDashboard = () => {
   const { getMainContentStyle } = useUserSidebarLayout();
+  const { user, updateUser } = useContext(AuthContext);
   const [eventos, setEventos] = useState([]);
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshingUser, setRefreshingUser] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -48,6 +61,19 @@ const UserDashboard = ({ user }) => {
 
     loadData();
   }, []);
+
+  // Función para actualizar datos del usuario
+  const handleRefreshUserData = async () => {
+    try {
+      setRefreshingUser(true);
+      const userData = await userService.getProfile();
+      updateUser(userData);
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    } finally {
+      setRefreshingUser(false);
+    }
+  };
 
   if (error) {
     return (
@@ -98,6 +124,88 @@ const UserDashboard = ({ user }) => {
               Descubre nuevos eventos disponibles para ti
             </Typography>
           </Box>
+
+          {/* ✅ ALERTA DE DOCUMENTOS NO VERIFICADOS */}
+          {user?.documentos && (
+            (() => {
+              const isEstudiante = user.rol === 'ESTUDIANTE';
+              const documentosCompletos = isEstudiante 
+                ? (user.documentos.cedula_subida && user.documentos.matricula_subida)
+                : user.documentos.cedula_subida;
+              const documentosVerificados = user.documentos.documentos_verificados;
+              
+              if (!documentosCompletos || !documentosVerificados) {
+                return (
+                  <Alert 
+                    severity="warning" 
+                    sx={{ 
+                      mb: 4, 
+                      borderRadius: 2,
+                      '& .MuiAlert-message': { width: '100%' }
+                    }}
+                  >
+                    <AlertTitle sx={{ fontWeight: 700 }}>
+                      📄 Verificación de Documentos Requerida
+                    </AlertTitle>
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="body2" sx={{ mb: 2 }}>
+                        <strong>Para inscribirte en cualquier evento o curso necesitas:</strong>
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                        <Chip 
+                          label={`${!user.documentos.cedula_subida ? '❌' : '✅'} Cédula`}
+                          size="small"
+                          color={user.documentos.cedula_subida ? "success" : "error"}
+                          variant="outlined"
+                        />
+                        {isEstudiante && (
+                          <Chip 
+                            label={`${!user.documentos.matricula_subida ? '❌' : '✅'} Matrícula`}
+                            size="small"
+                            color={user.documentos.matricula_subida ? "success" : "error"}
+                            variant="outlined"
+                          />
+                        )}
+                        <Chip 
+                          label={`${!documentosVerificados ? '❌' : '✅'} Verificación Admin`}
+                          size="small"
+                          color={documentosVerificados ? "success" : "error"}
+                          variant="outlined"
+                        />
+                      </Box>
+                      <Button
+                        component={Link}
+                        to="/perfil"
+                        variant="contained"
+                        size="small"
+                        sx={{ 
+                          textTransform: 'none',
+                          fontWeight: 600
+                        }}
+                      >
+                        Gestionar Documentos
+                      </Button>
+                      <Button
+                        onClick={handleRefreshUserData}
+                        disabled={refreshingUser}
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Refresh />}
+                        sx={{ 
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          ml: 1
+                        }}
+                      >
+                        {refreshingUser ? 'Actualizando...' : 'Actualizar Estado'}
+                      </Button>
+                    </Box>
+                  </Alert>
+                );
+              }
+              return null;
+            })()
+          )}
           
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
