@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'; // ✅ Agregar useRef
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -21,7 +21,8 @@ import {
   CardContent,
   CardActions,
   LinearProgress,
-  IconButton
+  IconButton,
+  Container
 } from '@mui/material';
 import {
   Person,
@@ -33,7 +34,11 @@ import {
   CheckCircle,
   Pending,
   Description,
-  Delete
+  Delete,
+  Email,
+  Phone,
+  CalendarToday,
+  Work
 } from '@mui/icons-material';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
@@ -42,7 +47,7 @@ import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
 import { carreraService } from '../../services/carreraService';
-import { documentService } from '../../services/documentService'; // ✅ NUEVO
+import { documentService } from '../../services/documentService';
 
 const validationSchema = Yup.object().shape({
   nom_usu1: Yup.string().required('El primer nombre es obligatorio'),
@@ -70,7 +75,7 @@ const UserProfile = () => {
   const [userData, setUserData] = useState(null);
   const [carreras, setCarreras] = useState([]);
   
-  // ✅ NUEVOS ESTADOS PARA DOCUMENTOS
+  // Estados para documentos
   const [tabValue, setTabValue] = useState(0);
   const [documentStatus, setDocumentStatus] = useState(null);
   const [documentLoading, setDocumentLoading] = useState(false);
@@ -79,34 +84,25 @@ const UserProfile = () => {
     cedula_pdf: null,
     matricula_pdf: null
   });
-
-  // ✅ AGREGAR NUEVOS ESTADOS
   const [deleting, setDeleting] = useState(false);
 
   const isEstudiante = userData?.rol === 'ESTUDIANTE';
 
-  // ✅ NUEVOS REFS PARA LOS INPUTS
-  const cedulaInputRef = useRef(null);
-  const matriculaInputRef = useRef(null);
+  // Refs para los inputs (se pueden agregar si se necesitan en el futuro)
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         
-        // Cargar datos del usuario
         const userResponse = await userService.getProfile();
-        console.log('User data loaded:', userResponse);
         setUserData(userResponse);
 
-        // Si es estudiante, cargar carreras
         if (userResponse?.rol === 'ESTUDIANTE') {
           const carrerasResponse = await carreraService.getAll();
-          console.log('Carreras loaded:', carrerasResponse);
           setCarreras(carrerasResponse);
         }
 
-        // ✅ CARGAR ESTADO DE DOCUMENTOS
         await loadDocumentStatus();
       } catch (error) {
         setMessage({
@@ -122,8 +118,6 @@ const UserProfile = () => {
     loadData();
   }, []);
 
-  // ✅ TODAS ESTAS FUNCIONES DEBEN ESTAR DEFINIDAS:
-  
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 KB';
     const k = 1024;
@@ -168,17 +162,14 @@ const UserProfile = () => {
     if (input) input.value = '';
   };
 
-  // ✅ CORREGIR la función uploadDocuments
   const uploadDocuments = async () => {
     try {
       setUploading(true);
       setMessage({ type: '', text: '' });
 
-      // ✅ NUEVA LÓGICA: Solo validar los archivos que se están subiendo
       const hayCedulaNueva = files.cedula_pdf;
       const hayMatriculaNueva = files.matricula_pdf;
 
-      // Validar que al menos haya UN archivo para subir
       if (!hayCedulaNueva && !hayMatriculaNueva) {
         setMessage({
           type: 'error',
@@ -187,7 +178,6 @@ const UserProfile = () => {
         return;
       }
 
-      // ✅ VALIDACIÓN MEJORADA: Solo validar según lo que ya existe y lo que se está subiendo
       const necesitaCedula = !documentStatus.cedula_subida;
       const necesitaMatricula = isEstudiante && !documentStatus.matricula_subida;
 
@@ -202,54 +192,30 @@ const UserProfile = () => {
       if (necesitaMatricula && !hayMatriculaNueva) {
         setMessage({
           type: 'error',
-          text: 'Para estudiantes es obligatorio el archivo de matrícula'
+          text: 'El archivo de matrícula es obligatorio para estudiantes'
         });
         return;
       }
 
-      // Crear FormData solo con los archivos nuevos
       const formData = new FormData();
-      
-      if (hayCedulaNueva) {
-        formData.append('cedula_pdf', files.cedula_pdf);
-      }
-      
-      if (hayMatriculaNueva) {
-        formData.append('matricula_pdf', files.matricula_pdf);
-      }
+      if (hayCedulaNueva) formData.append('cedula_pdf', files.cedula_pdf);
+      if (hayMatriculaNueva) formData.append('matricula_pdf', files.matricula_pdf);
 
-      console.log('📋 Archivos a subir:', {
-        cedula: hayCedulaNueva ? files.cedula_pdf.name : 'No incluido',
-        matricula: hayMatriculaNueva ? files.matricula_pdf.name : 'No incluido'
+      await documentService.uploadDocuments(formData);
+      
+      setMessage({
+        type: 'success',
+        text: 'Documentos subidos exitosamente'
       });
 
-      const response = await documentService.uploadDocuments(formData);
-      
-      if (response.success) {
-        setMessage({
-          type: 'success',
-          text: 'Documentos subidos exitosamente. Pendientes de verificación.'
-        });
-        
-        // Limpiar solo los archivos que se subieron
-        const newFiles = { ...files };
-        if (hayCedulaNueva) {
-          newFiles.cedula_pdf = null;
-          const cedulaInput = document.getElementById('cedula_pdf_input');
-          if (cedulaInput) cedulaInput.value = '';
-        }
-        if (hayMatriculaNueva) {
-          newFiles.matricula_pdf = null;
-          const matriculaInput = document.getElementById('matricula_pdf_input');
-          if (matriculaInput) matriculaInput.value = '';
-        }
-        
-        setFiles(newFiles);
-        await loadDocumentStatus();
-      }
+      setFiles({ cedula_pdf: null, matricula_pdf: null });
+      const cedulaInput = document.getElementById('cedula_pdf_input');
+      const matriculaInput = document.getElementById('matricula_pdf_input');
+      if (cedulaInput) cedulaInput.value = '';
+      if (matriculaInput) matriculaInput.value = '';
 
+      await loadDocumentStatus();
     } catch (error) {
-      console.error('❌ Error subiendo documentos:', error);
       setMessage({
         type: 'error',
         text: error.response?.data?.message || 'Error al subir documentos'
@@ -260,49 +226,36 @@ const UserProfile = () => {
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
-    setIsSubmitting(true);
-    setMessage({ type: '', text: '' });
-
     try {
-      // Preparar datos para enviar (sin isEstudiante)
-      const dataToSubmit = {
+      setIsSubmitting(true);
+      
+      const updateData = {
         nom_usu1: values.nom_usu1,
-        nom_usu2: values.nom_usu2,
+        nom_usu2: values.nom_usu2 || null,
         ape_usu1: values.ape_usu1,
-        ape_usu2: values.ape_usu2,
+        ape_usu2: values.ape_usu2 || null,
         fec_nac_usu: values.fec_nac_usu,
-        num_tel_usu: values.num_tel_usu,
-        id_car_per: values.id_car_per || null
+        num_tel_usu: values.num_tel_usu || null,
       };
 
-      console.log('Submitting data:', dataToSubmit);
-      
-      const updatedUser = await userService.updateProfile(dataToSubmit);
-      console.log('User updated:', updatedUser);
-      
-      // Actualizar el contexto de autenticación si es necesario
-      if (updateUser) {
-        updateUser(updatedUser);
+      if (isEstudiante && values.id_car_per) {
+        updateData.id_car_per = values.id_car_per;
       }
+
+      const updatedUser = await userService.updateProfile(updateData);
+      
       setUserData(updatedUser);
+      updateUser(updatedUser);
+      setIsEditing(false);
       
       setMessage({
         type: 'success',
-        text: 'Perfil actualizado exitosamente'
+        text: 'Perfil actualizado correctamente'
       });
-      
-      setIsEditing(false);
-      
-      // Limpiar mensaje después de 3 segundos
-      setTimeout(() => {
-        setMessage({ type: '', text: '' });
-      }, 3000);
-      
     } catch (error) {
-      console.error('Error updating profile:', error);
       setMessage({
         type: 'error',
-        text: error.message || 'Error al actualizar el perfil'
+        text: error.response?.data?.message || 'Error al actualizar el perfil'
       });
     } finally {
       setIsSubmitting(false);
@@ -316,9 +269,8 @@ const UserProfile = () => {
   };
 
   const getCarreraNombre = (carreraId) => {
-    if (!carreraId) return 'No asignada';
     const carrera = carreras.find(c => c.id_car === carreraId);
-    return carrera ? carrera.nom_car : 'No encontrada';
+    return carrera ? carrera.nom_car : 'Carrera no encontrada';
   };
 
   const handleCancel = () => {
@@ -326,56 +278,23 @@ const UserProfile = () => {
     setMessage({ type: '', text: '' });
   };
 
-  // ✅ NUEVA FUNCIÓN: Cambiar tab
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
-    setMessage({ type: '', text: '' }); // Limpiar mensajes al cambiar tab
   };
 
-  // ✅ AGREGAR ESTA FUNCIÓN después de uploadDocuments
   const deleteDocument = async (tipo) => {
-    if (!window.confirm(`¿Estás seguro de que quieres eliminar el documento de ${tipo}?`)) {
-      return;
-    }
-
     try {
       setDeleting(true);
-      setMessage({ type: '', text: '' });
-
-      console.log('🗑️ Eliminando documento tipo:', tipo);
-
-      const response = await documentService.deleteDocuments(tipo);
-      
-      if (response.success) {
-        setMessage({
-          type: 'success',
-          text: `Documento de ${tipo} eliminado exitosamente. Puedes subir uno nuevo.`
-        });
-        
-        // Limpiar estado local
-        if (tipo === 'cedula' || tipo === 'ambos') {
-          setFiles(prev => ({ ...prev, cedula_pdf: null }));
-        }
-        if (tipo === 'matricula' || tipo === 'ambos') {
-          setFiles(prev => ({ ...prev, matricula_pdf: null }));
-        }
-        
-        // Recargar estado de documentos
-        await loadDocumentStatus();
-      }
-
-    } catch (error) {
-      console.error('❌ Error eliminando documento:', error);
-      
-      let errorMessage = `Error al eliminar documento de ${tipo}`;
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
-      
+      await documentService.deleteDocument(tipo);
+      setMessage({
+        type: 'success',
+        text: 'Documento eliminado correctamente'
+      });
+      await loadDocumentStatus();
+    } catch {
       setMessage({
         type: 'error',
-        text: errorMessage
+        text: 'Error al eliminar documento'
       });
     } finally {
       setDeleting(false);
@@ -388,13 +307,12 @@ const UserProfile = () => {
         <UserSidebar />
         <Box sx={{ 
           flexGrow: 1,
-          p: 3, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
           ...getMainContentStyle()
         }}>
-          <CircularProgress sx={{ color: '#6d1313' }} />
+          <CircularProgress size={60} sx={{ color: '#b91c1c' }} />
         </Box>
       </Box>
     );
@@ -435,681 +353,601 @@ const UserProfile = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <UserSidebar />
       
-      {/* Main Content */}
       <Box sx={{ 
         flexGrow: 1,
-        p: 3,
         ...getMainContentStyle()
       }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Mi Perfil
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Gestiona tu información personal y documentos
-          </Typography>
-        </Box>
+        <Container maxWidth="lg" sx={{ py: 3 }}>
+          {/* Header compacto */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: '#1a1a1a' }}>
+              Mi Perfil
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Gestiona tu información personal y documentos
+            </Typography>
+          </Box>
 
-        {message.text && (
-          <Alert 
-            severity={message.type} 
-            sx={{ mb: 3 }}
-            onClose={() => setMessage({ type: '', text: '' })}
-          >
-            {message.text}
-          </Alert>
-        )}
+          {message.text && (
+            <Alert 
+              severity={message.type} 
+              sx={{ mb: 2 }}
+              onClose={() => setMessage({ type: '', text: '' })}
+            >
+              {message.text}
+            </Alert>
+          )}
 
-        {/* ✅ NUEVAS TABS */}
-        <Paper sx={{ mb: 3 }}>
-          <Tabs 
-            value={tabValue} 
-            onChange={handleTabChange}
-            sx={{ borderBottom: 1, borderColor: 'divider' }}
-          >
-            <Tab 
-              icon={<Person />} 
-              label="Información Personal" 
-              sx={{ minHeight: 64 }}
-            />
-            <Tab 
-              icon={<Description />} 
-              label="Documentos" 
-              sx={{ minHeight: 64 }}
-            />
-          </Tabs>
-        </Paper>
+          {/* Pestañas */}
+          <Paper elevation={1} sx={{ mb: 3, borderRadius: 2 }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange}
+              variant="fullWidth"
+              sx={{
+                '& .MuiTab-root': {
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  py: 2
+                }
+              }}
+            >
+              <Tab 
+                icon={<Person />} 
+                label="Información Personal" 
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<Description />} 
+                label="Documentos" 
+                iconPosition="start"
+              />
+            </Tabs>
+          </Paper>
 
-        {/* TAB 1: Información Personal (código existente igual) */}
-        {tabValue === 0 && (
-          <Grid container spacing={3}>
-            {/* Profile Card - código existente igual */}
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, textAlign: 'center' }}>
-                <Avatar
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    bgcolor: '#6d1313',
-                    mx: 'auto',
-                    mb: 2,
-                    fontSize: '3rem'
-                  }}
-                >
-                  <Person fontSize="inherit" />
-                </Avatar>
-                
-                <Typography variant="h5" gutterBottom>
-                  {userData?.nom_usu1} {userData?.ape_usu1}
-                </Typography>
-                
-                <Chip 
-                  label={userData?.rol || 'Usuario'} 
-                  color={isEstudiante ? "primary" : "secondary"}
-                  sx={{ mb: 2 }}
-                />
-                
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {userData?.email}
-                </Typography>
-                
-                <Typography variant="body2" color="text.secondary">
-                  Cédula: {userData?.ced_usu}
-                </Typography>
+                     {/* TAB 1: Información Personal */}
+           {tabValue === 0 && (
+             <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                   Información Personal
+                 </Typography>
+                 
+                 {!isEditing ? (
+                   <Button
+                     variant="contained"
+                     startIcon={<Edit />}
+                     onClick={() => setIsEditing(true)}
+                     sx={{ 
+                       bgcolor: '#b91c1c', 
+                       '&:hover': { bgcolor: '#991b1b' },
+                       borderRadius: 2
+                     }}
+                   >
+                     Editar
+                   </Button>
+                 ) : (
+                   <Button
+                     variant="outlined"
+                     color="error"
+                     startIcon={<Cancel />}
+                     onClick={handleCancel}
+                     sx={{ borderRadius: 2 }}
+                   >
+                     Cancelar
+                   </Button>
+                 )}
+               </Box>
 
-                {isEstudiante && (
-                  <>
-                    <Divider sx={{ my: 2 }} />
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
-                      <School sx={{ mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Carrera
-                      </Typography>
-                    </Box>
-                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                      {userData?.carrera?.nom_car || getCarreraNombre(userData?.id_car_per)}
-                    </Typography>
-                    {userData?.carrera?.nom_fac_per && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        {userData.carrera.nom_fac_per}
-                      </Typography>
-                    )}
-                  </>
-                )}
-              </Paper>
-            </Grid>
+               <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
+                 {/* Card de perfil compacta */}
+                 <Box sx={{ 
+                   p: 3, 
+                   borderRadius: 3, 
+                   bgcolor: '#f8f9fa', 
+                   border: '1px solid #e9ecef',
+                   height: 'fit-content',
+                   minWidth: '280px',
+                   flexShrink: 0
+                 }}>
+                   <Box sx={{ textAlign: 'center', mb: 2 }}>
+                     <Avatar
+                       sx={{
+                         width: 100,
+                         height: 100,
+                         bgcolor: '#b91c1c',
+                         mx: 'auto',
+                         mb: 2,
+                         fontSize: '2.5rem',
+                         boxShadow: 3
+                       }}
+                     >
+                       <Person fontSize="inherit" />
+                     </Avatar>
+                     
+                     <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                       {userData?.nom_usu1} {userData?.ape_usu1}
+                     </Typography>
+                     
+                     <Chip 
+                       label={userData?.rol || 'Usuario'} 
+                       color={isEstudiante ? "primary" : "secondary"}
+                       sx={{ mb: 2, fontWeight: 600 }}
+                     />
+                   </Box>
 
-            {/* Profile Form - código existente igual */}
-            <Grid item xs={12} md={8}>
-              <Paper sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6">
-                    Información Personal
-                  </Typography>
-                  
-                  {!isEditing ? (
-                    <Button
-                      variant="outlined"
-                      startIcon={<Edit />}
-                      onClick={() => setIsEditing(true)}
-                      sx={{ borderColor: '#6d1313', color: '#6d1313', '&:hover': { borderColor: '#5a1010', bgcolor: 'rgba(109, 19, 19, 0.04)' } }}
-                    >
-                      Editar
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<Cancel />}
-                      onClick={handleCancel}
-                    >
-                      Cancelar
-                    </Button>
-                  )}
+                   <Divider sx={{ my: 2 }} />
+
+                   {/* Información compacta */}
+                   <Box sx={{ space: 1.5 }}>
+                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                       <Email sx={{ mr: 1.5, color: 'text.secondary', fontSize: '1.1rem' }} />
+                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem' }}>
+                         {userData?.email}
+                       </Typography>
+                     </Box>
+
+                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                       <Person sx={{ mr: 1.5, color: 'text.secondary', fontSize: '1.1rem' }} />
+                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem' }}>
+                         Cédula: {userData?.ced_usu}
+                       </Typography>
+                     </Box>
+
+                     {userData?.num_tel_usu && (
+                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                         <Phone sx={{ mr: 1.5, color: 'text.secondary', fontSize: '1.1rem' }} />
+                         <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem' }}>
+                           {userData.num_tel_usu}
+                         </Typography>
+                       </Box>
+                     )}
+
+                     {userData?.fec_nac_usu && (
+                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                         <CalendarToday sx={{ mr: 1.5, color: 'text.secondary', fontSize: '1.1rem' }} />
+                         <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem' }}>
+                           {new Date(userData.fec_nac_usu).toLocaleDateString('es-ES')}
+                         </Typography>
+                       </Box>
+                     )}
+
+                     {isEstudiante && (
+                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                         <School sx={{ mr: 1.5, color: 'text.secondary', fontSize: '1.1rem' }} />
+                         <Box>
+                           <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                             {userData?.carrera?.nom_car || getCarreraNombre(userData?.id_car_per)}
+                           </Typography>
+                           {userData?.carrera?.nom_fac_per && (
+                             <Typography variant="caption" color="text.secondary">
+                               {userData.carrera.nom_fac_per}
+                             </Typography>
+                           )}
+                         </Box>
+                       </Box>
+                     )}
+                   </Box>
+                 </Box>
+
+                 {/* Formulario al lado */}
+                 <Box sx={{ flexGrow: 1 }}>
+                   <Formik
+                     initialValues={initialValues}
+                     validationSchema={validationSchema}
+                     onSubmit={handleSubmit}
+                     enableReinitialize
+                   >
+                     {({ values, errors, touched, handleChange, handleBlur }) => (
+                       <Form>
+                         {/* SECCIÓN: Información Editable */}
+                         <Box sx={{ mb: 4 }}>
+                           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1976d2' }}>
+                             📝 Información Personal (Editable)
+                           </Typography>
+                           <Grid container spacing={2}>
+                             {/* Nombres */}
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 name="nom_usu1"
+                                 label="Primer Nombre"
+                                 value={values.nom_usu1}
+                                 onChange={handleChange}
+                                 onBlur={handleBlur}
+                                 disabled={!isEditing}
+                                 error={touched.nom_usu1 && !!errors.nom_usu1}
+                                 helperText={touched.nom_usu1 && errors.nom_usu1}
+                                 size="small"
+                               />
+                             </Grid>
+                             
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 name="nom_usu2"
+                                 label="Segundo Nombre"
+                                 value={values.nom_usu2}
+                                 onChange={handleChange}
+                                 onBlur={handleBlur}
+                                 disabled={!isEditing}
+                                 error={touched.nom_usu2 && !!errors.nom_usu2}
+                                 helperText={touched.nom_usu2 && errors.nom_usu2}
+                                 size="small"
+                               />
+                             </Grid>
+
+                             {/* Apellidos */}
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 name="ape_usu1"
+                                 label="Primer Apellido"
+                                 value={values.ape_usu1}
+                                 onChange={handleChange}
+                                 onBlur={handleBlur}
+                                 disabled={!isEditing}
+                                 error={touched.ape_usu1 && !!errors.ape_usu1}
+                                 helperText={touched.ape_usu1 && errors.ape_usu1}
+                                 size="small"
+                               />
+                             </Grid>
+                             
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 name="ape_usu2"
+                                 label="Segundo Apellido"
+                                 value={values.ape_usu2}
+                                 onChange={handleChange}
+                                 onBlur={handleBlur}
+                                 disabled={!isEditing}
+                                 error={touched.ape_usu2 && !!errors.ape_usu2}
+                                 helperText={touched.ape_usu2 && errors.ape_usu2}
+                                 size="small"
+                               />
+                             </Grid>
+
+                             {/* Información personal */}
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 name="fec_nac_usu"
+                                 label="Fecha de Nacimiento"
+                                 type="date"
+                                 value={values.fec_nac_usu}
+                                 onChange={handleChange}
+                                 onBlur={handleBlur}
+                                 disabled={!isEditing}
+                                 error={touched.fec_nac_usu && !!errors.fec_nac_usu}
+                                 helperText={touched.fec_nac_usu && errors.fec_nac_usu}
+                                 InputLabelProps={{ shrink: true }}
+                                 size="small"
+                               />
+                             </Grid>
+                             
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 name="num_tel_usu"
+                                 label="Número de Teléfono"
+                                 value={values.num_tel_usu}
+                                 onChange={handleChange}
+                                 onBlur={handleBlur}
+                                 disabled={!isEditing}
+                                 error={touched.num_tel_usu && !!errors.num_tel_usu}
+                                 helperText={touched.num_tel_usu && errors.num_tel_usu}
+                                 size="small"
+                               />
+                             </Grid>
+
+                             {/* Carrera solo para estudiantes */}
+                             {isEstudiante && (
+                               <Grid item xs={12} sm={6}>
+                                 <FormControl fullWidth size="small">
+                                   <InputLabel>Carrera</InputLabel>
+                                   <Select
+                                     name="id_car_per"
+                                     value={values.id_car_per}
+                                     label="Carrera"
+                                     onChange={handleChange}
+                                     disabled={!isEditing}
+                                     error={touched.id_car_per && !!errors.id_car_per}
+                                   >
+                                     {carreras.map((carrera) => (
+                                       <MenuItem key={carrera.id_car} value={carrera.id_car}>
+                                         {carrera.nom_car}
+                                       </MenuItem>
+                                     ))}
+                                   </Select>
+                                   {touched.id_car_per && errors.id_car_per && (
+                                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                                       {errors.id_car_per}
+                                     </Typography>
+                                   )}
+                                 </FormControl>
+                               </Grid>
+                             )}
+                           </Grid>
+                         </Box>
+
+                         {/* SECCIÓN: Información del Sistema (No Editable) */}
+                         <Box sx={{ 
+                           p: 2, 
+                           bgcolor: '#f5f5f5', 
+                           borderRadius: 2, 
+                           border: '1px solid #e0e0e0' 
+                         }}>
+                           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#757575' }}>
+                             🔒 Información del Sistema (Solo Lectura)
+                           </Typography>
+                           <Grid container spacing={2}>
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 label="Email"
+                                 value={userData?.email || ''}
+                                 disabled
+                                 helperText="El email no se puede modificar"
+                                 size="small"
+                                 sx={{
+                                   '& .MuiInputBase-root': {
+                                     bgcolor: '#fafafa'
+                                   }
+                                 }}
+                               />
+                             </Grid>
+
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 label="Rol"
+                                 value={userData?.rol || ''}
+                                 disabled
+                                 helperText="Definido por el sistema"
+                                 size="small"
+                                 sx={{
+                                   '& .MuiInputBase-root': {
+                                     bgcolor: '#fafafa'
+                                   }
+                                 }}
+                               />
+                             </Grid>
+
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 label="Cédula"
+                                 value={userData?.ced_usu || ''}
+                                 disabled
+                                 helperText="Identificador único del usuario"
+                                 size="small"
+                                 sx={{
+                                   '& .MuiInputBase-root': {
+                                     bgcolor: '#fafafa'
+                                   }
+                                 }}
+                               />
+                             </Grid>
+
+                             <Grid item xs={12} sm={6}>
+                               <TextField
+                                 fullWidth
+                                 label="ID Usuario"
+                                 value={userData?.id_usu || ''}
+                                 disabled
+                                 helperText="Identificador interno del sistema"
+                                 size="small"
+                                 sx={{
+                                   '& .MuiInputBase-root': {
+                                     bgcolor: '#fafafa'
+                                   }
+                                 }}
+                               />
+                             </Grid>
+                           </Grid>
+                         </Box>
+
+                         {isEditing && (
+                           <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                             <Button
+                               type="submit"
+                               variant="contained"
+                               startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <Save />}
+                               disabled={isSubmitting}
+                               sx={{ 
+                                 bgcolor: '#b91c1c', 
+                                 '&:hover': { bgcolor: '#991b1b' },
+                                 borderRadius: 2
+                               }}
+                             >
+                               {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+                             </Button>
+                           </Box>
+                         )}
+                       </Form>
+                                            )}
+                     </Formik>
+                   </Box>
+                 </Box>
+               </Paper>
+           )}
+
+          {/* TAB 2: Documentos */}
+          {tabValue === 1 && (
+            <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+                Gestión de Documentos
+              </Typography>
+              
+              {documentLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                  <CircularProgress />
                 </Box>
-
-                <Formik
-                  initialValues={initialValues}
-                  validationSchema={validationSchema}
-                  onSubmit={handleSubmit}
-                  enableReinitialize
-                >
-                  {({ values, errors, touched, handleChange, handleBlur }) => (
-                    <Form>
-                      <Grid container spacing={3}>
-                        {/* Nombres */}
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            name="nom_usu1"
-                            label="Primer Nombre"
-                            value={values.nom_usu1}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            disabled={!isEditing}
-                            error={touched.nom_usu1 && !!errors.nom_usu1}
-                            helperText={touched.nom_usu1 && errors.nom_usu1}
-                          />
-                        </Grid>
+              ) : (
+                <Grid container spacing={3}>
+                  {/* Cédula */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined" sx={{ borderRadius: 2 }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                          <Description sx={{ mr: 1 }} />
+                          Cédula de Identidad
+                        </Typography>
                         
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            name="nom_usu2"
-                            label="Segundo Nombre"
-                            value={values.nom_usu2}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            disabled={!isEditing}
-                            error={touched.nom_usu2 && !!errors.nom_usu2}
-                            helperText={touched.nom_usu2 && errors.nom_usu2}
-                          />
-                        </Grid>
-
-                        {/* Apellidos */}
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            name="ape_usu1"
-                            label="Primer Apellido"
-                            value={values.ape_usu1}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            disabled={!isEditing}
-                            error={touched.ape_usu1 && !!errors.ape_usu1}
-                            helperText={touched.ape_usu1 && errors.ape_usu1}
-                          />
-                        </Grid>
-                        
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            name="ape_usu2"
-                            label="Segundo Apellido"
-                            value={values.ape_usu2}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            disabled={!isEditing}
-                            error={touched.ape_usu2 && !!errors.ape_usu2}
-                            helperText={touched.ape_usu2 && errors.ape_usu2}
-                          />
-                        </Grid>
-
-                        {/* Fecha de nacimiento */}
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            name="fec_nac_usu"
-                            label="Fecha de Nacimiento"
-                            type="date"
-                            value={values.fec_nac_usu}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            disabled={!isEditing}
-                            InputLabelProps={{ shrink: true }}
-                            error={touched.fec_nac_usu && !!errors.fec_nac_usu}
-                            helperText={touched.fec_nac_usu && errors.fec_nac_usu}
-                          />
-                        </Grid>
-
-                        {/* Teléfono */}
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            name="num_tel_usu"
-                            label="Número de Teléfono"
-                            value={values.num_tel_usu}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            disabled={!isEditing}
-                            placeholder="Ej: 0987654321"
-                            error={touched.num_tel_usu && !!errors.num_tel_usu}
-                            helperText={touched.num_tel_usu && errors.num_tel_usu}
-                          />
-                        </Grid>
-
-                        {/* Carrera (solo para estudiantes) */}
-                        {isEstudiante && (
-                          <Grid item xs={12}>
-                            <FormControl fullWidth disabled={!isEditing}>
-                              <InputLabel>Carrera</InputLabel>
-                              <Select
-                                name="id_car_per"
-                                value={values.id_car_per}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                label="Carrera"
-                                error={touched.id_car_per && !!errors.id_car_per}
-                              >
-                                <MenuItem value="">
-                                  <em>Selecciona una carrera</em>
-                                </MenuItem>
-                                {carreras.map((carrera) => (
-                                  <MenuItem key={carrera.id_car} value={carrera.id_car}>
-                                    <Box>
-                                      <Typography variant="body1">
-                                        {carrera.nom_car}
-                                      </Typography>
-                                      {carrera.nom_fac_per && (
-                                        <Typography variant="caption" color="text.secondary">
-                                          {carrera.nom_fac_per}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                              {touched.id_car_per && errors.id_car_per && (
-                                <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
-                                  {errors.id_car_per}
-                                </Typography>
-                              )}
-                            </FormControl>
-                          </Grid>
-                        )}
-
-                        {/* Información del sistema (solo lectura) */}
-                        <Grid item xs={12}>
-                          <Divider sx={{ my: 2 }} />
-                          <Typography variant="h6" gutterBottom>
-                            Información del Sistema
-                          </Typography>
-                        </Grid>
-
-                        <Grid item xs={12} sm={4}>
-                          <TextField
-                            fullWidth
-                            label="Email"
-                            value={userData?.email || ''}
-                            disabled
-                            helperText="El email no se puede modificar"
-                          />
-                        </Grid>
-
-                        <Grid item xs={12} sm={4}>
-                          <TextField
-                            fullWidth
-                            label="Rol"
-                            value={userData?.rol || ''}
-                            disabled
-                          />
-                        </Grid>
-
-                        <Grid item xs={12} sm={4}>
-                          <TextField
-                            fullWidth
-                            label="ID Usuario"
-                            value={userData?.id_usu || ''}
-                            disabled
-                            inputProps={{ style: { fontSize: '0.8rem' } }}
-                          />
-                        </Grid>
-
-                        {/* Botón de guardar */}
-                        {isEditing && (
-                          <Grid item xs={12}>
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                              <Button
-                                type="submit"
-                                variant="contained"
-                                startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Save />}
-                                disabled={isSubmitting}
-                                sx={{ bgcolor: '#6d1313', '&:hover': { bgcolor: '#5a1010' } }}
-                              >
-                                {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-                              </Button>
-                            </Box>
-                          </Grid>
-                        )}
-                      </Grid>
-                    </Form>
-                  )}
-                </Formik>
-              </Paper>
-            </Grid>
-          </Grid>
-        )}
-
-        {/* ✅ TAB 2: Documentos (NUEVO) */}
-        {tabValue === 1 && (
-          <Grid container spacing={3}>
-            {/* Estado Actual de Documentos */}
-            <Grid item xs={12}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  📊 Estado de Documentos
-                </Typography>
-                
-                {documentLoading ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <CircularProgress size={20} />
-                    <Typography>Cargando estado...</Typography>
-                  </Box>
-                ) : documentStatus ? (
-                  <Grid container spacing={2}>
-                    {/* Cédula */}
-                    <Grid item xs={12} sm={6}>
-                      <Card variant="outlined" sx={{ 
-                        border: documentStatus.cedula_subida ? '2px solid #4caf50' : '2px solid #ff9800'
-                      }}>
-                        <CardContent>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            {documentStatus.cedula_subida ? (
-                              <CheckCircle sx={{ color: '#4caf50' }} />
-                            ) : (
-                              <Pending sx={{ color: '#ff9800' }} />
-                            )}
-                            <Box sx={{ flexGrow: 1 }}>
-                              <Typography variant="h6">Cédula</Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {documentStatus.cedula_subida 
-                                  ? `Subida (${documentStatus.archivos_info?.cedula?.tamaño || 'N/A'})`
-                                  : 'Pendiente'
-                                }
+                        {documentStatus?.cedula_subida ? (
+                          <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                              <CheckCircle sx={{ color: 'success.main', mr: 1 }} />
+                              <Typography variant="body2" color="success.main">
+                                Documento subido
                               </Typography>
                             </Box>
-                            
-                            {/* ✅ BOTÓN DE ELIMINAR CÉDULA */}
-                            {documentStatus.cedula_subida && documentStatus.puede_eliminar && (
-                              <IconButton 
-                                onClick={() => deleteDocument('cedula')}
-                                color="error"
-                                disabled={deleting}
-                                title="Eliminar documento"
-                              >
-                                <Delete />
-                              </IconButton>
+                            <Typography variant="caption" color="text.secondary">
+                              Subido: {new Date(documentStatus.cedula_fecha_subida).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                              Documento requerido
+                            </Typography>
+                            <input
+                              accept="application/pdf"
+                              style={{ display: 'none' }}
+                              id="cedula_pdf_input"
+                              type="file"
+                              onChange={(e) => handleFileSelect(e, 'cedula_pdf')}
+                            />
+                            <label htmlFor="cedula_pdf_input">
+                              <Button variant="outlined" component="span" size="small">
+                                Seleccionar PDF
+                              </Button>
+                            </label>
+                            {files.cedula_pdf && (
+                              <Box sx={{ mt: 1 }}>
+                                <Typography variant="caption">
+                                  {files.cedula_pdf.name} ({formatFileSize(files.cedula_pdf.size)})
+                                </Typography>
+                                <IconButton size="small" onClick={() => removeFile('cedula_pdf')}>
+                                  <Delete />
+                                </IconButton>
+                              </Box>
                             )}
                           </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
+                        )}
+                      </CardContent>
+                      
+                      {documentStatus?.cedula_subida && (
+                        <CardActions>
+                          <Button 
+                            size="small" 
+                            color="error" 
+                            onClick={() => deleteDocument('cedula')}
+                            disabled={deleting}
+                          >
+                            Eliminar
+                          </Button>
+                        </CardActions>
+                      )}
+                    </Card>
+                  </Grid>
 
-                    {/* Matrícula (solo estudiantes) */}
-                    {documentStatus.matricula_requerida && (
-                      <Grid item xs={12} sm={6}>
-                        <Card variant="outlined" sx={{ 
-                          border: documentStatus.matricula_subida ? '2px solid #4caf50' : '2px solid #ff9800'
-                        }}>
-                          <CardContent>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              {documentStatus.matricula_subida ? (
-                                <CheckCircle sx={{ color: '#4caf50' }} />
-                              ) : (
-                                <Pending sx={{ color: '#ff9800' }} />
-                              )}
-                              <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="h6">Matrícula</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {documentStatus.matricula_subida 
-                                    ? `Subida (${documentStatus.archivos_info?.matricula?.tamaño || 'N/A'})`
-                                    : 'Pendiente'
-                                  }
+                  {/* Matrícula (solo para estudiantes) */}
+                  {isEstudiante && (
+                    <Grid item xs={12} md={6}>
+                      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+                        <CardContent>
+                          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <School sx={{ mr: 1 }} />
+                            Matrícula Estudiantil
+                          </Typography>
+                          
+                          {documentStatus?.matricula_subida ? (
+                            <Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <CheckCircle sx={{ color: 'success.main', mr: 1 }} />
+                                <Typography variant="body2" color="success.main">
+                                  Documento subido
                                 </Typography>
                               </Box>
-                              
-                              {/* ✅ BOTÓN DE ELIMINAR MATRÍCULA */}
-                              {documentStatus.matricula_subida && documentStatus.puede_eliminar && (
-                                <IconButton 
-                                  onClick={() => deleteDocument('matricula')}
-                                  color="error"
-                                  disabled={deleting}
-                                  title="Eliminar documento"
-                                >
-                                  <Delete />
-                                </IconButton>
-                              )}
+                              <Typography variant="caption" color="text.secondary">
+                                Subido: {new Date(documentStatus.matricula_fecha_subida).toLocaleDateString()}
+                              </Typography>
                             </Box>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    )}
-
-                    {/* Estado de Verificación */}
-                    <Grid item xs={12}>
-                      <Alert 
-                        severity={documentStatus.documentos_verificados ? "success" : "info"}
-                        sx={{ mt: 2 }}
-                      >
-                        <Typography variant="subtitle1">
-                          Estado de Verificación: {' '}
-                          {documentStatus.documentos_verificados 
-                            ? `✅ Verificados (${new Date(documentStatus.fecha_verificacion).toLocaleDateString()})`
-                            : '⏰ Pendiente de verificación administrativa'
-                          }
-                        </Typography>
-                      </Alert>
-                    </Grid>
-                  </Grid>
-                ) : (
-                  <Alert severity="warning">
-                    No se pudo cargar el estado de los documentos
-                  </Alert>
-                )}
-              </Paper>
-            </Grid>
-
-            {/* ✅ SUBIR NUEVOS DOCUMENTOS - SOLO SI PUEDE SUBIR */}
-            {documentStatus && (!documentStatus.documentos_verificados) && (
-              <Grid item xs={12}>
-                <Paper sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    📤 Subir Documentos
-                  </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    {isEstudiante 
-                      ? 'Como estudiante, puedes subir o actualizar tu cédula y matrícula por separado.'
-                      : 'Puedes subir o actualizar tu documento de cédula.'
-                    }
-                  </Typography>
-
-                  <Grid container spacing={3}>
-                    {/* ✅ MOSTRAR CÉDULA: Si no tiene o si tiene archivos seleccionados */}
-                    {(!documentStatus.cedula_subida || files.cedula_pdf) && (
-                      <Grid item xs={12} sm={isEstudiante ? 6 : 12}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="subtitle1" gutterBottom>
-                            📋 Cédula de Identidad {!documentStatus.cedula_subida ? '*' : '(Actualizar)'}
-                          </Typography>
-                          
-                          {files.cedula_pdf ? (
-                            <Card variant="outlined" sx={{ p: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                  <Description />
-                                  <Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                      {files.cedula_pdf.name}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {formatFileSize(files.cedula_pdf.size)}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                                <IconButton 
-                                  onClick={() => removeFile('cedula_pdf')}
-                                  color="error"
-                                  size="small"
-                                >
-                                  <Delete />
-                                </IconButton>
-                              </Box>
-                            </Card>
                           ) : (
                             <Box>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Documento requerido para estudiantes
+                              </Typography>
                               <input
-                                ref={cedulaInputRef}
-                                id="cedula_pdf_input"
-                                type="file"
-                                accept=".pdf"
-                                onChange={(e) => handleFileSelect(e, 'cedula_pdf')}
+                                accept="application/pdf"
                                 style={{ display: 'none' }}
-                              />
-                              <label htmlFor="cedula_pdf_input">
-                                <Button
-                                  variant="outlined"
-                                  component="span"
-                                  startIcon={<UploadFile />}
-                                  fullWidth
-                                  sx={{ p: 3, borderStyle: 'dashed' }}
-                                >
-                                  {documentStatus.cedula_subida ? 'Actualizar cédula' : 'Seleccionar archivo PDF'}
-                                </Button>
-                              </label>
-                            </Box>
-                          )}
-                        </Box>
-                      </Grid>
-                    )}
-
-                    {/* ✅ MOSTRAR MATRÍCULA: Solo estudiantes y si no tiene o tiene archivos */}
-                    {isEstudiante && (!documentStatus.matricula_subida || files.matricula_pdf) && (
-                      <Grid item xs={12} sm={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="subtitle1" gutterBottom>
-                            🎓 Matrícula Estudiantil {!documentStatus.matricula_subida ? '*' : '(Actualizar)'}
-                          </Typography>
-                          
-                          {files.matricula_pdf ? (
-                            <Card variant="outlined" sx={{ p: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                  <Description />
-                                  <Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                      {files.matricula_pdf.name}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {formatFileSize(files.matricula_pdf.size)}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                                <IconButton 
-                                  onClick={() => removeFile('matricula_pdf')}
-                                  color="error"
-                                  size="small"
-                                >
-                                  <Delete />
-                                </IconButton>
-                              </Box>
-                            </Card>
-                          ) : (
-                            <Box>
-                              <input
-                                ref={matriculaInputRef}
                                 id="matricula_pdf_input"
                                 type="file"
-                                accept=".pdf"
                                 onChange={(e) => handleFileSelect(e, 'matricula_pdf')}
-                                style={{ display: 'none' }}
                               />
                               <label htmlFor="matricula_pdf_input">
-                                <Button
-                                  variant="outlined"
-                                  component="span"
-                                  startIcon={<UploadFile />}
-                                  fullWidth
-                                  sx={{ p: 3, borderStyle: 'dashed' }}
-                                >
-                                  {documentStatus.matricula_subida ? 'Actualizar matrícula' : 'Seleccionar archivo PDF'}
+                                <Button variant="outlined" component="span" size="small">
+                                  Seleccionar PDF
                                 </Button>
                               </label>
+                              {files.matricula_pdf && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Typography variant="caption">
+                                    {files.matricula_pdf.name} ({formatFileSize(files.matricula_pdf.size)})
+                                  </Typography>
+                                  <IconButton size="small" onClick={() => removeFile('matricula_pdf')}>
+                                    <Delete />
+                                  </IconButton>
+                                </Box>
+                              )}
                             </Box>
                           )}
-                        </Box>
-                      </Grid>
-                    )}
-
-                    {/* ✅ BOTÓN DE SUBIDA - Solo si hay archivos seleccionados */}
-                    {(files.cedula_pdf || files.matricula_pdf) && (
-                      <Grid item xs={12}>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                          <Button
-                            variant="contained"
-                            size="large"
-                            startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFile />}
-                            onClick={uploadDocuments}
-                            disabled={uploading}
-                            sx={{ 
-                              bgcolor: '#6d1313', 
-                              '&:hover': { bgcolor: '#5a1010' },
-                              minWidth: 200
-                            }}
-                          >
-                            {uploading ? 'Subiendo...' : 
-                              (files.cedula_pdf && files.matricula_pdf) ? 'Subir Ambos Documentos' :
-                              files.cedula_pdf ? 'Subir Cédula' : 'Subir Matrícula'
-                            }
-                          </Button>
-                        </Box>
+                        </CardContent>
                         
-                        <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 2 }} color="text.secondary">
-                          {files.cedula_pdf && files.matricula_pdf 
-                            ? 'Se subirán ambos documentos para verificación.'
-                            : files.cedula_pdf 
-                              ? 'Se subirá solo el documento de cédula.'
-                              : 'Se subirá solo el documento de matrícula.'
-                          }
-                        </Typography>
-                      </Grid>
-                    )}
+                        {documentStatus?.matricula_subida && (
+                          <CardActions>
+                            <Button 
+                              size="small" 
+                              color="error" 
+                              onClick={() => deleteDocument('matricula')}
+                              disabled={deleting}
+                            >
+                              Eliminar
+                            </Button>
+                          </CardActions>
+                        )}
+                      </Card>
+                    </Grid>
+                  )}
 
-                    {/* ✅ MENSAJE INFORMATIVO cuando no hay archivos seleccionados */}
-                    {!files.cedula_pdf && !files.matricula_pdf && documentStatus && 
-                     (documentStatus.cedula_subida || documentStatus.matricula_subida) && (
-                      <Grid item xs={12}>
-                        <Alert severity="info" sx={{ mt: 2 }}>
-                          <Typography variant="body2">
-                            ℹ️ Puedes actualizar tus documentos individualmente. 
-                            Elimina el documento que quieras reemplazar y sube uno nuevo.
-                          </Typography>
-                        </Alert>
-                      </Grid>
-                    )}
-                  </Grid>
-                </Paper>
-              </Grid>
-            )}
-
-            {/* ✅ MENSAJE CUANDO NO PUEDE SUBIR */}
-            {!documentStatus?.puede_subir_nuevos && documentStatus && (
-              <Grid item xs={12}>
-                <Paper sx={{ p: 3 }}>
-                  <Alert severity="info">
-                    <Typography variant="h6" gutterBottom>
-                      📋 Documentos Completos
-                    </Typography>
-                    <Typography variant="body1">
-                      {documentStatus.documentos_verificados 
-                        ? '✅ Tus documentos han sido verificados exitosamente por el administrador.'
-                        : documentStatus.puede_eliminar 
-                          ? '📄 Has subido todos los documentos requeridos. Puedes eliminarlos y subir nuevos mientras no sean verificados por el administrador.'
-                          : '⏳ Tus documentos están pendientes de verificación administrativa. Por favor espera la respuesta del equipo.'
-                      }
-                    </Typography>
-                    
-                    {/* Botón para eliminar todos los documentos */}
-                    {documentStatus.puede_eliminar && !documentStatus.documentos_verificados && (
-                      <Box sx={{ mt: 2 }}>
+                  {/* Botón de subida */}
+                  {(files.cedula_pdf || files.matricula_pdf) && (
+                    <Grid item xs={12}>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                         <Button
-                          variant="outlined"
-                          color="error"
-                          startIcon={deleting ? <CircularProgress size={16} /> : <Delete />}
-                          onClick={() => deleteDocument('ambos')}
-                          disabled={deleting}
+                          variant="contained"
+                          startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <UploadFile />}
+                          onClick={uploadDocuments}
+                          disabled={uploading}
+                          sx={{ 
+                            bgcolor: '#b91c1c', 
+                            '&:hover': { bgcolor: '#991b1b' },
+                            borderRadius: 2
+                          }}
                         >
-                          {deleting ? 'Eliminando...' : 'Eliminar Todos los Documentos'}
+                          {uploading ? 'Subiendo...' : 'Subir Documentos'}
                         </Button>
                       </Box>
-                    )}
-                  </Alert>
-                </Paper>
-              </Grid>
-            )}
-          </Grid>
-        )}
+                    </Grid>
+                  )}
+                </Grid>
+              )}
+            </Paper>
+          )}
+        </Container>
       </Box>
     </Box>
   );
