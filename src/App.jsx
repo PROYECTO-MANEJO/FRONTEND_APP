@@ -30,8 +30,12 @@ import CrearEventos from './components/admin/CrearEventos';
 import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
 import AdminConfiguracion from './components/admin/AdminConfiguracion';
+
+import HistorialReportesFinancieros from './components/admin/HistorialReportesFinancieros';
+
 import AdminVerificacionDocumentos from './components/admin/AdminVerificacionDocumentos';
 import AdminGestionInscripciones from './components/admin/AdminGestionInscripciones';
+
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
@@ -170,12 +174,29 @@ function App() {
                 </AdminRoute>
               } 
             />
+            <Route 
+              path="/admin/reportes/historial" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesFinancieros />
+                </AdminRoute>
+              } 
+            />
             
             <Route 
               path="/admin/configuracion" 
               element={
                 <AdminRoute>
                   <AdminConfiguracion />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/historial-reportes-financieros" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesFinancieros />
                 </AdminRoute>
               } 
             />
