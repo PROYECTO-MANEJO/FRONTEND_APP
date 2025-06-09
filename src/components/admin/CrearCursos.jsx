@@ -57,6 +57,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
     tipo_audiencia_cur: '',
     carreras: [],
     requiere_verificacion_docs: true,
+    es_gratuito: true,
+    precio: '',
   });
 
   useEffect(() => {
@@ -87,6 +89,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         tipo_audiencia_cur: cursoEditado.tipo_audiencia_cur,
         carreras: cursoEditado.carreras?.map(c => c.id_car) || [],
         requiere_verificacion_docs: cursoEditado.requiere_verificacion_docs ?? true,
+        es_gratuito: cursoEditado.es_gratuito !== undefined ? cursoEditado.es_gratuito : true,
+        precio: cursoEditado.precio || '',
       });
     }
   }, [cursoEditado]);
@@ -116,7 +120,16 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   }, [curso.fec_ini_cur, curso.fec_fin_cur, curso.hor_ini_cur, curso.hor_fin_cur]);
 
   const handleChange = (field) => (event) => {
-    setCurso({ ...curso, [field]: event.target.value });
+    const value = event.target.value;
+    
+    // Lógica especial para configuración de precio
+    if (field === 'es_gratuito' && value) {
+      // Si se marca como gratuito, limpiar el precio
+      setCurso({ ...curso, [field]: value, precio: '' });
+    } else {
+      setCurso({ ...curso, [field]: value });
+    }
+    
     setError(null);
   };
 
@@ -191,6 +204,23 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         setError('La capacidad máxima debe ser mayor a 0.');
         return;
       }
+      
+      // Validar configuración de precio
+      if (!curso.es_gratuito) {
+        if (!curso.precio || curso.precio === '') {
+          setError('El precio es obligatorio para cursos pagados.');
+          return;
+        }
+        const precio = parseFloat(curso.precio);
+        if (isNaN(precio) || precio <= 0) {
+          setError('El precio debe ser un número mayor a 0.');
+          return;
+        }
+        if (precio > 10000) {
+          setError('El precio no puede exceder $10,000.');
+          return;
+        }
+      }
     }
     setError(null);
     setActiveStep((prev) => prev + 1);
@@ -208,6 +238,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         dur_cur: parseInt(curso.dur_cur, 10),
         capacidad_max_cur: parseInt(curso.capacidad_max_cur, 10),
         requiere_verificacion_docs: !!curso.requiere_verificacion_docs,
+        es_gratuito: curso.es_gratuito,
+        precio: curso.es_gratuito ? null : parseFloat(curso.precio),
       };
       let idCur = cursoEditado ? cursoEditado.id_cur : undefined;
       if (cursoEditado) {
@@ -370,6 +402,41 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
                 <MenuItem value={false}>No</MenuItem>
               </Select>
             </FormControl>
+            
+            {/* Configuración de Precio */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+              <Checkbox
+                checked={curso.es_gratuito}
+                onChange={(e) => handleChange('es_gratuito')({ target: { value: e.target.checked } })}
+                sx={{ 
+                  color: '#6d1313',
+                  '&.Mui-checked': { color: '#6d1313' }
+                }}
+              />
+              <Typography variant="body1">
+                Curso gratuito (sin costo para los participantes)
+              </Typography>
+            </Box>
+            
+            {!curso.es_gratuito && (
+              <TextField
+                fullWidth
+                type="number"
+                label="Precio (USD)"
+                value={curso.precio}
+                onChange={handleChange('precio')}
+                helperText="Ingrese el precio del curso en dólares"
+                inputProps={{ 
+                  min: 0.01, 
+                  max: 10000,
+                  step: 0.01
+                }}
+                InputProps={{
+                  startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>$</Typography>
+                }}
+                required
+              />
+            )}
             <FormControl fullWidth sx={{ marginBottom: 3 }}>
               <InputLabel shrink={!!curso.ced_org_cur}>Organizador</InputLabel>
               <Select
@@ -421,6 +488,7 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
               <Typography variant="body1"><strong>Carreras:</strong> {carreras.filter(c => curso.carreras.includes(c.id_car)).map(c => c.nom_car).join(', ')}</Typography>
             )}
             <Typography variant="body1"><strong>¿Requiere verificación de documentos?:</strong> {curso.requiere_verificacion_docs ? 'Sí' : 'No'}</Typography>
+            <Typography variant="body1"><strong>Tipo de curso:</strong> {curso.es_gratuito ? 'Gratuito' : `Pagado - $${curso.precio}`}</Typography>
           </Box>
         );
       case 2:

@@ -43,7 +43,8 @@ import {
   Person,
   Save,
   Cancel,
-  Info
+  Info,
+  AttachMoney
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -85,7 +86,9 @@ const AdminCursos = () => {
     capacidad_max_cur: '',
     tipo_audiencia_cur: '',
     carreras_seleccionadas: [],
-    requiere_verificacion_docs: true
+    requiere_verificacion_docs: true,
+    es_gratuito: true,
+    precio: ''
   });
 
   const TIPOS_AUDIENCIA = [
@@ -194,7 +197,9 @@ const AdminCursos = () => {
         capacidad_max_cur: cursoData.capacidad_max_cur || '',
         tipo_audiencia_cur: cursoData.tipo_audiencia_cur || '',
         carreras_seleccionadas: cursoData.carreras ? cursoData.carreras.map(c => c.id) : [],
-        requiere_verificacion_docs: cursoData.requiere_verificacion_docs !== undefined ? cursoData.requiere_verificacion_docs : true
+        requiere_verificacion_docs: cursoData.requiere_verificacion_docs !== undefined ? cursoData.requiere_verificacion_docs : true,
+        es_gratuito: cursoData.es_gratuito !== undefined ? cursoData.es_gratuito : true,
+        precio: cursoData.precio || ''
       });
     } else {
       // Modo creación - limpiar formulario
@@ -209,7 +214,9 @@ const AdminCursos = () => {
         capacidad_max_cur: '',
         tipo_audiencia_cur: '',
         carreras_seleccionadas: [],
-        requiere_verificacion_docs: true
+        requiere_verificacion_docs: true,
+        es_gratuito: true,
+        precio: ''
       });
     }
     
@@ -272,7 +279,19 @@ const AdminCursos = () => {
       nuevosErrores.fec_fin_cur = 'La fecha de fin no puede ser anterior a la fecha de inicio';
     }
 
-
+    // Validar configuración de precio
+    if (!curso.es_gratuito) {
+      if (!curso.precio || curso.precio === '') {
+        nuevosErrores.precio = 'El precio es obligatorio para cursos pagados';
+      } else {
+        const precio = parseFloat(curso.precio);
+        if (isNaN(precio) || precio <= 0) {
+          nuevosErrores.precio = 'El precio debe ser un número mayor a 0';
+        } else if (precio > 10000) {
+          nuevosErrores.precio = 'El precio no puede exceder $10,000';
+        }
+      }
+    }
 
     if (Object.keys(nuevosErrores).length > 0) {
       setErrors(nuevosErrores);
@@ -293,42 +312,84 @@ const AdminCursos = () => {
         ced_org_cur: curso.ced_org_cur,
         capacidad_max_cur: parseInt(curso.capacidad_max_cur),
         tipo_audiencia_cur: curso.tipo_audiencia_cur,
-        requiere_verificacion_docs: curso.requiere_verificacion_docs
+        requiere_verificacion_docs: curso.requiere_verificacion_docs,
+        es_gratuito: curso.es_gratuito,
+        precio: curso.es_gratuito ? null : parseFloat(curso.precio)
       };
 
+      let cursoId;
+      
       if (isEditing) {
         // Actualizar curso existente
-        await api.put(`/cursos/${selectedCourse.id_cur}`, cursoData);
+        const response = await api.put(`/cursos/${selectedCourse.id_cur}`, cursoData);
         
-        // Actualizar carreras si es necesario
-        if (curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && curso.carreras_seleccionadas.length > 0) {
-          await api.post(`/cursos/${selectedCourse.id_cur}/carreras`, { 
-            carreras: curso.carreras_seleccionadas 
+        // Verificar que la respuesta sea exitosa
+        if (response.data && response.data.success) {
+          cursoId = selectedCourse.id_cur;
+          
+          setSnackbar({
+            open: true,
+            message: 'Curso actualizado exitosamente',
+            severity: 'success'
           });
+        } else {
+          throw new Error('Respuesta inesperada del servidor');
         }
-        
-        setSnackbar({
-          open: true,
-          message: 'Curso actualizado exitosamente',
-          severity: 'success'
-        });
       } else {
-        // Crear nuevo curso
+        // Crear nuevo curso (las carreras se incluyen en el payload principal)
         const response = await api.post('/cursos', cursoData);
-        const nuevoCursoId = response.data?.data?.id_cur;
         
-        // Agregar carreras si es necesario
-        if (curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && curso.carreras_seleccionadas.length > 0 && nuevoCursoId) {
-          await api.post(`/cursos/${nuevoCursoId}/carreras`, { 
-            carreras: curso.carreras_seleccionadas 
+        // Verificar que la respuesta sea exitosa
+        if (response.data && response.data.success) {
+          cursoId = response.data?.curso?.id_cur;
+          
+          setSnackbar({
+            open: true,
+            message: 'Curso creado exitosamente',
+            severity: 'success'
           });
+        } else {
+          throw new Error('Respuesta inesperada del servidor');
         }
-        
-        setSnackbar({
-          open: true,
-          message: 'Curso creado exitosamente',
-          severity: 'success'
-        });
+      }
+
+      // Manejar carreras si es necesario
+      if (curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && cursoId) {
+        if (isEditing) {
+          // Para edición: eliminar asociaciones existentes
+          try {
+            const asociacionesResponse = await api.get('/cursosPorCarrera/listar');
+            const asociacionesActuales = asociacionesResponse.data.data.filter(
+              asoc => asoc.id_cur_per === cursoId
+            );
+
+            // Eliminar asociaciones existentes
+            for (const asociacion of asociacionesActuales) {
+              await api.delete('/cursosPorCarrera/eliminar', {
+                data: {
+                  cursoId: cursoId,
+                  carreraId: asociacion.id_car_per
+                }
+              });
+            }
+          } catch (error) {
+            console.warn('Error eliminando asociaciones previas:', error);
+          }
+        }
+
+        // Crear nuevas asociaciones
+        if (curso.carreras_seleccionadas.length > 0) {
+          for (const carreraId of curso.carreras_seleccionadas) {
+            try {
+              await api.post('/cursosPorCarrera/asociar', {
+                cursoId: cursoId,
+                carreraId: carreraId
+              });
+            } catch (error) {
+              console.warn('Error asociando carrera:', carreraId, error);
+            }
+          }
+        }
       }
       
       handleCloseModal();
@@ -559,6 +620,20 @@ const AdminCursos = () => {
                         <Typography variant="body2" color="text.secondary">
                           {curso.organizador_nombre || 'Sin organizador'}
                         </Typography>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {curso.es_gratuito ? 'Gratuito' : `$${curso.precio || '0'}`}
+                        </Typography>
+                        <Chip 
+                          label={curso.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                          size="small"
+                          color={curso.es_gratuito ? 'success' : 'warning'}
+                          variant="outlined"
+                          sx={{ ml: 1, fontSize: '0.7rem' }}
+                        />
                       </Box>
                     </Box>
 
@@ -903,6 +978,75 @@ const AdminCursos = () => {
                       />
                       <Typography>Requiere verificación de documentos</Typography>
                     </Box>
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              {/* Configuración de Precio */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                  <AttachMoney sx={{ mr: 1 }} />
+                  Configuración de Precio
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <FormControl error={!!errors.es_gratuito}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Checkbox
+                          checked={curso.es_gratuito}
+                          onChange={(e) => {
+                            const isGratuito = e.target.checked;
+                            setCurso(prev => ({ 
+                              ...prev, 
+                              es_gratuito: isGratuito,
+                              precio: isGratuito ? '' : prev.precio
+                            }));
+                          }}
+                          sx={{ 
+                            color: '#6d1313',
+                            '&.Mui-checked': { color: '#6d1313' }
+                          }}
+                        />
+                        <Typography variant="body1">
+                          Curso gratuito (sin costo para los participantes)
+                        </Typography>
+                      </Box>
+                      {errors.es_gratuito && <FormHelperText>{errors.es_gratuito}</FormHelperText>}
+                    </FormControl>
+                  </Grid>
+
+                  {!curso.es_gratuito && (
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Precio (USD)"
+                        value={curso.precio}
+                        onChange={(e) => setCurso(prev => ({ ...prev, precio: e.target.value }))}
+                        error={!!errors.precio}
+                        helperText={errors.precio || 'Ingrese el precio del curso en dólares'}
+                        inputProps={{ 
+                          min: 0.01, 
+                          max: 10000,
+                          step: 0.01
+                        }}
+                        InputProps={{
+                          startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>$</Typography>
+                        }}
+                        required
+                      />
+                    </Grid>
+                  )}
+
+                  <Grid item xs={12}>
+                    <Alert severity={curso.es_gratuito ? "success" : "info"}>
+                      {curso.es_gratuito 
+                        ? "Este curso será gratuito. Los estudiantes podrán inscribirse sin necesidad de proporcionar información de pago."
+                        : "Este curso es pagado. Los estudiantes deberán proporcionar el método de pago y el comprobante al inscribirse."
+                      }
+                    </Alert>
                   </Grid>
                 </Grid>
               </Grid>

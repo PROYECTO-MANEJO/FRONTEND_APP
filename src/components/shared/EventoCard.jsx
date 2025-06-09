@@ -156,6 +156,9 @@ const EventoCard = ({ evento }) => {
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
               <strong>Área:</strong> {evento.are_eve}
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
+              <strong>Precio:</strong> {evento.es_gratuito ? 'Gratuito' : `$${evento.precio}`}
+            </Typography>
             {evento.organizador_nombre && (
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
                 <strong>Organizador:</strong> {evento.organizador_nombre}
@@ -350,6 +353,23 @@ const EventoCard = ({ evento }) => {
               <Typography variant="body2">
                 {evento.ubi_eve}
               </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" color="primary" gutterBottom>
+                Costo
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2">
+                  {evento.es_gratuito ? 'Gratuito' : `$${evento.precio} USD`}
+                </Typography>
+                <Chip 
+                  label={evento.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                  size="small"
+                  color={evento.es_gratuito ? 'success' : 'warning'}
+                  variant="outlined"
+                />
+              </Box>
             </Box>
           </Box>
         </DialogContent>
