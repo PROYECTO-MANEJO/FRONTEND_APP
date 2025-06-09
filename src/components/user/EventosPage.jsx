@@ -122,6 +122,7 @@ const EventosPage = () => {
                   <Grid 
                     container 
                     spacing={{ xs: 2, sm: 3, md: 4 }}
+                    justifyContent="flex-start"
                     sx={{
                       '& .MuiGrid-item': {
                         display: 'flex',
@@ -139,6 +140,7 @@ const EventosPage = () => {
                         key={evento.id_eve}
                         sx={{ 
                           display: 'flex',
+                          justifyContent: 'center',
                           height: '300px !important' // FUERZA LA ALTURA
                         }}
                       >

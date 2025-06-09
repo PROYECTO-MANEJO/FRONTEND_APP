@@ -165,6 +165,7 @@ const UserDashboard = ({ user }) => {
                     <Grid 
                       container 
                       spacing={{ xs: 2, sm: 3, md: 4 }}
+                      justifyContent="flex-start"
                     >
                       {eventos.slice(0, 6).map((evento) => (
                         <Grid 
@@ -174,7 +175,11 @@ const UserDashboard = ({ user }) => {
                           md={4} 
                           lg={4}
                           key={evento.id_eve}
-                          sx={{ height: '280px' }} // ALTURA FIJA IGUAL
+                          sx={{ 
+                            height: '280px', // ALTURA FIJA IGUAL
+                            display: 'flex',
+                            justifyContent: 'center'
+                          }}
                         >
                           <EventoCard evento={evento} />
                         </Grid>
@@ -244,6 +249,7 @@ const UserDashboard = ({ user }) => {
                     <Grid 
                       container 
                       spacing={{ xs: 2, sm: 3, md: 4 }}
+                      justifyContent="flex-start"
                     >
                       {cursos.slice(0, 6).map((curso) => (
                         <Grid 
@@ -253,7 +259,11 @@ const UserDashboard = ({ user }) => {
                           md={4} 
                           lg={4}
                           key={curso.id_cur}
-                          sx={{ height: '280px' }} // ALTURA FIJA IGUAL
+                          sx={{ 
+                            height: '280px', // ALTURA FIJA IGUAL
+                            display: 'flex',
+                            justifyContent: 'center'
+                          }}
                         >
                           <CursoCard curso={curso} />
                         </Grid>

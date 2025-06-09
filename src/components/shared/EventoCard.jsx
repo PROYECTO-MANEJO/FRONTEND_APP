@@ -71,7 +71,9 @@ const EventoCard = ({ evento }) => {
           minHeight: '300px', // ALTURA MÍNIMA
           maxHeight: '300px', // ALTURA MÁXIMA
           display: 'flex', 
-          width: '450px',
+          width: '100%',
+          minWidth: '400px',
+          maxWidth: '400px',
           flexDirection: 'column',
           position: 'relative',
           '&:hover': {

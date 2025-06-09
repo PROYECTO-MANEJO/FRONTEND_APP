@@ -161,6 +161,7 @@ const CursosPage = () => {
                       <Grid 
                         container 
                         spacing={{ xs: 2, sm: 3, md: 4 }}
+                        justifyContent="flex-start"
                       >
                         {misCursos.map(curso => (
                           <Grid 
@@ -170,6 +171,10 @@ const CursosPage = () => {
                             md={4} 
                             lg={3}
                             key={curso.id_cur}
+                            sx={{ 
+                              display: 'flex',
+                              justifyContent: 'center'
+                            }}
                           >
                             <CursoCard curso={curso} />
                           </Grid>
@@ -205,6 +210,7 @@ const CursosPage = () => {
                       <Grid 
                         container 
                         spacing={{ xs: 2, sm: 3, md: 4 }}
+                        justifyContent="flex-start"
                       >
                         {cursosDisponibles.map(curso => (
                           <Grid 
@@ -214,6 +220,10 @@ const CursosPage = () => {
                             md={4} 
                             lg={3}
                             key={curso.id_cur}
+                            sx={{ 
+                              display: 'flex',
+                              justifyContent: 'center'
+                            }}
                           >
                             <CursoCard curso={curso} />
                           </Grid>
