@@ -4,25 +4,27 @@ import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import {
   Box,
-  Card,
-  CardContent,
   TextField,
   Button,
   Typography,
   Alert,
-  Container,
-  Avatar,
   CircularProgress,
   IconButton,
   InputAdornment,
+  Paper,
+  Divider,
 } from '@mui/material';
 import {
   Lock,
   School,
   Visibility,
   VisibilityOff,
+  CheckCircle,
+  Facebook,
+  Twitter,
 } from '@mui/icons-material';
 import authService from '../../services/authService';
+import utaImage from '../../assets/images/uta1.jpg';
 
 const validationSchema = Yup.object().shape({
   password: Yup.string()
@@ -50,7 +52,7 @@ const ResetPassword = () => {
       try {
         await authService.verifyResetToken(token);
         setValidToken(true);
-      } catch (error) {
+      } catch {
         setValidToken(false);
         setError('El enlace de recuperación es inválido o ha expirado.');
       }
@@ -92,22 +94,115 @@ const ResetPassword = () => {
           padding: 2,
         }}
       >
-        <Container maxWidth="sm">
-          <Card elevation={3} sx={{ borderRadius: 3 }}>
-            <CardContent sx={{ p: 4, textAlign: 'center' }}>
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-              <Button 
-                component={Link} 
-                to="/forgot-password" 
+        <Paper
+          elevation={24}
+          sx={{
+            display: 'flex',
+            width: '100%',
+            maxWidth: 900,
+            minHeight: 550,
+            borderRadius: 0,
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+          }}
+        >
+          {/* Left Panel - Decorative */}
+          <Box
+            sx={{
+              flex: 1,
+              background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 50%, #dc3545 100%)',
+              position: 'relative',
+              display: { xs: 'none', md: 'flex' },
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: 'white',
+              p: 4,
+              backgroundImage: `url(${utaImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundBlendMode: 'overlay',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.7) 0%, rgba(238, 85, 82, 0.8) 100%)',
+                zIndex: 1,
+              },
+              '& > *': {
+                position: 'relative',
+                zIndex: 2,
+              },
+            }}
+          >
+            <Lock sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: 700,
+                mb: 2,
+                textAlign: 'center',
+                fontSize: { xs: '2rem', md: '3rem' },
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+              }}
+            >
+              Error
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                textAlign: 'center',
+                opacity: 0.9,
+                lineHeight: 1.6,
+                maxWidth: 300,
+                fontSize: '1.1rem',
+              }}
+            >
+              Hubo un problema con el enlace de recuperación
+            </Typography>
+          </Box>
+
+          {/* Right Panel - Error Message */}
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              p: { xs: 3, md: 5 },
+              backgroundColor: 'white',
+              textAlign: 'center',
+            }}
+          >
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 0 }}>
+              {error}
+            </Alert>
+            <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
+              <Button
                 variant="contained"
+                sx={{
+                  py: 1.5,
+                  px: 4,
+                  borderRadius: 2,
+                  backgroundColor: '#dc3545',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  boxShadow: '0 4px 12px rgba(220, 53, 69, 0.3)',
+                  '&:hover': {
+                    backgroundColor: '#c82333',
+                    boxShadow: '0 6px 16px rgba(220, 53, 69, 0.4)',
+                  },
+                }}
               >
                 Solicitar nuevo enlace
               </Button>
-            </CardContent>
-          </Card>
-        </Container>
+            </Link>
+          </Box>
+        </Paper>
       </Box>
     );
   }
@@ -125,7 +220,7 @@ const ResetPassword = () => {
           padding: 2,
         }}
       >
-        <CircularProgress />
+        <CircularProgress size={60} sx={{ color: '#dc3545' }} />
       </Box>
     );
   }
@@ -143,22 +238,115 @@ const ResetPassword = () => {
           padding: 2,
         }}
       >
-        <Container maxWidth="sm">
-          <Card elevation={3} sx={{ borderRadius: 3 }}>
-            <CardContent sx={{ p: 4, textAlign: 'center' }}>
-              <Alert severity="success" sx={{ mb: 3 }}>
-                ¡Contraseña actualizada exitosamente! Serás redirigido al login en unos segundos.
-              </Alert>
-              <Button 
-                component={Link} 
-                to="/login" 
+        <Paper
+          elevation={24}
+          sx={{
+            display: 'flex',
+            width: '100%',
+            maxWidth: 900,
+            minHeight: 550,
+            borderRadius: 0,
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+          }}
+        >
+          {/* Left Panel - Decorative */}
+          <Box
+            sx={{
+              flex: 1,
+              background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 50%, #dc3545 100%)',
+              position: 'relative',
+              display: { xs: 'none', md: 'flex' },
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: 'white',
+              p: 4,
+              backgroundImage: `url(${utaImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundBlendMode: 'overlay',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.7) 0%, rgba(238, 85, 82, 0.8) 100%)',
+                zIndex: 1,
+              },
+              '& > *': {
+                position: 'relative',
+                zIndex: 2,
+              },
+            }}
+          >
+            <CheckCircle sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: 700,
+                mb: 2,
+                textAlign: 'center',
+                fontSize: { xs: '2rem', md: '3rem' },
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+              }}
+            >
+              ¡Listo!
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                textAlign: 'center',
+                opacity: 0.9,
+                lineHeight: 1.6,
+                maxWidth: 300,
+                fontSize: '1.1rem',
+              }}
+            >
+              Tu contraseña ha sido actualizada exitosamente
+            </Typography>
+          </Box>
+
+          {/* Right Panel - Success Message */}
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              p: { xs: 3, md: 5 },
+              backgroundColor: 'white',
+              textAlign: 'center',
+            }}
+          >
+            <Alert severity="success" sx={{ mb: 3, borderRadius: 0 }}>
+              ¡Contraseña actualizada exitosamente! Serás redirigido al login en unos segundos.
+            </Alert>
+            <Link to="/login" style={{ textDecoration: 'none' }}>
+              <Button
                 variant="contained"
+                sx={{
+                  py: 1.5,
+                  px: 4,
+                  borderRadius: 2,
+                  backgroundColor: '#dc3545',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  boxShadow: '0 4px 12px rgba(220, 53, 69, 0.3)',
+                  '&:hover': {
+                    backgroundColor: '#c82333',
+                    boxShadow: '0 6px 16px rgba(220, 53, 69, 0.4)',
+                  },
+                }}
               >
                 Ir al Login
               </Button>
-            </CardContent>
-          </Card>
-        </Container>
+            </Link>
+          </Box>
+        </Paper>
       </Box>
     );
   }
@@ -179,42 +367,159 @@ const ResetPassword = () => {
         padding: 2,
       }}
     >
-      <Container maxWidth="sm">
-        <Card elevation={3} sx={{ borderRadius: 3 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar
+      <Paper
+        elevation={24}
+        sx={{
+          display: 'flex',
+          width: '100%',
+          maxWidth: 900,
+          minHeight: 550,
+          borderRadius: 0,
+          overflow: 'hidden',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+        }}
+      >
+        {/* Left Panel - Decorative */}
+        <Box
+          sx={{
+            flex: 1,
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 50%, #dc3545 100%)',
+            position: 'relative',
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: 'white',
+            p: 4,
+            backgroundImage: `url(${utaImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundBlendMode: 'overlay',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.7) 0%, rgba(238, 85, 82, 0.8) 100%)',
+              zIndex: 1,
+            },
+            '& > *': {
+              position: 'relative',
+              zIndex: 2,
+            },
+          }}
+        >
+          <Lock sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
+          <Typography
+            variant="h2"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+              textAlign: 'center',
+              fontSize: { xs: '2rem', md: '3rem' },
+              textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+            }}
+          >
+            Renovar
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              textAlign: 'center',
+              opacity: 0.9,
+              lineHeight: 1.6,
+              maxWidth: 300,
+              fontSize: '1.1rem',
+            }}
+          >
+            Establece una nueva contraseña segura para tu cuenta
+          </Typography>
+          
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="body2" sx={{ mb: 2, textAlign: 'center', opacity: 0.8 }}>
+              Conecta con redes sociales
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<Facebook />}
                 sx={{
-                  width: 64,
-                  height: 64,
-                  bgcolor: '#6d1313',
-                  mx: 'auto',
-                  mb: 2,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.3)',
+                  },
                 }}
               >
-                <School fontSize="large" />
-              </Avatar>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Nueva Contraseña
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Ingresa tu nueva contraseña para completar el restablecimiento.
-              </Typography>
+                Facebook
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Twitter />}
+                sx={{
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.3)',
+                  },
+                }}
+              >
+                Twitter
+              </Button>
             </Box>
+          </Box>
+        </Box>
 
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
-
-            <Formik
-              initialValues={initialValues}
-              validationSchema={validationSchema}
-              onSubmit={handleSubmit}
+        {/* Right Panel - Reset Password Form */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            p: { xs: 3, md: 5 },
+            backgroundColor: 'white',
+          }}
+        >
+          <Box sx={{ mb: 4 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                color: '#2c3e50',
+                mb: 1,
+                fontSize: { xs: '1.8rem', md: '2.2rem' },
+              }}
             >
-              {({ values, errors, touched, handleChange, handleBlur }) => (
-                <Form>
+              Nueva Contraseña
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#7f8c8d' }}>
+              Ingresa tu nueva contraseña para completar el proceso
+            </Typography>
+          </Box>
+
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 0 }}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Form */}
+          <Formik
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+          >
+            {({ values, errors, touched, handleChange, handleBlur }) => (
+              <Form>
+                <Box>
                   <TextField
                     fullWidth
                     id="password"
@@ -228,13 +533,31 @@ const ResetPassword = () => {
                     placeholder="Mínimo 6 caracteres"
                     error={touched.password && !!errors.password}
                     helperText={touched.password && errors.password}
-                    sx={{ mb: 2 }}
+                    sx={{
+                      mb: 3,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 0,
+                        '& fieldset': {
+                          borderColor: '#e0e6ed',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#dc3545',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#dc3545',
+                        },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#dc3545',
+                      },
+                    }}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton
                             onClick={() => setShowPassword(!showPassword)}
                             edge="end"
+                            sx={{ color: '#7f8c8d' }}
                           >
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
@@ -256,13 +579,31 @@ const ResetPassword = () => {
                     placeholder="Repite tu contraseña"
                     error={touched.confirmPassword && !!errors.confirmPassword}
                     helperText={touched.confirmPassword && errors.confirmPassword}
-                    sx={{ mb: 3 }}
+                    sx={{
+                      mb: 3,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 0,
+                        '& fieldset': {
+                          borderColor: '#e0e6ed',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#dc3545',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#dc3545',
+                        },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#dc3545',
+                      },
+                    }}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                             edge="end"
+                            sx={{ color: '#7f8c8d' }}
                           >
                             {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
@@ -277,26 +618,41 @@ const ResetPassword = () => {
                     variant="contained"
                     size="large"
                     disabled={isSubmitting}
-                    sx={{ 
-                      mb: 3, 
+                    sx={{
+                      mb: 3,
                       py: 1.5,
-                      backgroundColor: '#6d1313',
+                      borderRadius: 2,
+                      backgroundColor: '#dc3545',
+                      fontSize: '1.1rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      boxShadow: '0 4px 12px rgba(220, 53, 69, 0.3)',
                       '&:hover': {
-                        backgroundColor: '#5a1010',
+                        backgroundColor: '#c82333',
+                        boxShadow: '0 6px 16px rgba(220, 53, 69, 0.4)',
+                      },
+                      '&:disabled': {
+                        backgroundColor: '#f8d7da',
                       },
                     }}
                   >
-                    {isSubmitting ? 'Actualizando...' : 'Actualizar Contraseña'}
+                    {isSubmitting ? (
+                      <CircularProgress size={24} color="inherit" />
+                    ) : (
+                      'Actualizar Contraseña'
+                    )}
                   </Button>
 
+                  <Divider sx={{ mb: 2 }} />
+
                   <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#7f8c8d' }}>
                       ¿Recordaste tu contraseña?{' '}
                       <Link
                         to="/login"
                         style={{
-                          color: '#6d1313',
-                          textDecoration: 'none',
+                          color: '#dc3545',
+                          textDecoration: 'underline',
                           fontWeight: 500,
                         }}
                       >
@@ -304,12 +660,12 @@ const ResetPassword = () => {
                       </Link>
                     </Typography>
                   </Box>
-                </Form>
-              )}
-            </Formik>
-          </CardContent>
-        </Card>
-      </Container>
+                </Box>
+              </Form>
+            )}
+          </Formik>
+        </Box>
+      </Paper>
     </Box>
   );
 };
