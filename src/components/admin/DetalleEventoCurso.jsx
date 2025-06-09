@@ -285,10 +285,10 @@ const DetalleEventoCurso = ({ item, onClose }) => {
     }
   };
 
-  const handleAsistenciaChange = (inscripcionId, presente) => {
+  const handleAsistenciaChange = (inscripcionId, porcentaje) => {
     setAsistencias(prev => ({
       ...prev,
-      [inscripcionId]: presente
+      [inscripcionId]: porcentaje
     }));
   };
 
@@ -303,8 +303,38 @@ const DetalleEventoCurso = ({ item, onClose }) => {
     try {
       setLoadingCalificaciones(true);
       setEditingCalificacion(inscripcionId);
-      const asistencia = asistencias[inscripcionId] || false;
+      
+      const asistenciaPorcentaje = asistencias[inscripcionId] || 0;
       const nota = item.tipo === 'CURSO' ? (calificaciones[inscripcionId] || 0) : null;
+
+      // Validar datos antes de enviar
+      if (item.tipo === 'EVENTO') {
+        if (asistenciaPorcentaje === '' || asistenciaPorcentaje < 0 || asistenciaPorcentaje > 100) {
+          setSnackbar({
+            open: true,
+            message: 'El porcentaje de asistencia debe estar entre 0 y 100',
+            severity: 'error'
+          });
+          return;
+        }
+      } else {
+        if (asistenciaPorcentaje === '' || asistenciaPorcentaje < 0 || asistenciaPorcentaje > 100) {
+          setSnackbar({
+            open: true,
+            message: 'El porcentaje de asistencia debe estar entre 0 y 100',
+            severity: 'error'
+          });
+          return;
+        }
+        if (nota === '' || nota < 0 || nota > 100) {
+          setSnackbar({
+            open: true,
+            message: 'La nota final debe estar entre 0 y 100',
+            severity: 'error'
+          });
+          return;
+        }
+      }
 
       const endpoint = item.tipo === 'EVENTO'
         ? `/administracion/evento/${item.id_eve}/participacion`
@@ -312,8 +342,8 @@ const DetalleEventoCurso = ({ item, onClose }) => {
 
       const data = {
         inscripcion_id: inscripcionId,
-        asistencia: asistencia,
-        ...(item.tipo === 'CURSO' && { nota_final: nota })
+        asistencia_porcentaje: parseFloat(asistenciaPorcentaje),
+        ...(item.tipo === 'CURSO' && { nota_final: parseFloat(nota) })
       };
 
       const response = await api.post(endpoint, data);
@@ -321,16 +351,16 @@ const DetalleEventoCurso = ({ item, onClose }) => {
       if (response.data.success) {
         setSnackbar({
           open: true,
-          message: 'Calificación guardada exitosamente',
+          message: `Participación guardada exitosamente. Estado: ${response.data.data.estado}`,
           severity: 'success'
         });
         setEditingCalificacion(null);
       }
     } catch (error) {
-      console.error('Error al guardar calificación:', error);
+      console.error('Error al guardar participación:', error);
       setSnackbar({
         open: true,
-        message: 'Error al guardar la calificación',
+        message: error.response?.data?.message || 'Error al guardar la participación',
         severity: 'error'
       });
     } finally {
@@ -599,8 +629,8 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                     <TableRow>
                       <TableCell>Usuario</TableCell>
                       <TableCell>Carrera</TableCell>
-                      <TableCell>Asistencia</TableCell>
-                      {item.tipo === 'CURSO' && <TableCell>Nota Final</TableCell>}
+                      <TableCell>Asistencia (%)</TableCell>
+                      {item.tipo === 'CURSO' && <TableCell>Nota Final (0-100)</TableCell>}
                       <TableCell>Acciones</TableCell>
                     </TableRow>
                   </TableHead>
@@ -628,24 +658,18 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Button
-                              variant={asistencias[inscripcion.id_inscripcion] === true ? 'contained' : 'outlined'}
-                              color="success"
-                              size="small"
-                              onClick={() => handleAsistenciaChange(inscripcion.id_inscripcion, true)}
-                            >
-                              Presente
-                            </Button>
-                            <Button
-                              variant={asistencias[inscripcion.id_inscripcion] === false ? 'contained' : 'outlined'}
-                              color="error"
-                              size="small"
-                              onClick={() => handleAsistenciaChange(inscripcion.id_inscripcion, false)}
-                            >
-                              Ausente
-                            </Button>
-                          </Box>
+                          <TextField
+                            type="number"
+                            size="small"
+                            placeholder="0-100%"
+                            value={asistencias[inscripcion.id_inscripcion] || ''}
+                            onChange={(e) => handleAsistenciaChange(inscripcion.id_inscripcion, e.target.value)}
+                            inputProps={{ min: 0, max: 100 }}
+                            sx={{ width: 100 }}
+                            InputProps={{
+                              endAdornment: <Typography variant="caption">%</Typography>
+                            }}
+                          />
                         </TableCell>
                         {item.tipo === 'CURSO' && (
                           <TableCell>
