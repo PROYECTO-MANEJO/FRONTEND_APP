@@ -55,7 +55,7 @@ export const documentService = {
   // Descargar documento del usuario actual
   downloadDocument: async (tipo) => {
     try {
-      const response = await api.get(`${BASE_URL}/download-document/${tipo}`, {
+      const response = await api.get(`${BASE_URL}/my-document/${tipo}`, {
         responseType: 'blob'
       });
       return response.data;
@@ -79,7 +79,7 @@ export const documentService = {
   // Descargar documento específico de un usuario (admin)
   downloadUserDocument: async (userId, documentType) => {
     try {
-      const response = await api.get(`${BASE_URL}/download-user-document/${userId}/${documentType}`, {
+      const response = await api.get(`${BASE_URL}/download-document/${userId}/${documentType}`, {
         responseType: 'blob'
       });
       return response;
