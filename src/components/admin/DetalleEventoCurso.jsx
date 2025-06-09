@@ -52,7 +52,11 @@ import {
   Visibility,
   Schedule,
   Category,
-  Business
+  Business,
+  Grade,
+  Assignment,
+  Save,
+  Edit
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -64,8 +68,14 @@ const DetalleEventoCurso = ({ item, onClose }) => {
   const [inscripciones, setInscripciones] = useState([]);
   const [filteredInscripciones, setFilteredInscripciones] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTab, setSelectedTab] = useState(0); // 0: Todas, 1: Pendientes, 2: Aprobadas, 3: Rechazadas
+  const [selectedTab, setSelectedTab] = useState(0); // 0: Todas, 1: Pendientes, 2: Aprobadas, 3: Rechazadas, 4: Calificaciones
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  
+  // Estados para calificaciones y asistencia
+  const [calificaciones, setCalificaciones] = useState({});
+  const [asistencias, setAsistencias] = useState({});
+  const [editingCalificacion, setEditingCalificacion] = useState(null);
+  const [loadingCalificaciones, setLoadingCalificaciones] = useState(false);
   
   // Estados para acciones
   const [loadingAction, setLoadingAction] = useState(false);
@@ -262,6 +272,71 @@ const DetalleEventoCurso = ({ item, onClose }) => {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setSelectedInscripcion(null);
+  };
+
+  // Funciones para calificaciones y asistencia
+  const getUsuariosParaCalificar = () => {
+    if (item.es_gratuito) {
+      // Si es gratuito, mostrar todos los usuarios inscritos
+      return inscripciones;
+    } else {
+      // Si es pagado, mostrar solo los aprobados
+      return inscripciones.filter(ins => ins.estado_pago === 'APROBADO');
+    }
+  };
+
+  const handleAsistenciaChange = (inscripcionId, presente) => {
+    setAsistencias(prev => ({
+      ...prev,
+      [inscripcionId]: presente
+    }));
+  };
+
+  const handleCalificacionChange = (inscripcionId, nota) => {
+    setCalificaciones(prev => ({
+      ...prev,
+      [inscripcionId]: nota
+    }));
+  };
+
+  const guardarCalificacion = async (inscripcionId) => {
+    try {
+      setLoadingCalificaciones(true);
+      setEditingCalificacion(inscripcionId);
+      const asistencia = asistencias[inscripcionId] || false;
+      const nota = item.tipo === 'CURSO' ? (calificaciones[inscripcionId] || 0) : null;
+
+      const endpoint = item.tipo === 'EVENTO'
+        ? `/administracion/evento/${item.id_eve}/participacion`
+        : `/administracion/curso/${item.id_cur}/participacion`;
+
+      const data = {
+        inscripcion_id: inscripcionId,
+        asistencia: asistencia,
+        ...(item.tipo === 'CURSO' && { nota_final: nota })
+      };
+
+      const response = await api.post(endpoint, data);
+
+      if (response.data.success) {
+        setSnackbar({
+          open: true,
+          message: 'Calificación guardada exitosamente',
+          severity: 'success'
+        });
+        setEditingCalificacion(null);
+      }
+    } catch (error) {
+      console.error('Error al guardar calificación:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error al guardar la calificación',
+        severity: 'error'
+      });
+    } finally {
+      setLoadingCalificaciones(false);
+      setEditingCalificacion(null);
+    }
   };
 
   if (loading) {
@@ -490,26 +565,151 @@ const DetalleEventoCurso = ({ item, onClose }) => {
             />
             <Tab label="Aprobadas" />
             <Tab label="Rechazadas" />
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {item.tipo === 'CURSO' ? <Grade /> : <Assignment />}
+                  {item.tipo === 'CURSO' ? 'Calificaciones' : 'Asistencia'}
+                </Box>
+              } 
+            />
           </Tabs>
         </Paper>
 
-        {/* Tabla de inscripciones */}
+        {/* Tabla de inscripciones o calificaciones */}
         <Paper>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Usuario</TableCell>
-                  <TableCell>Contacto</TableCell>
-                  <TableCell>Carrera</TableCell>
-                  <TableCell>Fecha Inscripción</TableCell>
-                  <TableCell>Estado</TableCell>
-                  {!itemData.es_gratuito && <TableCell>Pago</TableCell>}
-                  <TableCell>Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredInscripciones.map((inscripcion) => (
+          {selectedTab === 4 ? (
+            // Sección de Calificaciones/Asistencia
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                {item.tipo === 'CURSO' ? <Grade /> : <Assignment />}
+                {item.tipo === 'CURSO' ? 'Gestión de Calificaciones y Asistencia' : 'Gestión de Asistencia'}
+              </Typography>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                {item.es_gratuito 
+                  ? 'Mostrando todos los usuarios inscritos (evento/curso gratuito)'
+                  : 'Mostrando solo usuarios con pago aprobado'
+                }
+              </Typography>
+
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Usuario</TableCell>
+                      <TableCell>Carrera</TableCell>
+                      <TableCell>Asistencia</TableCell>
+                      {item.tipo === 'CURSO' && <TableCell>Nota Final</TableCell>}
+                      <TableCell>Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {getUsuariosParaCalificar().map((inscripcion) => (
+                      <TableRow key={inscripcion.id_inscripcion}>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Avatar sx={{ mr: 2, bgcolor: '#6d1313' }}>
+                              {inscripcion.usuario.nombre_completo.charAt(0)}
+                            </Avatar>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                {inscripcion.usuario.nombre_completo}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {inscripcion.usuario.cedula}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {inscripcion.usuario.carrera}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Button
+                              variant={asistencias[inscripcion.id_inscripcion] === true ? 'contained' : 'outlined'}
+                              color="success"
+                              size="small"
+                              onClick={() => handleAsistenciaChange(inscripcion.id_inscripcion, true)}
+                            >
+                              Presente
+                            </Button>
+                            <Button
+                              variant={asistencias[inscripcion.id_inscripcion] === false ? 'contained' : 'outlined'}
+                              color="error"
+                              size="small"
+                              onClick={() => handleAsistenciaChange(inscripcion.id_inscripcion, false)}
+                            >
+                              Ausente
+                            </Button>
+                          </Box>
+                        </TableCell>
+                        {item.tipo === 'CURSO' && (
+                          <TableCell>
+                            <TextField
+                              type="number"
+                              size="small"
+                              placeholder="0-100"
+                              value={calificaciones[inscripcion.id_inscripcion] || ''}
+                              onChange={(e) => handleCalificacionChange(inscripcion.id_inscripcion, e.target.value)}
+                              inputProps={{ min: 0, max: 100 }}
+                              sx={{ width: 100 }}
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={editingCalificacion === inscripcion.id_inscripcion ? <CircularProgress size={16} /> : <Save />}
+                            onClick={() => guardarCalificacion(inscripcion.id_inscripcion)}
+                            disabled={loadingCalificaciones && editingCalificacion === inscripcion.id_inscripcion}
+                            sx={{ bgcolor: '#6d1313', '&:hover': { bgcolor: '#5a0f0f' } }}
+                          >
+                            Guardar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {getUsuariosParaCalificar().length === 0 && (
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography variant="h6" color="text.secondary">
+                    No hay usuarios para calificar
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {item.es_gratuito 
+                      ? 'No hay usuarios inscritos en este evento/curso'
+                      : 'No hay usuarios con pago aprobado'
+                    }
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          ) : (
+            // Tabla normal de inscripciones
+            <>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Usuario</TableCell>
+                      <TableCell>Contacto</TableCell>
+                      <TableCell>Carrera</TableCell>
+                      <TableCell>Fecha Inscripción</TableCell>
+                      <TableCell>Estado</TableCell>
+                      {!itemData.es_gratuito && <TableCell>Pago</TableCell>}
+                      <TableCell>Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredInscripciones.map((inscripcion) => (
                   <TableRow key={inscripcion.id_inscripcion}>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -598,20 +798,22 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                       </IconButton>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
-          {filteredInscripciones.length === 0 && (
-            <Box sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary">
-                No se encontraron inscripciones
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {searchTerm ? 'Intenta con otros términos de búsqueda' : 'No hay inscripciones para mostrar'}
-              </Typography>
-            </Box>
+              {filteredInscripciones.length === 0 && (
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography variant="h6" color="text.secondary">
+                    No se encontraron inscripciones
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {searchTerm ? 'Intenta con otros términos de búsqueda' : 'No hay inscripciones para mostrar'}
+                  </Typography>
+                </Box>
+              )}
+            </>
           )}
         </Paper>
       </Box>
