@@ -82,9 +82,16 @@ const AdminReportes = () => {
   const handleGenerar = async (tipo) => {
     setLoading(true);
     try {
-      const res = await api.post('/reportes/generar', { tipo });
-      if (res.data && res.data.data && res.data.data.id) {
-        navigate(`/admin/reportes/${res.data.data.id}`);
+      if (tipo === 'financiero') {
+        // Genera el PDF financiero y luego navega al historial de reportes financieros
+        await api.post('/reportes/finanzas/pdf');
+        navigate('/admin/reportes/historial?tipo=FINANZAS');
+      } else {
+        // Deja el resto igual para otros reportes
+        const res = await api.post('/reportes/generar', { tipo });
+        if (res.data && res.data.data && res.data.data.id) {
+          navigate(`/admin/reportes/${res.data.data.id}`);
+        }
       }
     } catch (error) {
       alert('Error al generar el reporte');
