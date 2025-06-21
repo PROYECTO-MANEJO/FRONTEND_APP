@@ -43,8 +43,11 @@ import {
   AccessTime,
   RequestPage,
   Engineering,
+  GitHub,
+  OpenInNew,
 } from '@mui/icons-material';
 import solicitudesService from '../../services/solicitudesService';
+import githubService from '../../services/githubService';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import GestionTecnicaSolicitud from './GestionTecnicaSolicitud';
@@ -980,6 +983,90 @@ const AdminSolicitudes = () => {
                             {selectedSolicitud.recursos_tecnicos_necesarios_sol}
                           </Typography>
                         </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Información de GitHub */}
+                  {(selectedSolicitud.github_branch_name || selectedSolicitud.github_pr_number || 
+                    selectedSolicitud.github_commits) && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313', fontWeight: 'bold' }}>
+                        <GitHub sx={{ fontSize: 18, mr: 1, verticalAlign: 'middle' }} />
+                        Integración con GitHub
+                      </Typography>
+                      
+                      {selectedSolicitud.github_branch_name && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Chip 
+                            label={`Branch: ${selectedSolicitud.github_branch_name}`}
+                            color="primary" 
+                            size="small"
+                          />
+                          {selectedSolicitud.github_repo_url && (
+                            <Button
+                              size="small"
+                              startIcon={<OpenInNew />}
+                              onClick={() => window.open(selectedSolicitud.github_repo_url, '_blank')}
+                            >
+                              Ver Repositorio
+                            </Button>
+                          )}
+                        </Box>
+                      )}
+
+                      {selectedSolicitud.github_pr_number && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Chip 
+                            label={`PR #${selectedSolicitud.github_pr_number}`}
+                            color="secondary" 
+                            size="small"
+                          />
+                          {selectedSolicitud.github_pr_url && (
+                            <Button
+                              size="small"
+                              startIcon={<OpenInNew />}
+                              onClick={() => window.open(selectedSolicitud.github_pr_url, '_blank')}
+                            >
+                              Ver Pull Request
+                            </Button>
+                          )}
+                        </Box>
+                      )}
+
+                      {selectedSolicitud.github_commits && Array.isArray(selectedSolicitud.github_commits) && 
+                       selectedSolicitud.github_commits.length > 0 && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 1 }}>
+                            Commits Relacionados ({selectedSolicitud.github_commits.length})
+                          </Typography>
+                          <Box sx={{ maxHeight: 150, overflow: 'auto' }}>
+                            {githubService.formatearCommits(selectedSolicitud.github_commits).slice(0, 3).map((commit, index) => (
+                              <Box key={index} sx={{ p: 1, bgcolor: '#f5f5f5', borderRadius: 1, mb: 1 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                                  {commit.shortSha} - {commit.author}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                                  {commit.shortMessage}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {commit.formattedDate}
+                                </Typography>
+                              </Box>
+                            ))}
+                            {selectedSolicitud.github_commits.length > 3 && (
+                              <Typography variant="caption" color="text.secondary">
+                                ... y {selectedSolicitud.github_commits.length - 3} commits más
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {selectedSolicitud.github_last_sync && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                          {githubService.obtenerEstadoSincronizacion(selectedSolicitud.github_last_sync)}
+                        </Typography>
                       )}
                     </Box>
                   )}

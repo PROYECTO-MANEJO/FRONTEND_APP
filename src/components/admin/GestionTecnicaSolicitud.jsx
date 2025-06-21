@@ -18,8 +18,7 @@ import {
   Chip,
   Alert,
   CircularProgress,
-  Paper,
-  Divider
+  Paper
 } from '@mui/material';
 import {
   Close,
@@ -28,9 +27,16 @@ import {
   Settings,
   Assessment,
   Engineering,
-  Schedule
+  Schedule,
+  GitHub,
+  Sync,
+  OpenInNew,
+  Add,
+  Code,
+  CallMerge
 } from '@mui/icons-material';
 import solicitudesService from '../../services/solicitudesService';
+import githubService from '../../services/githubService';
 
 const GestionTecnicaSolicitud = ({ 
   open, 
@@ -90,6 +96,21 @@ const GestionTecnicaSolicitud = ({
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Estados para GitHub
+  const [githubInfo, setGithubInfo] = useState(null);
+  const [githubLoading, setGithubLoading] = useState(false);
+  const [githubError, setGithubError] = useState(null);
+  const [githubConfig, setGithubConfig] = useState(null);
+  const [selectedRepo, setSelectedRepo] = useState('main');
+  
+  // Estados para creación de branches y PRs
+  const [creandoBranch, setCreandoBranch] = useState(false);
+  const [creandoPR, setCreandoPR] = useState(false);
+  const [baseBranch, setBaseBranch] = useState('main');
+  const [mostrarCrearBranch, setMostrarCrearBranch] = useState(false);
+  const [mostrarCrearPR, setMostrarCrearPR] = useState(false);
+  const [branchInfoDetallada, setBranchInfoDetallada] = useState(null);
 
   // Opciones para selects
   const riesgos = solicitudesService.getOpcionesRiesgo();
@@ -99,6 +120,10 @@ const GestionTecnicaSolicitud = ({
 
   useEffect(() => {
     if (solicitud) {
+      // Cargar información de GitHub
+      loadGithubInfo();
+      loadGithubConfig();
+      
       setFormData({
         // =========================================
         // CAMPOS BÁSICOS DE GESTIÓN
@@ -161,6 +186,119 @@ const GestionTecnicaSolicitud = ({
       ...prev,
       [field]: value
     }));
+  };
+
+  // Funciones para GitHub
+  const loadGithubConfig = async () => {
+    try {
+      const response = await githubService.obtenerEstadoConfiguracion();
+      setGithubConfig(response.data);
+    } catch (error) {
+      console.error('Error cargando configuración de GitHub:', error);
+    }
+  };
+
+  const loadGithubInfo = async () => {
+    if (!solicitud?.id_sol) return;
+    
+    try {
+      setGithubLoading(true);
+      setGithubError(null);
+      const response = await githubService.obtenerInfoGitHub(solicitud.id_sol);
+      setGithubInfo(response.data);
+    } catch (error) {
+      setGithubError(error.response?.data?.message || 'Error cargando información de GitHub');
+    } finally {
+      setGithubLoading(false);
+    }
+  };
+
+  const handleSyncGithub = async () => {
+    if (!solicitud?.id_sol) return;
+    
+    try {
+      setGithubLoading(true);
+      setGithubError(null);
+      await githubService.sincronizarSolicitud(solicitud.id_sol);
+      await loadGithubInfo(); // Recargar información
+    } catch (error) {
+      setGithubError(error.response?.data?.message || 'Error sincronizando con GitHub');
+    } finally {
+      setGithubLoading(false);
+    }
+  };
+
+  const handleSyncRepoEspecifico = async () => {
+    if (!solicitud?.id_sol || !selectedRepo) return;
+    
+    try {
+      setGithubLoading(true);
+      setGithubError(null);
+      await githubService.sincronizarSolicitudEnRepo(solicitud.id_sol, selectedRepo);
+      await loadGithubInfo(); // Recargar información
+    } catch (error) {
+      setGithubError(error.response?.data?.message || 'Error sincronizando repositorio específico');
+    } finally {
+      setGithubLoading(false);
+    }
+  };
+
+
+
+  // Función para crear un nuevo branch
+  const handleCrearBranch = async () => {
+    if (!solicitud?.id_sol) return;
+    
+    try {
+      setCreandoBranch(true);
+      setGithubError(null);
+      await githubService.crearBranch(solicitud.id_sol, selectedRepo, baseBranch);
+      await loadGithubInfo(); // Recargar información
+      setMostrarCrearBranch(false);
+      setBaseBranch('main');
+    } catch (error) {
+      setGithubError(error.response?.data?.message || 'Error creando branch');
+    } finally {
+      setCreandoBranch(false);
+    }
+  };
+
+  // Función para crear Pull Request
+  const handleCrearPR = async () => {
+    if (!solicitud?.id_sol || !githubInfo?.branch?.name) return;
+    
+    try {
+      setCreandoPR(true);
+      setGithubError(null);
+      await githubService.crearPullRequest(
+        solicitud.id_sol, 
+        githubInfo.branch.name, 
+        selectedRepo, 
+        baseBranch
+      );
+      await loadGithubInfo(); // Recargar información
+      setMostrarCrearPR(false);
+      setBaseBranch('main');
+    } catch (error) {
+      setGithubError(error.response?.data?.message || 'Error creando Pull Request');
+    } finally {
+      setCreandoPR(false);
+    }
+  };
+
+  // Función para obtener información detallada del branch
+  const handleObtenerInfoBranch = async (branchName) => {
+    if (!branchName) return;
+    
+    try {
+      setGithubLoading(true);
+      const response = await githubService.obtenerInfoBranch(branchName, selectedRepo);
+      setBranchInfoDetallada(response.data);
+    } catch (error) {
+      setGithubError(error.response?.data?.message || 'Error obteniendo información del branch');
+    } finally {
+      setGithubLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -571,7 +709,369 @@ const GestionTecnicaSolicitud = ({
           </Box>
         </Paper>
 
-        {/* Sección 5: Planificación y Recursos */}
+        {/* Sección 5: Integración con GitHub */}
+        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+            <GitHub sx={{ color: '#6d1313' }} />
+            <Typography variant="h6" sx={{ color: '#6d1313', fontWeight: 'bold' }}>
+              Integración con GitHub
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
+              {githubConfig?.repositorios && githubConfig.repositorios.length > 1 && (
+                <>
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <InputLabel>Repositorio</InputLabel>
+                    <Select
+                      value={selectedRepo}
+                      label="Repositorio"
+                      onChange={(e) => setSelectedRepo(e.target.value)}
+                    >
+                      {githubConfig.repositorios.map((repo) => (
+                        <MenuItem key={repo.type} value={repo.type}>
+                          {repo.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={githubLoading ? <CircularProgress size={16} /> : <Sync />}
+                    onClick={handleSyncRepoEspecifico}
+                    disabled={githubLoading}
+                  >
+                    Sync {selectedRepo}
+                  </Button>
+                </>
+              )}
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={githubLoading ? <CircularProgress size={16} /> : <Sync />}
+                onClick={handleSyncGithub}
+                disabled={githubLoading}
+              >
+                {githubLoading ? 'Sincronizando...' : 'Sync Todos'}
+              </Button>
+            </Box>
+          </Box>
+
+          {githubError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {githubError}
+            </Alert>
+          )}
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Información actual de GitHub */}
+            {githubInfo && (
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#6d1313', mb: 2 }}>
+                  📋 Información Actual
+                </Typography>
+
+                {/* Mostrar información por repositorio si hay múltiples */}
+                {githubInfo.repositories && Object.keys(githubInfo.repositories).length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      Por Repositorio:
+                    </Typography>
+                    {Object.entries(githubInfo.repositories).map(([repoType, repoData]) => (
+                      <Box key={repoType} sx={{ mb: 1, p: 1, bgcolor: '#f8f8f8', borderRadius: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                          {repoData.name} ({repoType})
+                        </Typography>
+                        {repoData.branches.length > 0 && (
+                          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                            Branches: {repoData.branches.map(b => b.name).join(', ')}
+                          </Typography>
+                        )}
+                        {repoData.pullRequests.length > 0 && (
+                          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                            PRs: {repoData.pullRequests.map(pr => `#${pr.number}`).join(', ')}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+                
+                {githubInfo.github_branch_name && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Chip 
+                      label={`Branch: ${githubInfo.github_branch_name}`}
+                      color="primary" 
+                      size="small"
+                    />
+                    {githubInfo.github_repo_url && (
+                      <Button
+                        size="small"
+                        startIcon={<OpenInNew />}
+                        onClick={() => window.open(githubInfo.github_repo_url, '_blank')}
+                      >
+                        Ver Repositorio
+                      </Button>
+                    )}
+                  </Box>
+                )}
+
+                {githubInfo.github_pr_number && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Chip 
+                      label={`PR #${githubInfo.github_pr_number}`}
+                      color="secondary" 
+                      size="small"
+                    />
+                    {githubInfo.github_pr_url && (
+                      <Button
+                        size="small"
+                        startIcon={<OpenInNew />}
+                        onClick={() => window.open(githubInfo.github_pr_url, '_blank')}
+                      >
+                        Ver Pull Request
+                      </Button>
+                    )}
+                  </Box>
+                )}
+
+                {githubInfo.github_commits && Array.isArray(githubInfo.github_commits) && githubInfo.github_commits.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      Commits Relacionados ({githubInfo.github_commits.length})
+                    </Typography>
+                    <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+                      {githubService.formatearCommits(githubInfo.github_commits).slice(0, 5).map((commit, index) => (
+                        <Box key={index} sx={{ p: 1, bgcolor: '#f5f5f5', borderRadius: 1, mb: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                            {commit.shortSha} - {commit.author}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                            {commit.shortMessage}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {commit.formattedDate}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+
+                {githubInfo.github_last_sync && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    {githubService.obtenerEstadoSincronizacion(githubInfo.github_last_sync)}
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+
+
+            {/* Sección de Creación de Branches y PRs */}
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#6d1313', mb: 2 }}>
+                🚀 Crear Branch y Pull Request
+              </Typography>
+              
+              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Add />}
+                  onClick={() => setMostrarCrearBranch(!mostrarCrearBranch)}
+                  color="success"
+                >
+                  {mostrarCrearBranch ? 'Ocultar' : 'Crear Branch'}
+                </Button>
+                
+                {githubInfo?.github_branch_name && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<CallMerge />}
+                    onClick={() => setMostrarCrearPR(!mostrarCrearPR)}
+                    color="info"
+                  >
+                    {mostrarCrearPR ? 'Ocultar' : 'Crear Pull Request'}
+                  </Button>
+                )}
+                
+                {githubInfo?.github_branch_name && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<Code />}
+                    onClick={() => handleObtenerInfoBranch(githubInfo.github_branch_name)}
+                    size="small"
+                  >
+                    Ver Commits
+                  </Button>
+                )}
+              </Box>
+
+              {/* Formulario para crear branch */}
+              {mostrarCrearBranch && (
+                <Box sx={{ p: 2, bgcolor: '#e8f5e8', borderRadius: 1, mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
+                    Crear Nuevo Branch
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {githubConfig?.repositorios && githubConfig.repositorios.length > 1 && (
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Repositorio Destino</InputLabel>
+                        <Select
+                          value={selectedRepo}
+                          label="Repositorio Destino"
+                          onChange={(e) => setSelectedRepo(e.target.value)}
+                        >
+                          {githubConfig.repositorios.map((repo) => (
+                            <MenuItem key={repo.type} value={repo.type}>
+                              {repo.name} ({repo.type})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                    
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Branch Base"
+                      value={baseBranch}
+                      onChange={(e) => setBaseBranch(e.target.value)}
+                      placeholder="main"
+                      helperText="Branch desde el cual crear el nuevo branch"
+                    />
+                    
+                    <Alert severity="info" sx={{ fontSize: '0.85rem' }}>
+                      Se creará automáticamente un branch con el nombre: <strong>SOL-{solicitud?.id_sol?.substring(0, 8)}-{solicitud?.titulo_sol?.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30)}</strong>
+                    </Alert>
+                    
+                    <Button
+                      variant="contained"
+                      startIcon={creandoBranch ? <CircularProgress size={16} /> : <Add />}
+                      onClick={handleCrearBranch}
+                      disabled={creandoBranch || !selectedRepo}
+                      color="success"
+                      sx={{ alignSelf: 'flex-start' }}
+                    >
+                      {creandoBranch ? 'Creando Branch...' : 'Crear Branch'}
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Formulario para crear PR */}
+              {mostrarCrearPR && githubInfo?.github_branch_name && (
+                <Box sx={{ p: 2, bgcolor: '#e3f2fd', borderRadius: 1, mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
+                    Crear Pull Request
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Alert severity="info" sx={{ fontSize: '0.85rem' }}>
+                      Se creará un PR desde el branch <strong>{githubInfo.github_branch_name}</strong>
+                    </Alert>
+                    
+                    {githubConfig?.repositorios && githubConfig.repositorios.length > 1 && (
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Repositorio</InputLabel>
+                        <Select
+                          value={selectedRepo}
+                          label="Repositorio"
+                          onChange={(e) => setSelectedRepo(e.target.value)}
+                        >
+                          {githubConfig.repositorios.map((repo) => (
+                            <MenuItem key={repo.type} value={repo.type}>
+                              {repo.name} ({repo.type})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                    
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Branch Destino"
+                      value={baseBranch}
+                      onChange={(e) => setBaseBranch(e.target.value)}
+                      placeholder="main"
+                      helperText="Branch al cual hacer merge"
+                    />
+                    
+                    <Button
+                      variant="contained"
+                      startIcon={creandoPR ? <CircularProgress size={16} /> : <CallMerge />}
+                      onClick={handleCrearPR}
+                      disabled={creandoPR || !githubInfo?.github_branch_name}
+                      color="info"
+                      sx={{ alignSelf: 'flex-start' }}
+                    >
+                      {creandoPR ? 'Creando PR...' : 'Crear Pull Request'}
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Información detallada del branch */}
+              {branchInfoDetallada && (
+                <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 1, mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
+                    📊 Información Detallada del Branch: {branchInfoDetallada.name}
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Typography variant="body2">
+                      <strong>Repositorio:</strong> {branchInfoDetallada.repository}
+                    </Typography>
+                    
+                    <Typography variant="body2">
+                      <strong>Último Commit:</strong> {branchInfoDetallada.lastCommit?.message}
+                    </Typography>
+                    
+                    <Typography variant="body2">
+                      <strong>Autor:</strong> {branchInfoDetallada.lastCommit?.author} 
+                      ({githubService.formatearTiempo(branchInfoDetallada.lastCommit?.date)})
+                    </Typography>
+                    
+                    <Button
+                      size="small"
+                      startIcon={<OpenInNew />}
+                      onClick={() => window.open(branchInfoDetallada.url, '_blank')}
+                      sx={{ alignSelf: 'flex-start', mt: 1 }}
+                    >
+                      Ver Branch en GitHub
+                    </Button>
+                    
+                    {branchInfoDetallada.commits && branchInfoDetallada.commits.length > 0 && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
+                          Últimos Commits ({branchInfoDetallada.commits.length})
+                        </Typography>
+                        <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+                          {branchInfoDetallada.commits.slice(0, 5).map((commit, index) => (
+                            <Box key={index} sx={{ p: 1, bgcolor: '#ffffff', borderRadius: 1, mb: 1, border: '1px solid #e0e0e0' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                                {commit.sha.substring(0, 7)} - {commit.author}
+                              </Typography>
+                              <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                                {commit.message}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {githubService.formatearTiempo(commit.date)}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Sección 6: Planificación y Recursos */}
         <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
             <Schedule sx={{ color: '#6d1313' }} />
