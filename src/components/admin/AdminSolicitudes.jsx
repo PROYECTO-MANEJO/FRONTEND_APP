@@ -42,10 +42,12 @@ import {
   PriorityHigh,
   AccessTime,
   RequestPage,
+  Engineering,
 } from '@mui/icons-material';
 import solicitudesService from '../../services/solicitudesService';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
+import GestionTecnicaSolicitud from './GestionTecnicaSolicitud';
 
 const AdminSolicitudes = () => {
   const { getMainContentStyle } = useSidebarLayout();
@@ -55,6 +57,7 @@ const AdminSolicitudes = () => {
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [respuestaDialog, setRespuestaDialog] = useState(false);
+  const [gestionTecnicaDialog, setGestionTecnicaDialog] = useState(false);
   const [estadisticas, setEstadisticas] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   
@@ -146,10 +149,16 @@ const AdminSolicitudes = () => {
 
   const verDetalle = async (solicitud) => {
     try {
-      setSelectedSolicitud(solicitud);
+      setLoading(true);
+      // Cargar los detalles completos de la solicitud desde el backend
+      const response = await solicitudesService.obtenerSolicitudAdmin(solicitud.id_sol);
+      setSelectedSolicitud(response.data);
       setDialogOpen(true);
-    } catch {
+    } catch (error) {
       setError('Error al cargar los detalles de la solicitud');
+      console.error('Error cargando detalles:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -165,16 +174,14 @@ const AdminSolicitudes = () => {
     setRespuestaDialog(true);
   };
 
-  const abrirEdicion = (solicitud) => {
+  const abrirGestionTecnica = (solicitud) => {
     setSelectedSolicitud(solicitud);
-    setRespuestaForm({
-      estado_sol: solicitud.estado_sol,
-      prioridad_sol: solicitud.prioridad_sol,
-      comentarios_admin_sol: solicitud.comentarios_admin_sol || '',
-      comentarios_internos_sol: solicitud.comentarios_internos_sol || ''
-    });
-    setEsEdicion(true);
-    setRespuestaDialog(true);
+    setGestionTecnicaDialog(true);
+  };
+
+  const handleGestionTecnicaCompleta = async () => {
+    await cargarSolicitudes();
+    await cargarEstadisticas();
   };
 
   const handleRespuestaSubmit = async () => {
@@ -200,9 +207,9 @@ const AdminSolicitudes = () => {
       console.log('Solicitud completa:', selectedSolicitud);
       
       if (esEdicion) {
-        console.log('Llamando editarSolicitud...');
-        const response = await solicitudesService.editarSolicitud(selectedSolicitud.id_sol, datosAEnviar);
-        console.log('Respuesta edición:', response);
+        console.log('Llamando gestionarSolicitudTecnica...');
+        const response = await solicitudesService.gestionarSolicitudTecnica(selectedSolicitud.id_sol, datosAEnviar);
+        console.log('Respuesta gestión técnica:', response);
       } else {
         console.log('Llamando responderSolicitud...');
         const response = await solicitudesService.responderSolicitud(selectedSolicitud.id_sol, datosAEnviar);
@@ -228,7 +235,7 @@ const AdminSolicitudes = () => {
   const cambiarEstado = async (solicitud, nuevoEstado) => {
     try {
       setLoading(true);
-      await solicitudesService.actualizarEstadoSolicitud(solicitud.id_sol, nuevoEstado);
+      await solicitudesService.actualizarEstado(solicitud.id_sol, nuevoEstado);
       await cargarSolicitudes();
       await cargarEstadisticas();
       setError(null);
@@ -274,7 +281,7 @@ const AdminSolicitudes = () => {
           <Grid item xs={12} sm={6} md={3} key={item.estado}>
             <Card elevation={1}>
               <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" sx={{ color: solicitudesService.getColorEstado(item.estado) }} gutterBottom>
+                <Typography variant="h4" sx={{ color: solicitudesService.getColorPorEstado(item.estado) }} gutterBottom>
                   {item.cantidad}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -298,7 +305,7 @@ const AdminSolicitudes = () => {
             label={estados.find(e => e.value === solicitud.estado_sol)?.label || solicitud.estado_sol}
             size="small"
             sx={{
-              bgcolor: solicitudesService.getColorEstado(solicitud.estado_sol),
+              bgcolor: solicitudesService.getColorPorEstado(solicitud.estado_sol),
               color: 'white',
               fontWeight: 500
             }}
@@ -307,7 +314,7 @@ const AdminSolicitudes = () => {
             label={solicitud.prioridad_sol}
             size="small"
             sx={{
-              bgcolor: solicitudesService.getColorPrioridad(solicitud.prioridad_sol),
+              bgcolor: solicitudesService.getColorPorPrioridad(solicitud.prioridad_sol),
               color: 'white'
             }}
           />
@@ -373,28 +380,27 @@ const AdminSolicitudes = () => {
                 onClick={() => abrirRespuesta(solicitud)}
                 size="small"
               >
-                Responder
+                Respuesta Rápida
               </Button>
             )}
           </Box>
           
-          {/* Botón de editar siempre visible excepto para completadas */}
+          {/* Botón de gestión completa - Siempre visible excepto para completadas */}
           {solicitud.estado_sol !== 'COMPLETADA' && (
             <Button
               fullWidth
               variant="contained"
-              startIcon={<Edit />}
-              onClick={() => abrirEdicion(solicitud)}
+              startIcon={<Engineering />}
+              onClick={() => abrirGestionTecnica(solicitud)}
               size="small"
-              color="warning"
-              sx={{ 
-                bgcolor: '#f59e0b',
+              sx={{
+                bgcolor: '#6d1313',
                 '&:hover': {
-                  bgcolor: '#d97706'
+                  bgcolor: '#5a1010'
                 }
               }}
             >
-              Editar Solicitud
+              Gestión Completa
             </Button>
           )}
 
@@ -666,13 +672,15 @@ const AdminSolicitudes = () => {
         <DialogContent>
           {selectedSolicitud && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Debug temporal - eliminar después */}
+              {console.log('=== DEBUG SOLICITUD COMPLETA ===', selectedSolicitud)}
               {/* Estados y fechas */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Chip
                   icon={getIconoEstado(selectedSolicitud.estado_sol)}
                   label={estados.find(e => e.value === selectedSolicitud.estado_sol)?.label}
                   sx={{
-                    bgcolor: solicitudesService.getColorEstado(selectedSolicitud.estado_sol),
+                    bgcolor: solicitudesService.getColorPorEstado(selectedSolicitud.estado_sol),
                     color: 'white',
                     fontWeight: 500
                   }}
@@ -680,7 +688,7 @@ const AdminSolicitudes = () => {
                 <Chip
                   label={selectedSolicitud.prioridad_sol}
                   sx={{
-                    bgcolor: solicitudesService.getColorPrioridad(selectedSolicitud.prioridad_sol),
+                    bgcolor: solicitudesService.getColorPorPrioridad(selectedSolicitud.prioridad_sol),
                     color: 'white'
                   }}
                 />
@@ -773,6 +781,208 @@ const AdminSolicitudes = () => {
                       {selectedSolicitud.comentarios_internos_sol}
                     </Typography>
                   </Box>
+                </>
+              )}
+
+
+
+              {/* Información Técnica Adicional - Solo visible para administradores */}
+              {selectedSolicitud && (selectedSolicitud.riesgo_cambio_sol || selectedSolicitud.categoria_cambio_sol || 
+                selectedSolicitud.impacto_negocio_sol || selectedSolicitud.impacto_tecnico_sol ||
+                selectedSolicitud.plan_implementacion_sol || selectedSolicitud.plan_rollout_sol ||
+                selectedSolicitud.plan_backout_sol || selectedSolicitud.plan_rollback_sol ||
+                selectedSolicitud.plan_testing_sol || selectedSolicitud.fecha_planificada_inicio_sol ||
+                selectedSolicitud.fecha_real_inicio_sol || selectedSolicitud.tiempo_estimado_horas_sol ||
+                selectedSolicitud.comentarios_tecnicos_sol || selectedSolicitud.observaciones_implementacion_sol) && (
+                <>
+                  <Divider />
+                  <Typography variant="h6" sx={{ color: '#6d1313', fontWeight: 'bold', mt: 2 }}>
+                    📋 Información Técnica Detallada
+                  </Typography>
+
+                  {/* Análisis de Riesgo y Categorización */}
+                  {(selectedSolicitud.riesgo_cambio_sol || selectedSolicitud.categoria_cambio_sol) && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313', fontWeight: 'bold' }}>
+                        📊 Análisis de Riesgo y Categorización
+                      </Typography>
+                      {selectedSolicitud.riesgo_cambio_sol && (
+                        <Typography variant="body2">
+                          <strong>Riesgo del Cambio:</strong> {selectedSolicitud.riesgo_cambio_sol}
+                        </Typography>
+                      )}
+                      {selectedSolicitud.categoria_cambio_sol && (
+                        <Typography variant="body2">
+                          <strong>Categoría del Cambio:</strong> {selectedSolicitud.categoria_cambio_sol}
+                        </Typography>
+                      )}
+                      {selectedSolicitud.comentarios_tecnicos_sol && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body2"><strong>Comentarios Técnicos:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.comentarios_tecnicos_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Análisis de Impacto */}
+                  {(selectedSolicitud.impacto_negocio_sol || selectedSolicitud.impacto_tecnico_sol || selectedSolicitud.tiempo_inactividad_estimado_sol) && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313', fontWeight: 'bold' }}>
+                        🎯 Análisis de Impacto
+                      </Typography>
+                      {selectedSolicitud.impacto_negocio_sol && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2"><strong>Impacto en el Negocio:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.impacto_negocio_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                      {selectedSolicitud.impacto_tecnico_sol && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2"><strong>Impacto Técnico:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.impacto_tecnico_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                      {selectedSolicitud.tiempo_inactividad_estimado_sol && (
+                        <Typography variant="body2">
+                          <strong>Tiempo de Inactividad Estimado:</strong> {selectedSolicitud.tiempo_inactividad_estimado_sol}
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Planes de Implementación */}
+                  {(selectedSolicitud.plan_implementacion_sol || selectedSolicitud.plan_rollout_sol || 
+                    selectedSolicitud.plan_backout_sol || selectedSolicitud.plan_rollback_sol || 
+                    selectedSolicitud.plan_testing_sol) && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313', fontWeight: 'bold' }}>
+                        ⚙️ Planes de Implementación
+                      </Typography>
+                      {selectedSolicitud.plan_implementacion_sol && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2"><strong>Plan de Implementación:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.plan_implementacion_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                      {selectedSolicitud.plan_rollout_sol && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2"><strong>Plan de Rollout:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.plan_rollout_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                      {selectedSolicitud.plan_backout_sol && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2"><strong>Plan de Backout:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.plan_backout_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                      {selectedSolicitud.plan_rollback_sol && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2"><strong>Plan de Rollback:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.plan_rollback_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                      {selectedSolicitud.plan_testing_sol && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2"><strong>Plan de Testing:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.plan_testing_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                      {selectedSolicitud.observaciones_implementacion_sol && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2"><strong>Observaciones de Implementación:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.observaciones_implementacion_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Planificación y Fechas */}
+                  {(selectedSolicitud.fecha_planificada_inicio_sol || selectedSolicitud.fecha_real_inicio_sol || 
+                    selectedSolicitud.tiempo_estimado_horas_sol || selectedSolicitud.ventana_mantenimiento_sol) && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313', fontWeight: 'bold' }}>
+                        📅 Planificación y Recursos
+                      </Typography>
+                      
+                      {/* Fechas Planificadas */}
+                      {(selectedSolicitud.fecha_planificada_inicio_sol || selectedSolicitud.fecha_planificada_fin_sol) && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>Fechas Planificadas:</Typography>
+                          {selectedSolicitud.fecha_planificada_inicio_sol && (
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              <strong>Inicio:</strong> {solicitudesService.formatearFecha(selectedSolicitud.fecha_planificada_inicio_sol)}
+                              {selectedSolicitud.hora_planificada_inicio_sol && ` a las ${selectedSolicitud.hora_planificada_inicio_sol}`}
+                            </Typography>
+                          )}
+                          {selectedSolicitud.fecha_planificada_fin_sol && (
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              <strong>Fin:</strong> {solicitudesService.formatearFecha(selectedSolicitud.fecha_planificada_fin_sol)}
+                              {selectedSolicitud.hora_planificada_fin_sol && ` a las ${selectedSolicitud.hora_planificada_fin_sol}`}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+
+                      {/* Fechas Reales */}
+                      {(selectedSolicitud.fecha_real_inicio_sol || selectedSolicitud.fecha_real_fin_sol) && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>Fechas Reales de Ejecución:</Typography>
+                          {selectedSolicitud.fecha_real_inicio_sol && (
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              <strong>Inicio Real:</strong> {solicitudesService.formatearFecha(selectedSolicitud.fecha_real_inicio_sol)}
+                              {selectedSolicitud.hora_real_inicio_sol && ` a las ${selectedSolicitud.hora_real_inicio_sol}`}
+                            </Typography>
+                          )}
+                          {selectedSolicitud.fecha_real_fin_sol && (
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              <strong>Fin Real:</strong> {solicitudesService.formatearFecha(selectedSolicitud.fecha_real_fin_sol)}
+                              {selectedSolicitud.hora_real_fin_sol && ` a las ${selectedSolicitud.hora_real_fin_sol}`}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+
+                      {/* Otros recursos */}
+                      {selectedSolicitud.tiempo_estimado_horas_sol && (
+                        <Typography variant="body2">
+                          <strong>Tiempo Estimado:</strong> {selectedSolicitud.tiempo_estimado_horas_sol} horas
+                        </Typography>
+                      )}
+                      {selectedSolicitud.ventana_mantenimiento_sol && (
+                        <Typography variant="body2">
+                          <strong>Ventana de Mantenimiento:</strong> {selectedSolicitud.ventana_mantenimiento_sol}
+                        </Typography>
+                      )}
+                      {selectedSolicitud.recursos_tecnicos_necesarios_sol && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body2"><strong>Recursos Técnicos Necesarios:</strong></Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9', p: 1, borderRadius: 1, mt: 0.5 }}>
+                            {selectedSolicitud.recursos_tecnicos_necesarios_sol}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
                 </>
               )}
             </Box>
@@ -892,6 +1102,14 @@ const AdminSolicitudes = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal de Gestión Completa */}
+      <GestionTecnicaSolicitud
+        open={gestionTecnicaDialog}
+        onClose={() => setGestionTecnicaDialog(false)}
+        solicitud={selectedSolicitud}
+        onGestionCompleta={handleGestionTecnicaCompleta}
+      />
       </Box>
     </Box>
   );

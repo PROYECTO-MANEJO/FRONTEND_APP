@@ -137,7 +137,7 @@ const MisSolicitudes = () => {
             label={estados.find(e => e.value === solicitud.estado_sol)?.label || solicitud.estado_sol}
             size="small"
             sx={{
-              bgcolor: solicitudesService.getColorEstado(solicitud.estado_sol),
+              bgcolor: solicitudesService.getColorPorEstado(solicitud.estado_sol),
               color: 'white',
               fontWeight: 500
             }}
@@ -146,7 +146,7 @@ const MisSolicitudes = () => {
             label={solicitud.prioridad_sol}
             size="small"
             sx={{
-              bgcolor: solicitudesService.getColorPrioridad(solicitud.prioridad_sol),
+              bgcolor: solicitudesService.getColorPorPrioridad(solicitud.prioridad_sol),
               color: 'white'
             }}
           />
@@ -403,7 +403,7 @@ const MisSolicitudes = () => {
                   icon={getIconoEstado(selectedSolicitud.estado_sol)}
                   label={estados.find(e => e.value === selectedSolicitud.estado_sol)?.label}
                   sx={{
-                    bgcolor: solicitudesService.getColorEstado(selectedSolicitud.estado_sol),
+                    bgcolor: solicitudesService.getColorPorEstado(selectedSolicitud.estado_sol),
                     color: 'white',
                     fontWeight: 500
                   }}
@@ -411,7 +411,7 @@ const MisSolicitudes = () => {
                 <Chip
                   label={selectedSolicitud.prioridad_sol}
                   sx={{
-                    bgcolor: solicitudesService.getColorPrioridad(selectedSolicitud.prioridad_sol),
+                    bgcolor: solicitudesService.getColorPorPrioridad(selectedSolicitud.prioridad_sol),
                     color: 'white'
                   }}
                 />

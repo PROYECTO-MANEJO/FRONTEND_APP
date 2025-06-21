@@ -52,7 +52,7 @@ const AdminSidebar = () => {
     { text: 'Eventos', icon: <Event />, path: '/admin/eventos' },
     { text: 'Cursos', icon: <School />, path: '/admin/cursos' },
     { text: 'Gestión', icon: <ManageAccounts />, path: '/admin/gestion-inscripciones' },
-    { text: 'Solicitudes', icon: <RequestPage />, path: '/admin/solicitudes' },
+    ...(user?.rol === 'MASTER' ? [{ text: 'Solicitudes de Cambio', icon: <RequestPage />, path: '/admin/solicitudes' }] : []),
     { text: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
   ];
 

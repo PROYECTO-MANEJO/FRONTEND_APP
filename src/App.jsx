@@ -107,9 +107,9 @@ function App() {
             <Route 
               path="/admin/usuarios" 
               element={
-                <AdminRoute>
+                <MasterRoute>
                   <AdminUsuarios />
-                </AdminRoute>
+                </MasterRoute>
               } 
             />
             
@@ -170,9 +170,9 @@ function App() {
             <Route 
               path="/admin/solicitudes" 
               element={
-                <AdminRoute>
+                <MasterRoute>
                   <AdminSolicitudes />
-                </AdminRoute>
+                </MasterRoute>
               } 
             />
             

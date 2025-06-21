@@ -5,7 +5,9 @@ import {
   Grid,
   Card,
   CardContent,
-  Avatar
+  Avatar,
+  Alert,
+  Chip
 } from '@mui/material';
 import { 
   People,
@@ -52,11 +54,12 @@ const AdminDashboard = () => {
       color: '#6d1313'
     },
     {
-      title: 'Ver Solicitudes',
-      description: 'Revisar solicitudes pendientes',
+      title: 'Solicitudes de Cambio',
+      description: 'Revisar solicitudes de cambio',
       icon: <RequestPage />,
       path: '/admin/solicitudes',
-      color: '#6d1313'
+      color: '#6d1313',
+      isRestricted: user?.rol !== 'MASTER'
     },
     {
       title: 'Verificar Documentos',
@@ -111,6 +114,44 @@ const AdminDashboard = () => {
         </Box>
 
         
+
+        {/* Información de Rol */}
+        {user?.rol !== 'MASTER' && (
+          <Alert 
+            severity="info" 
+            sx={{ 
+              mb: 3, 
+              borderRadius: 2,
+              border: '1px solid #6d1313',
+              '& .MuiAlert-icon': { color: '#6d1313' }
+            }}
+          >
+            <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+              ℹ️ Acceso de Administrador Estándar
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Tu rol actual te permite gestionar eventos, cursos, inscripciones y reportes. 
+              Las siguientes funcionalidades están restringidas a <strong>Administradores Master</strong>:
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Chip 
+                label="👥 Gestión de Usuarios" 
+                size="small" 
+                sx={{ bgcolor: '#ffebee', color: '#6d1313' }}
+              />
+              <Chip 
+                label="📋 Solicitudes de Cambio" 
+                size="small" 
+                sx={{ bgcolor: '#ffebee', color: '#6d1313' }}
+              />
+              <Chip 
+                label="✅ Verificación de Documentos" 
+                size="small" 
+                sx={{ bgcolor: '#ffebee', color: '#6d1313' }}
+              />
+            </Box>
+          </Alert>
+        )}
 
         {/* Quick Actions */}
         <Card sx={{ borderRadius: 3, boxShadow: 3, mb: 4 }}>
