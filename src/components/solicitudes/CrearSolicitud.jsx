@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -30,17 +31,24 @@ import {
   Timeline,
   Group,
   CalendarMonth,
+  Edit,
+  Schedule,
+  Assignment,
+  Save,
 } from '@mui/icons-material';
-// import { useAuth } from '../../context/AuthContext'; // Removido porque no se usa
+
 import solicitudesService from '../../services/solicitudesService';
 
-const CrearSolicitud = ({ onSolicitudCreada }) => {
-  // const { user } = useAuth(); // Removido porque no se usa en esta versión mejorada
-  const [activeStep, setActiveStep] = useState(0);
+const CrearSolicitud = () => {
+  const navigate = useNavigate();
+  const { id } = useParams(); // Para editar solicitud existente
+  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-
+  const [success, setSuccess] = useState(null);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  
   const [formData, setFormData] = useState({
     titulo_sol: '',
     descripcion_sol: '',
@@ -55,603 +63,419 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
     fecha_limite_deseada: '',
   });
 
-  const steps = ['Información Básica', 'Detalles del Cambio', 'Impacto y Planificación', 'Revisión'];
+  const [solicitudActual, setSolicitudActual] = useState(null);
+
   const tiposCambio = solicitudesService.getOpcionesTipoCambio();
   const prioridades = solicitudesService.getOpcionesPrioridad();
   const urgencias = solicitudesService.getOpcionesUrgencia();
 
-  const handleChange = (field) => (event) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.value
-    });
-    setError(null);
-  };
-
-  const handleNext = () => {
-    // Validaciones por paso
-    if (activeStep === 0) {
-      if (!formData.titulo_sol.trim() || formData.titulo_sol.length < 5) {
-        setError('El título debe tener al menos 5 caracteres');
-        return;
-      }
-      if (!formData.tipo_cambio_sol) {
-        setError('Debe seleccionar un tipo de cambio');
-        return;
-      }
+  useEffect(() => {
+    if (id) {
+      cargarSolicitud();
     }
-    
-    if (activeStep === 1) {
-      if (!formData.descripcion_sol.trim() || formData.descripcion_sol.length < 10) {
-        setError('La descripción debe tener al menos 10 caracteres');
-        return;
-      }
-      if (!formData.justificacion_sol.trim() || formData.justificacion_sol.length < 10) {
-        setError('La justificación debe tener al menos 10 caracteres');
-        return;
-      }
-    }
+  }, [id]);
 
-    setError(null);
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    setError(null);
-
+  const cargarSolicitud = async () => {
     try {
-      // Preparar datos para envío (solo incluir campos no vacíos)
-      const datosEnvio = {
-        titulo_sol: formData.titulo_sol,
-        descripcion_sol: formData.descripcion_sol,
-        justificacion_sol: formData.justificacion_sol,
-        tipo_cambio_sol: formData.tipo_cambio_sol,
-        prioridad_sol: formData.prioridad_sol,
-        urgencia_sol: formData.urgencia_sol
-      };
-
-      // Agregar campos opcionales solo si tienen valor
-      if (formData.impacto_negocio_sol.trim()) {
-        datosEnvio.impacto_negocio_sol = formData.impacto_negocio_sol;
-      }
-      if (formData.beneficios_esperados_sol.trim()) {
-        datosEnvio.beneficios_esperados_sol = formData.beneficios_esperados_sol;
-      }
-      if (formData.recursos_necesarios_sol.trim()) {
-        datosEnvio.recursos_necesarios_sol = formData.recursos_necesarios_sol;
-      }
-      if (formData.usuarios_afectados_sol.trim()) {
-        datosEnvio.usuarios_afectados_sol = formData.usuarios_afectados_sol;
-      }
-      if (formData.fecha_limite_deseada) {
-        datosEnvio.fecha_limite_deseada = formData.fecha_limite_deseada;
-      }
-
-      const response = await solicitudesService.crearSolicitud(datosEnvio);
-      setSuccess(true);
+      setLoading(true);
+      const response = await solicitudesService.obtenerMiSolicitud(id);
+      const solicitud = response.data;
       
-      // Resetear formulario después de 2 segundos
-      setTimeout(() => {
-        setFormData({
-          titulo_sol: '',
-          descripcion_sol: '',
-          justificacion_sol: '',
-          tipo_cambio_sol: '',
-          prioridad_sol: 'MEDIA',
-          urgencia_sol: 'NORMAL',
-          impacto_negocio_sol: '',
-          usuarios_afectados_sol: '',
-          recursos_necesarios_sol: '',
-          beneficios_esperados_sol: '',
-          fecha_limite_deseada: '',
-        });
-        setActiveStep(0);
-        setSuccess(false);
-        if (onSolicitudCreada) {
-          onSolicitudCreada(response.data);
-        }
-      }, 2000);
-
+      setSolicitudActual(solicitud);
+      setModoEdicion(true);
+      
+      // Verificar si puede editarse
+      if (!['BORRADOR', 'RECHAZADA'].includes(solicitud.estado_sol)) {
+        setError('Esta solicitud no puede editarse en su estado actual');
+        return;
+      }
+      
+      // Cargar datos en el formulario
+      setFormData({
+        titulo_sol: solicitud.titulo_sol || '',
+        descripcion_sol: solicitud.descripcion_sol || '',
+        justificacion_sol: solicitud.justificacion_sol || '',
+        tipo_cambio_sol: solicitud.tipo_cambio_sol || '',
+        prioridad_sol: solicitud.prioridad_sol || 'MEDIA',
+        urgencia_sol: solicitud.urgencia_sol || 'NORMAL',
+        impacto_negocio_sol: solicitud.impacto_negocio_sol || '',
+        usuarios_afectados_sol: solicitud.usuarios_afectados_sol || '',
+        recursos_necesarios_sol: solicitud.recursos_necesarios_sol || '',
+        beneficios_esperados_sol: solicitud.beneficios_esperados_sol || '',
+        fecha_limite_deseada: solicitud.fecha_limite_deseada ? 
+          new Date(solicitud.fecha_limite_deseada).toISOString().split('T')[0] : '',
+      });
+      
     } catch (error) {
-      setError(error.message);
+      setError('Error al cargar la solicitud: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) {
-    return (
-      <Paper elevation={2} sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
-        <CheckCircle sx={{ fontSize: 60, color: '#6d1313', mb: 2 }} />
-        <Typography variant="h5" gutterBottom sx={{ color: '#6d1313' }}>
-          ¡Solicitud Creada Exitosamente!
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Tu solicitud ha sido enviada y está siendo revisada por los administradores.
-        </Typography>
-      </Paper>
-    );
-  }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Limpiar errores cuando el usuario empiece a escribir
+    if (error) setError(null);
+  };
 
-  const renderStepContent = (step) => {
-    switch (step) {
-      case 0:
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <TextField
-              fullWidth
-              label="Título de la Solicitud"
-              value={formData.titulo_sol}
-              onChange={handleChange('titulo_sol')}
-              placeholder="Ej: Implementar filtro avanzado de búsqueda"
-              helperText="Describe brevemente el cambio que solicitas (5-200 caracteres)"
-              required
-              inputProps={{ maxLength: 200 }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#6d1313',
-                  },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#6d1313',
-                },
-              }}
-            />
+  const validarFormulario = () => {
+    const errores = [];
+    
+    if (!formData.titulo_sol.trim()) errores.push('El título es obligatorio');
+    if (!formData.descripcion_sol.trim()) errores.push('La descripción es obligatoria');
+    if (!formData.justificacion_sol.trim()) errores.push('La justificación es obligatoria');
+    if (!formData.tipo_cambio_sol) errores.push('El tipo de cambio es obligatorio');
+    
+    return errores;
+  };
 
-            <FormControl fullWidth required>
-              <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Tipo de Cambio</InputLabel>
-              <Select
-                value={formData.tipo_cambio_sol}
-                label="Tipo de Cambio"
-                onChange={handleChange('tipo_cambio_sol')}
-                sx={{
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#6d1313',
-                  },
-                }}
-              >
-                {tiposCambio.map((tipo) => (
-                  <MenuItem key={tipo.value} value={tipo.value}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Category sx={{ fontSize: 20, color: '#6d1313' }} />
-                        <Typography variant="body1">{tipo.label}</Typography>
-                      </Box>
-                      <Typography variant="caption" color="text.secondary">
-                        {tipo.description}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Prioridad</InputLabel>
-                  <Select
-                    value={formData.prioridad_sol}
-                    label="Prioridad"
-                    onChange={handleChange('prioridad_sol')}
-                    sx={{
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#6d1313',
-                      },
-                    }}
-                  >
-                    {prioridades.map((prioridad) => (
-                      <MenuItem key={prioridad.value} value={prioridad.value}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <PriorityHigh sx={{ fontSize: 20, color: prioridad.color }} />
-                            <Typography variant="body1">{prioridad.label}</Typography>
-                          </Box>
-                          <Typography variant="caption" color="text.secondary">
-                            {prioridad.description}
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Urgencia</InputLabel>
-                  <Select
-                    value={formData.urgencia_sol}
-                    label="Urgencia"
-                    onChange={handleChange('urgencia_sol')}
-                    sx={{
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#6d1313',
-                      },
-                    }}
-                  >
-                    {urgencias.map((urgencia) => (
-                      <MenuItem key={urgencia.value} value={urgencia.value}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Timeline sx={{ fontSize: 20, color: '#6d1313' }} />
-                            <Typography variant="body1">{urgencia.label}</Typography>
-                          </Box>
-                          <Typography variant="caption" color="text.secondary">
-                            {urgencia.description}
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-          </Box>
-        );
-
-      case 1:
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Descripción Detallada"
-              value={formData.descripcion_sol}
-              onChange={handleChange('descripcion_sol')}
-              placeholder="Describe detalladamente el cambio que necesitas, incluyendo funcionalidades específicas..."
-              helperText="Explica en detalle qué cambio necesitas (mínimo 10 caracteres)"
-              required
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#6d1313',
-                  },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#6d1313',
-                },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Justificación"
-              value={formData.justificacion_sol}
-              onChange={handleChange('justificacion_sol')}
-              placeholder="Explica por qué es necesario este cambio, qué problema resuelve..."
-              helperText="Justifica la necesidad del cambio (mínimo 10 caracteres)"
-              required
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#6d1313',
-                  },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#6d1313',
-                },
-              }}
-            />
-          </Box>
-        );
-
-      case 2:
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Impacto en el Negocio"
-              value={formData.impacto_negocio_sol}
-              onChange={handleChange('impacto_negocio_sol')}
-              placeholder="Describe cómo este cambio impactará al negocio, procesos o usuarios..."
-              helperText="Campo opcional - Ayuda al equipo técnico a entender el impacto"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#6d1313',
-                  },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#6d1313',
-                },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Beneficios Esperados"
-              value={formData.beneficios_esperados_sol}
-              onChange={handleChange('beneficios_esperados_sol')}
-              placeholder="¿Qué beneficios esperas obtener con este cambio?"
-              helperText="Campo opcional - Describe los beneficios esperados"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#6d1313',
-                  },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#6d1313',
-                },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              label="Usuarios Afectados"
-              value={formData.usuarios_afectados_sol}
-              onChange={handleChange('usuarios_afectados_sol')}
-              placeholder="¿Qué usuarios o grupos se verán afectados por este cambio?"
-              helperText="Campo opcional - Especifica quiénes se verán impactados"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#6d1313',
-                  },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#6d1313',
-                },
-              }}
-            />
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={2}
-                  label="Recursos Necesarios"
-                  value={formData.recursos_necesarios_sol}
-                  onChange={handleChange('recursos_necesarios_sol')}
-                  placeholder="Estimación de recursos, tiempo, personal..."
-                  helperText="Campo opcional - Tu estimación de recursos"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#6d1313',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#6d1313',
-                    },
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="date"
-                  label="Fecha Límite Deseada"
-                  value={formData.fecha_limite_deseada}
-                  onChange={handleChange('fecha_limite_deseada')}
-                  helperText="Campo opcional - Fecha límite deseada"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  inputProps={{
-                    min: new Date().toISOString().split('T')[0], // No permitir fechas pasadas
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#6d1313',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#6d1313',
-                    },
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-        );
-
-      case 3:
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ color: '#6d1313' }}>
-              Resumen de tu Solicitud
-            </Typography>
-            
-            <Card elevation={1}>
-              <CardContent>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                      {formData.titulo_sol}
-                    </Typography>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Category sx={{ fontSize: 16, color: '#6d1313' }} />
-                      <Typography variant="body2">
-                        <strong>Tipo:</strong> {tiposCambio.find(t => t.value === formData.tipo_cambio_sol)?.label}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <PriorityHigh sx={{ fontSize: 16, color: '#6d1313' }} />
-                      <Typography variant="body2">
-                        <strong>Prioridad:</strong> {prioridades.find(p => p.value === formData.prioridad_sol)?.label}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Timeline sx={{ fontSize: 16, color: '#6d1313' }} />
-                      <Typography variant="body2">
-                        <strong>Urgencia:</strong> {urgencias.find(u => u.value === formData.urgencia_sol)?.label}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  
-                  {formData.fecha_limite_deseada && (
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <CalendarMonth sx={{ fontSize: 16, color: '#6d1313' }} />
-                        <Typography variant="body2">
-                          <strong>Fecha límite:</strong> {new Date(formData.fecha_limite_deseada).toLocaleDateString('es-ES')}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )}
-                  
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 1 }} />
-                    <Typography variant="body2" paragraph>
-                      <strong>Descripción:</strong> {formData.descripcion_sol}
-                    </Typography>
-                    <Typography variant="body2" paragraph>
-                      <strong>Justificación:</strong> {formData.justificacion_sol}
-                    </Typography>
-                    
-                    {formData.impacto_negocio_sol && (
-                      <Typography variant="body2" paragraph>
-                        <strong>Impacto en el Negocio:</strong> {formData.impacto_negocio_sol}
-                      </Typography>
-                    )}
-                    
-                    {formData.beneficios_esperados_sol && (
-                      <Typography variant="body2" paragraph>
-                        <strong>Beneficios Esperados:</strong> {formData.beneficios_esperados_sol}
-                      </Typography>
-                    )}
-                    
-                    {formData.usuarios_afectados_sol && (
-                      <Typography variant="body2" paragraph>
-                        <strong>Usuarios Afectados:</strong> {formData.usuarios_afectados_sol}
-                      </Typography>
-                    )}
-                    
-                    {formData.recursos_necesarios_sol && (
-                      <Typography variant="body2">
-                        <strong>Recursos Necesarios:</strong> {formData.recursos_necesarios_sol}
-                      </Typography>
-                    )}
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Box>
-        );
-
-      default:
-        return null;
+  const handleGuardarBorrador = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (modoEdicion) {
+        // Actualizar solicitud existente
+        await solicitudesService.editarSolicitud(id, formData);
+        setSuccess('Solicitud actualizada como borrador');
+      } else {
+        // Crear nueva solicitud (se crea automáticamente como BORRADOR)
+        const response = await solicitudesService.crearSolicitud(formData);
+        setSuccess('Solicitud guardada como borrador');
+        
+        // Redirigir a edición de la nueva solicitud
+        navigate(`/solicitudes/editar/${response.data.id_sol}`);
+      }
+      
+    } catch (error) {
+      setError('Error al guardar: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleEnviarSolicitud = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Validar formulario antes de enviar
+      const errores = validarFormulario();
+      if (errores.length > 0) {
+        setError('Completa los campos obligatorios: ' + errores.join(', '));
+        return;
+      }
+      
+      let solicitudId = id;
+      
+      if (!modoEdicion) {
+        // Crear nueva solicitud primero
+        const response = await solicitudesService.crearSolicitud(formData);
+        solicitudId = response.data.id_sol;
+      } else {
+        // Actualizar solicitud existente
+        await solicitudesService.editarSolicitud(id, formData);
+      }
+      
+      // Enviar solicitud (BORRADOR → PENDIENTE)
+      await solicitudesService.enviarSolicitud(solicitudId);
+      
+      setSuccess('Solicitud enviada exitosamente. Está pendiente de revisión.');
+      
+      // Redirigir a mis solicitudes después de un momento
+      setTimeout(() => {
+        navigate('/solicitudes');
+      }, 2000);
+      
+    } catch (error) {
+      setError('Error al enviar: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEstadoInfo = (estado) => {
+    const estados = {
+      'BORRADOR': { color: '#9e9e9e', icon: <Edit />, label: 'Borrador' },
+      'PENDIENTE': { color: '#ff9800', icon: <Schedule />, label: 'Pendiente' },
+      'RECHAZADA': { color: '#f44336', icon: <Assignment />, label: 'Rechazada' }
+    };
+    return estados[estado] || estados['BORRADOR'];
+  };
+
+  const estadoInfo = solicitudActual ? getEstadoInfo(solicitudActual.estado_sol) : getEstadoInfo('BORRADOR');
+
   return (
-    <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
+    <Box sx={{ flexGrow: 1, p: 3 }}>
+      {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#6d1313' }}>
-          <Description sx={{ color: '#6d1313' }} />
-          Nueva Solicitud de Cambio
+        <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 1 }}>
+          {modoEdicion ? 'Editar Solicitud' : 'Nueva Solicitud de Cambio'}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Completa el formulario para enviar tu solicitud de cambio al equipo de desarrollo
+        <Typography variant="subtitle1" color="text.secondary">
+          {modoEdicion ? 'Modifica los detalles de tu solicitud' : 'Crea una nueva solicitud de cambio'}
         </Typography>
+        
+        {solicitudActual && (
+          <Box sx={{ mt: 2 }}>
+            <Chip 
+              icon={estadoInfo.icon}
+              label={estadoInfo.label}
+              sx={{ 
+                bgcolor: estadoInfo.color,
+                color: 'white',
+                fontWeight: 'bold'
+              }}
+            />
+          </Box>
+        )}
       </Box>
 
-      <Stepper activeStep={activeStep} sx={{ 
-        mb: 4,
-        '& .MuiStepIcon-root.Mui-active': {
-          color: '#6d1313',
-        },
-        '& .MuiStepIcon-root.Mui-completed': {
-          color: '#6d1313',
-        }
-      }}>
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
-
+      {/* Alertas */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
+      
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      )}
 
-      <Box sx={{ mb: 4 }}>
-        {renderStepContent(activeStep)}
-      </Box>
+      {/* Stepper de proceso */}
+      <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
+        <Stepper activeStep={modoEdicion && solicitudActual?.estado_sol !== 'BORRADOR' ? 1 : 0}>
+          <Step>
+            <StepLabel>Crear/Editar Borrador</StepLabel>
+          </Step>
+          <Step>
+            <StepLabel>Enviar para Revisión</StepLabel>
+          </Step>
+          <Step>
+            <StepLabel>Revisión y Aprobación</StepLabel>
+          </Step>
+        </Stepper>
+      </Paper>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      {/* Formulario */}
+      <Card>
+        <CardContent>
+          <Grid container spacing={3}>
+            {/* Información Básica */}
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: '#1976d2' }}>
+                📋 Información Básica
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                name="titulo_sol"
+                label="Título de la Solicitud"
+                value={formData.titulo_sol}
+                onChange={handleInputChange}
+                required
+                placeholder="Ej: Implementar autenticación de dos factores"
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Tipo de Cambio</InputLabel>
+                <Select
+                  name="tipo_cambio_sol"
+                  value={formData.tipo_cambio_sol}
+                  onChange={handleInputChange}
+                  label="Tipo de Cambio"
+                >
+                  {tiposCambio.map((tipo) => (
+                    <MenuItem key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Prioridad</InputLabel>
+                <Select
+                  name="prioridad_sol"
+                  value={formData.prioridad_sol}
+                  onChange={handleInputChange}
+                  label="Prioridad"
+                >
+                  {prioridades.map((prioridad) => (
+                    <MenuItem key={prioridad.value} value={prioridad.value}>
+                      {prioridad.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Urgencia</InputLabel>
+                <Select
+                  name="urgencia_sol"
+                  value={formData.urgencia_sol}
+                  onChange={handleInputChange}
+                  label="Urgencia"
+                >
+                  {urgencias.map((urgencia) => (
+                    <MenuItem key={urgencia.value} value={urgencia.value}>
+                      {urgencia.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                name="descripcion_sol"
+                label="Descripción Detallada"
+                value={formData.descripcion_sol}
+                onChange={handleInputChange}
+                required
+                placeholder="Describe detalladamente qué cambio necesitas y cómo debería funcionar..."
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                name="justificacion_sol"
+                label="Justificación del Cambio"
+                value={formData.justificacion_sol}
+                onChange={handleInputChange}
+                required
+                placeholder="Explica por qué es necesario este cambio..."
+              />
+            </Grid>
+
+            {/* Información Adicional */}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: '#1976d2' }}>
+                📊 Información Adicional
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                name="impacto_negocio_sol"
+                label="Impacto en el Negocio"
+                value={formData.impacto_negocio_sol}
+                onChange={handleInputChange}
+                placeholder="¿Cómo afectará este cambio al negocio?"
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                name="beneficios_esperados_sol"
+                label="Beneficios Esperados"
+                value={formData.beneficios_esperados_sol}
+                onChange={handleInputChange}
+                placeholder="¿Qué beneficios se esperan obtener?"
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                multiline
+                rows={2}
+                name="usuarios_afectados_sol"
+                label="Usuarios Afectados"
+                value={formData.usuarios_afectados_sol}
+                onChange={handleInputChange}
+                placeholder="¿Qué usuarios o grupos se verán afectados?"
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                multiline
+                rows={2}
+                name="recursos_necesarios_sol"
+                label="Recursos Necesarios"
+                value={formData.recursos_necesarios_sol}
+                onChange={handleInputChange}
+                placeholder="¿Qué recursos adicionales se necesitan?"
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                type="date"
+                name="fecha_limite_deseada"
+                label="Fecha Límite Deseada"
+                value={formData.fecha_limite_deseada}
+                onChange={handleInputChange}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Botones de Acción */}
+      <Box sx={{ mt: 4, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button
-          disabled={activeStep === 0}
-          onClick={handleBack}
           variant="outlined"
-          sx={{
-            borderColor: '#6d1313',
-            color: '#6d1313',
-            '&:hover': {
-              borderColor: '#5a1010',
-              backgroundColor: 'rgba(109, 19, 19, 0.04)',
-            },
-          }}
+          onClick={() => navigate('/solicitudes')}
+          disabled={loading}
         >
-          Atrás
+          Cancelar
         </Button>
-
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {activeStep === steps.length - 1 ? (
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : <Send />}
-              sx={{ 
-                minWidth: 140,
-                backgroundColor: '#6d1313',
-                '&:hover': {
-                  backgroundColor: '#5a1010',
-                },
-              }}
-            >
-              {loading ? 'Enviando...' : 'Enviar Solicitud'}
-            </Button>
-          ) : (
-            <Button 
-              variant="contained" 
-              onClick={handleNext}
-              sx={{
-                backgroundColor: '#6d1313',
-                '&:hover': {
-                  backgroundColor: '#5a1010',
-                },
-              }}
-            >
-              Siguiente
-            </Button>
-          )}
-        </Box>
+        
+        <Button
+          variant="outlined"
+          startIcon={<Save />}
+          onClick={handleGuardarBorrador}
+          disabled={loading}
+          sx={{ color: '#9e9e9e', borderColor: '#9e9e9e' }}
+        >
+          Guardar Borrador
+        </Button>
+        
+        <Button
+          variant="contained"
+          startIcon={<Send />}
+          onClick={handleEnviarSolicitud}
+          disabled={loading}
+          sx={{ bgcolor: '#4caf50' }}
+        >
+          Enviar Solicitud
+        </Button>
       </Box>
-    </Paper>
+    </Box>
   );
 };
 

@@ -61,6 +61,9 @@ const AdminSolicitudes = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [respuestaDialog, setRespuestaDialog] = useState(false);
   const [gestionTecnicaDialog, setGestionTecnicaDialog] = useState(false);
+  const [asignacionDialog, setAsignacionDialog] = useState(false);
+  const [desarrolladores, setDesarrolladores] = useState([]);
+  const [desarrolladorSeleccionado, setDesarrolladorSeleccionado] = useState('');
   const [estadisticas, setEstadisticas] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   
@@ -180,6 +183,38 @@ const AdminSolicitudes = () => {
   const abrirGestionTecnica = (solicitud) => {
     setSelectedSolicitud(solicitud);
     setGestionTecnicaDialog(true);
+  };
+
+  const abrirAsignacionDesarrollador = async (solicitud) => {
+    try {
+      setSelectedSolicitud(solicitud);
+      // Cargar lista de desarrolladores disponibles
+      const response = await solicitudesService.obtenerDesarrolladoresDisponibles();
+      setDesarrolladores(response.data);
+      setDesarrolladorSeleccionado('');
+      setAsignacionDialog(true);
+    } catch (error) {
+      setError('Error al cargar desarrolladores disponibles');
+      console.error('Error cargando desarrolladores:', error);
+    }
+  };
+
+  const handleAsignarDesarrollador = async () => {
+    if (!desarrolladorSeleccionado || !selectedSolicitud) return;
+
+    try {
+      setLoading(true);
+      await solicitudesService.asignarDesarrollador(selectedSolicitud.id_sol, desarrolladorSeleccionado);
+      setAsignacionDialog(false);
+      setDesarrolladorSeleccionado('');
+      await cargarSolicitudes();
+      await cargarEstadisticas();
+    } catch (error) {
+      setError('Error al asignar desarrollador');
+      console.error('Error asignando desarrollador:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGestionTecnicaCompleta = async () => {
@@ -404,6 +439,27 @@ const AdminSolicitudes = () => {
               }}
             >
               Gestión Completa
+            </Button>
+          )}
+
+          {/* Botón de asignación de desarrollador - Solo para solicitudes aprobadas */}
+          {solicitud.estado_sol === 'APROBADA' && (
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<Person />}
+              onClick={() => abrirAsignacionDesarrollador(solicitud)}
+              size="small"
+              sx={{
+                color: '#7b1fa2',
+                borderColor: '#7b1fa2',
+                '&:hover': {
+                  bgcolor: 'rgba(123, 31, 162, 0.1)',
+                  borderColor: '#7b1fa2'
+                }
+              }}
+            >
+              Asignar Desarrollador
             </Button>
           )}
 
@@ -1197,6 +1253,75 @@ const AdminSolicitudes = () => {
         solicitud={selectedSolicitud}
         onGestionCompleta={handleGestionTecnicaCompleta}
       />
+
+      {/* Dialog para asignar desarrollador */}
+      <Dialog
+        open={asignacionDialog}
+        onClose={() => setAsignacionDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle>
+          <Typography variant="h6">
+            Asignar Desarrollador
+          </Typography>
+        </DialogTitle>
+        
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            {selectedSolicitud && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Solicitud: {selectedSolicitud.titulo_sol}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  ID: {selectedSolicitud.id_sol}
+                </Typography>
+              </Box>
+            )}
+            
+            <FormControl fullWidth>
+              <InputLabel>Desarrollador</InputLabel>
+              <Select
+                value={desarrolladorSeleccionado}
+                label="Desarrollador"
+                onChange={(e) => setDesarrolladorSeleccionado(e.target.value)}
+              >
+                {desarrolladores.map((dev) => (
+                  <MenuItem key={dev.id} value={dev.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Avatar sx={{ width: 24, height: 24, bgcolor: '#7b1fa2', fontSize: '0.8rem' }}>
+                        {dev.nombre.charAt(0)}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2">{dev.nombre}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {dev.email}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        
+        <DialogActions>
+          <Button onClick={() => setAsignacionDialog(false)}>
+            Cancelar
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleAsignarDesarrollador}
+            disabled={!desarrolladorSeleccionado || loading}
+            sx={{ bgcolor: '#7b1fa2', '&:hover': { bgcolor: '#6a1b9a' } }}
+          >
+            {loading ? 'Asignando...' : 'Asignar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       </Box>
     </Box>
   );

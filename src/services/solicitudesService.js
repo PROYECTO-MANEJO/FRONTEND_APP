@@ -46,6 +46,7 @@ const OPCIONES_CATEGORIA = [
 
 const OPCIONES_ESTADO = [
   // Estados iniciales
+  { value: 'BORRADOR', label: 'Borrador', color: '#9e9e9e' },
   { value: 'PENDIENTE', label: 'Pendiente', color: '#757575' },
   { value: 'EN_REVISION', label: 'En Revisión', color: '#2196f3' },
   
@@ -188,6 +189,106 @@ const solicitudesService = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error al obtener estadísticas');
+    }
+  },
+
+  // ========================================
+  // FUNCIONES PARA DESARROLLADORES
+  // ========================================
+
+  // Obtener solicitudes asignadas a un desarrollador específico
+  async getSolicitudesAsignadas(desarrolladorId) {
+    try {
+      const response = await api.get(`/solicitudes-cambio/desarrollador/${desarrolladorId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener las solicitudes asignadas');
+    }
+  },
+
+  // Actualizar estado de una solicitud (para desarrolladores)
+  async actualizarEstadoSolicitud(solicitudId, nuevoEstado) {
+    try {
+      const response = await api.post(`/solicitudes-cambio/${solicitudId}/estado`, {
+        estado: nuevoEstado
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al actualizar el estado de la solicitud');
+    }
+  },
+
+  // Asignar desarrollador a una solicitud (para admins)
+  async asignarDesarrollador(solicitudId, desarrolladorId) {
+    try {
+      const response = await api.post(`/solicitudes-cambio/${solicitudId}/asignar-desarrollador`, {
+        desarrolladorId
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al asignar desarrollador');
+    }
+  },
+
+  // Obtener una solicitud específica (desarrollador)
+  async obtenerSolicitudDesarrollador(id) {
+    try {
+      const response = await api.get(`/solicitudes-cambio/desarrollador/solicitud/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener la solicitud');
+    }
+  },
+
+  // Agregar comentario de desarrollo
+  async agregarComentarioDesarrollo(solicitudId, comentario) {
+    try {
+      const response = await api.post(`/solicitudes-cambio/${solicitudId}/comentario-desarrollo`, {
+        comentario
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al agregar comentario');
+    }
+  },
+
+  // Obtener desarrolladores disponibles (para admins)
+  async obtenerDesarrolladoresDisponibles() {
+    try {
+      const response = await api.get('/solicitudes-cambio/admin/desarrolladores/disponibles');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener desarrolladores disponibles');
+    }
+  },
+
+  // Enviar solicitud (BORRADOR → PENDIENTE)
+  async enviarSolicitud(solicitudId) {
+    try {
+      const response = await api.put(`/solicitudes-cambio/${solicitudId}/enviar`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al enviar la solicitud');
+    }
+  },
+
+  // Actualizar planes técnicos (para desarrolladores)
+  async actualizarPlanesTecnicos(solicitudId, planes) {
+    try {
+      const response = await api.put(`/developer/solicitud/${solicitudId}/planes-tecnicos`, planes);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al actualizar los planes técnicos');
+    }
+  },
+
+  // Eliminar solicitud (solo BORRADOR)
+  async eliminarSolicitud(solicitudId) {
+    try {
+      const response = await api.delete(`/solicitudes-cambio/${solicitudId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al eliminar la solicitud');
     }
   },
 

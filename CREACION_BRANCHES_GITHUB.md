@@ -112,7 +112,7 @@ GITHUB_DEFAULT_OWNER=tu_organizacion
 # Repositorio principal
 GITHUB_DEFAULT_REPO=repositorio_principal
 
-# Repositorios adicionales (opcional)
+# Solo 2 repositorios: Frontend y Backend
 GITHUB_REPO_FRONTEND=frontend_repo
 GITHUB_REPO_BACKEND=backend_repo
 ```

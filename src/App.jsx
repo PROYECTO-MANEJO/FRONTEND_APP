@@ -14,6 +14,7 @@ import ResetPassword from './components/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import MasterRoute from './components/auth/MasterRoute';
+import DeveloperRoute from './components/auth/DeveloperRoute';
 
 // User components
 import Dashboard from './components/user/Dashboard';
@@ -42,6 +43,12 @@ import HistorialReportesGenerales from './components/admin/HistorialReportesGene
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
+import CrearSolicitud from './components/solicitudes/CrearSolicitud';
+
+// Developer components
+import DeveloperLayout from './components/developer/DeveloperLayout';
+import SolicitudesDesarrollador from './components/developer/SolicitudesDesarrollador';
+import DetalleSolicitudDesarrollador from './components/developer/DetalleSolicitudDesarrollador';
 
 function App() {
   return (
@@ -51,8 +58,8 @@ function App() {
         <SidebarProvider>
           <Router>
           <Routes>
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Redirect root to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
@@ -78,6 +85,28 @@ function App() {
                 <ProtectedRoute>
                   <UserSidebarProvider>
                     <SolicitudesUsuario />
+                  </UserSidebarProvider>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/solicitudes/crear" 
+              element={
+                <ProtectedRoute>
+                  <UserSidebarProvider>
+                    <CrearSolicitud />
+                  </UserSidebarProvider>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/solicitudes/editar/:id" 
+              element={
+                <ProtectedRoute>
+                  <UserSidebarProvider>
+                    <CrearSolicitud />
                   </UserSidebarProvider>
                 </ProtectedRoute>
               } 
@@ -175,6 +204,20 @@ function App() {
                 </MasterRoute>
               } 
             />
+
+            {/* Developer routes */}
+            <Route 
+              path="/developer" 
+              element={
+                <DeveloperRoute>
+                  <DeveloperLayout />
+                </DeveloperRoute>
+              }
+            >
+              <Route index element={<Navigate to="/developer/solicitudes" replace />} />
+              <Route path="solicitudes" element={<SolicitudesDesarrollador />} />
+              <Route path="solicitud/:id" element={<DetalleSolicitudDesarrollador />} />
+            </Route>
             
             <Route 
               path="/admin/reportes" 
@@ -275,7 +318,7 @@ function App() {
             />
             
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Router>
         </SidebarProvider>

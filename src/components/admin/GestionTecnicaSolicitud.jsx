@@ -102,7 +102,7 @@ const GestionTecnicaSolicitud = ({
   const [githubLoading, setGithubLoading] = useState(false);
   const [githubError, setGithubError] = useState(null);
   const [githubConfig, setGithubConfig] = useState(null);
-  const [selectedRepo, setSelectedRepo] = useState('main');
+  const [selectedRepo, setSelectedRepo] = useState('frontend');
   
   // Estados para creación de branches y PRs
   const [creandoBranch, setCreandoBranch] = useState(false);

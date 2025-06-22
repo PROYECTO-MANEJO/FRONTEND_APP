@@ -141,7 +141,7 @@ class GitHubService {
   }
 
   // Crear un nuevo branch para una solicitud
-  async crearBranch(solicitudId, repoType = 'main', baseBranch = 'main') {
+  async crearBranch(solicitudId, repoType = 'frontend', baseBranch = 'main') {
     try {
       const response = await api.post(`/github/solicitud/${solicitudId}/crear-branch`, {
         repoType,
@@ -155,7 +155,7 @@ class GitHubService {
   }
 
   // Crear Pull Request para una solicitud
-  async crearPullRequest(solicitudId, branchName, repoType = 'main', baseBranch = 'main') {
+  async crearPullRequest(solicitudId, branchName, repoType = 'frontend', baseBranch = 'main') {
     try {
       const response = await api.post(`/github/solicitud/${solicitudId}/crear-pull-request`, {
         branchName,
@@ -170,7 +170,7 @@ class GitHubService {
   }
 
   // Obtener información detallada de un branch
-  async obtenerInfoBranch(branchName, repoType = 'main') {
+  async obtenerInfoBranch(branchName, repoType = 'frontend') {
     try {
       const response = await api.get(`/github/branch/${repoType}/${encodeURIComponent(branchName)}`);
       return response.data;
@@ -178,6 +178,33 @@ class GitHubService {
       console.error('Error obteniendo información del branch:', error);
       throw error;
     }
+  }
+
+  // Formatear tiempo de manera legible
+  formatearTiempo(fechaISO) {
+    if (!fechaISO) return 'Fecha no disponible';
+    
+    const fecha = new Date(fechaISO);
+    const ahora = new Date();
+    const diferencia = ahora - fecha;
+    
+    const minutos = Math.floor(diferencia / (1000 * 60));
+    const horas = Math.floor(diferencia / (1000 * 60 * 60));
+    const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+    
+    if (minutos < 1) return 'Hace un momento';
+    if (minutos < 60) return `Hace ${minutos} minuto${minutos > 1 ? 's' : ''}`;
+    if (horas < 24) return `Hace ${horas} hora${horas > 1 ? 's' : ''}`;
+    if (dias < 30) return `Hace ${dias} día${dias > 1 ? 's' : ''}`;
+    
+    // Para fechas más antiguas, mostrar fecha formateada
+    return fecha.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   // Obtener estado de sincronización (texto descriptivo)
