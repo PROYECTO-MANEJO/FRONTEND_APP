@@ -153,19 +153,9 @@ const AdminSolicitudes = () => {
     setFiltros(nuevosFiltros);
   };
 
-  const verDetalle = async (solicitud) => {
-    try {
-      setLoading(true);
-      // Cargar los detalles completos de la solicitud desde el backend
-      const response = await solicitudesService.obtenerSolicitudAdmin(solicitud.id_sol);
-      setSelectedSolicitud(response.data);
-      setDialogOpen(true);
-    } catch (error) {
-      setError('Error al cargar los detalles de la solicitud');
-      console.error('Error cargando detalles:', error);
-    } finally {
-      setLoading(false);
-    }
+  const verDetalle = (solicitud) => {
+    // Navegar a la página de detalle completo
+    window.location.href = `/admin/solicitud/${solicitud.id_sol}`;
   };
 
   const abrirRespuesta = (solicitud) => {
@@ -204,13 +194,23 @@ const AdminSolicitudes = () => {
 
     try {
       setLoading(true);
+      
+      // Debug logs
+      console.log('=== DEBUG ASIGNACIÓN DESARROLLADOR ===');
+      console.log('Solicitud ID:', selectedSolicitud.id_sol);
+      console.log('Tipo de solicitud ID:', typeof selectedSolicitud.id_sol);
+      console.log('Desarrollador seleccionado:', desarrolladorSeleccionado);
+      console.log('Tipo de desarrollador ID:', typeof desarrolladorSeleccionado);
+      console.log('Desarrolladores disponibles:', desarrolladores);
+      console.log('Desarrollador encontrado:', desarrolladores.find(d => d.id === desarrolladorSeleccionado));
+      
       await solicitudesService.asignarDesarrollador(selectedSolicitud.id_sol, desarrolladorSeleccionado);
       setAsignacionDialog(false);
       setDesarrolladorSeleccionado('');
       await cargarSolicitudes();
       await cargarEstadisticas();
     } catch (error) {
-      setError('Error al asignar desarrollador');
+      setError('Error al asignar desarrollador: ' + error.message);
       console.error('Error asignando desarrollador:', error);
     } finally {
       setLoading(false);

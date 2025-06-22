@@ -77,7 +77,22 @@ const SolicitudesDesarrollador = () => {
       setLoading(true);
       setError(null);
       
-      const response = await solicitudesService.getSolicitudesAsignadas(user.id);
+      console.log('=== FRONTEND DEBUG ===');
+      console.log('Usuario completo:', user);
+      console.log('User ID:', user?.id);
+      console.log('User ID_USU:', user?.id_usu);
+      console.log('User properties:', Object.keys(user || {}));
+      console.log('User ID tipo:', typeof user?.id);
+      
+      const userId = user?.id_usu || user?.id;
+      console.log('User ID final seleccionado:', userId);
+      
+      if (!userId) {
+        setError('Usuario no autenticado - ID no encontrado');
+        return;
+      }
+      
+      const response = await solicitudesService.getSolicitudesAsignadas(userId);
       let solicitudesFiltradas = response.data || [];
       
       // Aplicar filtro de estado si existe
@@ -93,6 +108,8 @@ const SolicitudesDesarrollador = () => {
         total: todasLasSolicitudes.length,
         pendientes: todasLasSolicitudes.filter(s => s.estado_sol === 'APROBADA').length,
         enDesarrollo: todasLasSolicitudes.filter(s => s.estado_sol === 'EN_DESARROLLO').length,
+        planesPendientes: todasLasSolicitudes.filter(s => s.estado_sol === 'PLANES_PENDIENTES_APROBACION').length,
+        listoImplementar: todasLasSolicitudes.filter(s => s.estado_sol === 'LISTO_PARA_IMPLEMENTAR').length,
         enTesting: todasLasSolicitudes.filter(s => s.estado_sol === 'EN_TESTING').length,
         completadas: todasLasSolicitudes.filter(s => s.estado_sol === 'COMPLETADA').length,
         enPausa: todasLasSolicitudes.filter(s => s.estado_sol === 'EN_PAUSA').length
@@ -101,7 +118,8 @@ const SolicitudesDesarrollador = () => {
       
     } catch (error) {
       console.error('Error cargando solicitudes:', error);
-      setError('Error al cargar las solicitudes asignadas');
+      console.error('Error completo:', error);
+      setError(error.message || 'Error al cargar las solicitudes asignadas');
     } finally {
       setLoading(false);
     }
@@ -123,6 +141,17 @@ const SolicitudesDesarrollador = () => {
     } catch (error) {
       console.error('Error actualizando estado:', error);
       setError('Error al actualizar el estado');
+    }
+  };
+
+  const handleEnviarPlanesARevision = async (solicitudId) => {
+    try {
+      await solicitudesService.enviarPlanesARevision(solicitudId);
+      loadSolicitudesAsignadas();
+      setError(null);
+    } catch (error) {
+      console.error('Error enviando planes a revisión:', error);
+      setError(error.message);
     }
   };
 
@@ -151,8 +180,10 @@ const SolicitudesDesarrollador = () => {
   const getProgresoSegunEstado = (estado) => {
     const progreso = {
       'APROBADA': 0,
-      'EN_DESARROLLO': 50,
-      'EN_TESTING': 80,
+      'EN_DESARROLLO': 30,
+      'PLANES_PENDIENTES_APROBACION': 50,
+      'LISTO_PARA_IMPLEMENTAR': 70,
+      'EN_TESTING': 85,
       'COMPLETADA': 100,
       'EN_PAUSA': 25
     };
@@ -186,8 +217,8 @@ const SolicitudesDesarrollador = () => {
       )}
 
       {/* Estadísticas */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={2}>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={1.5}>
           <Card 
             sx={{ 
               bgcolor: '#f3e5f5',
@@ -208,7 +239,7 @@ const SolicitudesDesarrollador = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={1.5}>
           <Card 
             sx={{ 
               bgcolor: '#fff3e0',
@@ -229,7 +260,7 @@ const SolicitudesDesarrollador = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={1.5}>
           <Card 
             sx={{ 
               bgcolor: '#e3f2fd',
@@ -250,7 +281,49 @@ const SolicitudesDesarrollador = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={1.5}>
+          <Card 
+            sx={{ 
+              bgcolor: '#fff3e0',
+              cursor: 'pointer',
+              border: filtroEstado === 'PLANES_PENDIENTES_APROBACION' ? '2px solid #ff6f00' : '1px solid transparent'
+            }}
+            onClick={() => handleFiltroChange('PLANES_PENDIENTES_APROBACION')}
+          >
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <Assignment sx={{ fontSize: 40, color: '#ff6f00', mb: 1 }} />
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ff6f00' }}>
+                {stats.planesPendientes}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Planes Pendientes
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={1.5}>
+          <Card 
+            sx={{ 
+              bgcolor: '#e8f5e8',
+              cursor: 'pointer',
+              border: filtroEstado === 'LISTO_PARA_IMPLEMENTAR' ? '2px solid #388e3c' : '1px solid transparent'
+            }}
+            onClick={() => handleFiltroChange('LISTO_PARA_IMPLEMENTAR')}
+          >
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <CheckCircle sx={{ fontSize: 40, color: '#388e3c', mb: 1 }} />
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#388e3c' }}>
+                {stats.listoImplementar}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Listo Implementar
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={1.5}>
           <Card 
             sx={{ 
               bgcolor: '#f3e5f5',
@@ -271,7 +344,7 @@ const SolicitudesDesarrollador = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={1.5}>
           <Card 
             sx={{ 
               bgcolor: '#e8f5e8',
@@ -292,7 +365,7 @@ const SolicitudesDesarrollador = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={1.5}>
           <Card 
             sx={{ 
               bgcolor: '#f5f5f5',
@@ -329,6 +402,8 @@ const SolicitudesDesarrollador = () => {
                 <MenuItem value="">Todos los Estados</MenuItem>
                 <MenuItem value="APROBADA">Pendientes (Aprobadas)</MenuItem>
                 <MenuItem value="EN_DESARROLLO">En Desarrollo</MenuItem>
+                <MenuItem value="PLANES_PENDIENTES_APROBACION">Planes Pendientes Aprobación</MenuItem>
+                <MenuItem value="LISTO_PARA_IMPLEMENTAR">Listo para Implementar</MenuItem>
                 <MenuItem value="EN_TESTING">En Testing</MenuItem>
                 <MenuItem value="EN_PAUSA">En Pausa</MenuItem>
                 <MenuItem value="COMPLETADA">Completadas</MenuItem>
@@ -461,13 +536,13 @@ const SolicitudesDesarrollador = () => {
                           
                           {solicitud.estado_sol === 'EN_DESARROLLO' && (
                             <>
-                              <Tooltip title="Completar Desarrollo">
+                              <Tooltip title="Enviar Planes a Revisión">
                                 <IconButton 
                                   size="small" 
-                                  color="success"
-                                  onClick={() => handleAccionRapida(solicitud.id_sol, 'EN_TESTING')}
+                                  color="primary"
+                                  onClick={() => handleEnviarPlanesARevision(solicitud.id_sol)}
                                 >
-                                  <Done />
+                                  <Assignment />
                                 </IconButton>
                               </Tooltip>
                               <Tooltip title="Pausar">

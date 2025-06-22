@@ -61,6 +61,8 @@ const OPCIONES_ESTADO = [
   
   // Estados de implementación
   { value: 'EN_DESARROLLO', label: 'En Desarrollo', color: '#3f51b5' },
+  { value: 'PLANES_PENDIENTES_APROBACION', label: 'Planes Pend. Aprobación', color: '#ff6f00' },
+  { value: 'LISTO_PARA_IMPLEMENTAR', label: 'Listo para Implementar', color: '#388e3c' },
   { value: 'EN_TESTING', label: 'En Testing', color: '#9c27b0' },
   { value: 'EN_DESPLIEGUE', label: 'En Despliegue', color: '#ff5722' },
   
@@ -199,9 +201,19 @@ const solicitudesService = {
   // Obtener solicitudes asignadas a un desarrollador específico
   async getSolicitudesAsignadas(desarrolladorId) {
     try {
+      console.log('=== SERVICE getSolicitudesAsignadas ===');
+      console.log('Desarrollador ID recibido:', desarrolladorId);
+      console.log('URL que se va a llamar:', `/solicitudes-cambio/desarrollador/${desarrolladorId}`);
+      
       const response = await api.get(`/solicitudes-cambio/desarrollador/${desarrolladorId}`);
+      console.log('Solicitudes obtenidas:', response.data?.data?.length || 0);
       return response.data;
     } catch (error) {
+      console.error('=== ERROR EN getSolicitudesAsignadas ===');
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      console.error('Error message:', error.message);
       throw new Error(error.response?.data?.message || 'Error al obtener las solicitudes asignadas');
     }
   },
@@ -221,11 +233,20 @@ const solicitudesService = {
   // Asignar desarrollador a una solicitud (para admins)
   async asignarDesarrollador(solicitudId, desarrolladorId) {
     try {
+      console.log('=== SERVICE DEBUG ===');
+      console.log('URL:', `/solicitudes-cambio/${solicitudId}/asignar-desarrollador`);
+      console.log('Payload:', { desarrolladorId });
+      console.log('Solicitud ID:', solicitudId, 'Tipo:', typeof solicitudId);
+      console.log('Desarrollador ID:', desarrolladorId, 'Tipo:', typeof desarrolladorId);
+      
       const response = await api.post(`/solicitudes-cambio/${solicitudId}/asignar-desarrollador`, {
         desarrolladorId
       });
       return response.data;
     } catch (error) {
+      console.error('=== ERROR EN SERVICE ===');
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
       throw new Error(error.response?.data?.message || 'Error al asignar desarrollador');
     }
   },
@@ -244,6 +265,18 @@ const solicitudesService = {
   async agregarComentarioDesarrollo(solicitudId, comentario) {
     try {
       const response = await api.post(`/solicitudes-cambio/${solicitudId}/comentario-desarrollo`, {
+        comentario
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al agregar comentario');
+    }
+  },
+
+  // Agregar comentario como admin
+  async agregarComentarioAdmin(solicitudId, comentario) {
+    try {
+      const response = await api.post(`/solicitudes-cambio/${solicitudId}/comentario-admin`, {
         comentario
       });
       return response.data;
@@ -275,10 +308,96 @@ const solicitudesService = {
   // Actualizar planes técnicos (para desarrolladores)
   async actualizarPlanesTecnicos(solicitudId, planes) {
     try {
-      const response = await api.put(`/developer/solicitud/${solicitudId}/planes-tecnicos`, planes);
+      console.log('=== ACTUALIZANDO PLANES TÉCNICOS ===');
+      console.log('Solicitud ID:', solicitudId);
+      console.log('Planes a enviar:', planes);
+      
+      const response = await api.put(`/solicitudes-cambio/desarrollador/solicitud/${solicitudId}/planes-tecnicos`, planes);
       return response.data;
     } catch (error) {
+      console.error('Error actualizando planes técnicos:', error);
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
       throw new Error(error.response?.data?.message || 'Error al actualizar los planes técnicos');
+    }
+  },
+
+  // Enviar planes técnicos a revisión (desarrolladores)
+  async enviarPlanesARevision(solicitudId) {
+    try {
+      const response = await api.post(`/solicitudes-cambio/${solicitudId}/enviar-planes-revision`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al enviar planes a revisión');
+    }
+  },
+
+  // Obtener solicitudes con planes pendientes (MASTER)
+  async obtenerSolicitudesPlanesPendientes() {
+    try {
+      const response = await api.get('/solicitudes-cambio/admin/planes-pendientes');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener solicitudes con planes pendientes');
+    }
+  },
+
+  // Aprobar o rechazar planes técnicos (MASTER) - CON MUTEX GLOBAL
+  async aprobarRechazarPlanes(solicitudId, accion, comentarios = '') {
+    // MUTEX GLOBAL - Una sola petición a la vez para esta función específica
+    if (window.__MUTEX_APROBAR_RECHAZAR_ACTIVO) {
+      console.log('🚫 MUTEX ACTIVO - Bloqueando petición duplicada');
+      return { success: true, message: 'Petición ya en proceso, ignorando duplicado' };
+    }
+
+    let timeoutId;
+    try {
+      // Activar mutex global
+      window.__MUTEX_APROBAR_RECHAZAR_ACTIVO = true;
+      console.log('🔒 MUTEX ACTIVADO para aprobar/rechazar');
+      
+      // Timeout de seguridad: liberar mutex después de 10 segundos máximo
+      timeoutId = setTimeout(() => {
+        if (window.__MUTEX_APROBAR_RECHAZAR_ACTIVO) {
+          console.log('⏰ TIMEOUT: Liberando mutex por seguridad');
+          window.__MUTEX_APROBAR_RECHAZAR_ACTIVO = false;
+        }
+      }, 10000);
+      
+      console.log('=== APROBAR/RECHAZAR PLANES (MUTEX) ===');
+      console.log('Solicitud ID:', solicitudId);
+      console.log('Acción:', accion);
+      console.log('Comentarios:', comentarios);
+      
+      // Usar GET con query parameters para evitar OPTIONS
+      const encodedComentarios = encodeURIComponent(comentarios || '');
+      const response = await api.get(`/solicitudes-cambio/${solicitudId}/aprobar-rechazar-planes?accion=${accion}&comentarios=${encodedComentarios}`);
+      
+      console.log('✅ Respuesta recibida:', response.data);
+      
+      // Limpiar timeout si la petición fue exitosa
+      clearTimeout(timeoutId);
+      
+      return response.data;
+      
+    } catch (error) {
+      console.error('❌ Error aprobando/rechazando planes:', error);
+      
+      // Manejar diferentes tipos de errores
+      let errorMessage = 'Error al procesar la decisión sobre los planes';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      throw new Error(errorMessage);
+    } finally {
+      // SIEMPRE liberar el mutex, incluso si hay error
+      clearTimeout(timeoutId); // Limpiar timeout
+      window.__MUTEX_APROBAR_RECHAZAR_ACTIVO = false;
+      console.log('🔓 MUTEX LIBERADO');
     }
   },
 

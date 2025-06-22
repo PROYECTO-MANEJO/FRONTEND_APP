@@ -28,7 +28,7 @@ import {
   PriorityHigh,
   CheckCircle,
   Business,
-  Timeline,
+
   Group,
   CalendarMonth,
   Edit,

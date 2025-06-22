@@ -26,7 +26,8 @@ import {
   VerifiedUser,
   ManageAccounts,
   MenuOpen,
-  Menu
+  Menu,
+  CheckCircle
 } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
@@ -53,6 +54,7 @@ const AdminSidebar = () => {
     { text: 'Cursos', icon: <School />, path: '/admin/cursos' },
     { text: 'Gestión', icon: <ManageAccounts />, path: '/admin/gestion-inscripciones' },
     ...(user?.rol === 'MASTER' ? [{ text: 'Solicitudes de Cambio', icon: <RequestPage />, path: '/admin/solicitudes' }] : []),
+    ...(user?.rol === 'MASTER' ? [{ text: 'Revisión de Planes', icon: <CheckCircle />, path: '/admin/revision-planes' }] : []),
     { text: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
   ];
 

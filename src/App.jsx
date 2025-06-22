@@ -27,11 +27,13 @@ import MisCertificadosWrapper from './components/user/MisCertificadosWrapper';
 // Admin components
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminSolicitudes from './components/admin/AdminSolicitudes';
+import DetalleSolicitudAdmin from './components/admin/DetalleSolicitudAdmin';
 import AdminUsuarios from './components/admin/AdminUsuarios';
 import AdminEventos from './components/admin/AdminEventos';
 import CrearEventos from './components/admin/CrearEventos';
 import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
+import RevisionPlanes from './components/admin/RevisionPlanes';
 
 
 import HistorialReportesFinancieros from './components/admin/HistorialReportesFinancieros';
@@ -201,6 +203,24 @@ function App() {
               element={
                 <MasterRoute>
                   <AdminSolicitudes />
+                </MasterRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/solicitud/:id" 
+              element={
+                <MasterRoute>
+                  <DetalleSolicitudAdmin />
+                </MasterRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/revision-planes" 
+              element={
+                <MasterRoute>
+                  <RevisionPlanes />
                 </MasterRoute>
               } 
             />
