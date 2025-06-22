@@ -282,7 +282,7 @@ const AdminSolicitudes = () => {
     }
   };
 
-  // Función para obtener información del estado con colores distintivos
+  // Función para obtener información del estado con colores rojos
   const getEstadoInfo = (estado) => {
     const estadosInfo = {
       'BORRADOR': { 
@@ -291,23 +291,23 @@ const AdminSolicitudes = () => {
         label: 'Borrador' 
       },
       'PENDIENTE': { 
-        color: '#ff9800',
-        bgcolor: '#fff3e0',
+        color: '#b91c1c',
+        bgcolor: '#fef2f2',
         label: 'Pendiente' 
       },
       'EN_REVISION': { 
-        color: '#2196f3',
-        bgcolor: '#e3f2fd',
+        color: '#dc2626',
+        bgcolor: '#fef2f2',
         label: 'En Revisión' 
       },
       'APROBADA': { 
-        color: '#4caf50',
-        bgcolor: '#e8f5e8',
+        color: '#991b1b',
+        bgcolor: '#f0fdf4',
         label: 'Aprobada' 
       },
       'RECHAZADA': { 
-        color: '#f44336',
-        bgcolor: '#ffebee',
+        color: '#ef4444',
+        bgcolor: '#fef2f2',
         label: 'Rechazada' 
       }
     };
@@ -467,14 +467,7 @@ const AdminSolicitudes = () => {
                     <Chip
                       label={solicitud.prioridad_sol}
               size="small"
-                      sx={{
-                        bgcolor: solicitud.prioridad_sol === 'CRITICA' ? '#d32f2f' : 
-                                solicitud.prioridad_sol === 'ALTA' ? '#ff9800' :
-                                solicitud.prioridad_sol === 'MEDIA' ? '#2196f3' :
-                                solicitud.prioridad_sol === 'BAJA' ? '#4caf50' : '#9e9e9e',
-                        color: 'white',
-                        fontWeight: 'bold'
-                      }}
+                      color={solicitud.prioridad_sol === 'ALTA' || solicitud.prioridad_sol === 'CRITICA' ? 'error' : 'default'}
                     />
                   </TableCell>
                   
@@ -1057,7 +1050,7 @@ const AdminSolicitudes = () => {
                         </Box>
                               </Grid>
                             </Grid>
-                          </Box>
+                        </Box>
 
                           {/* Comentarios del Administrador - Altura fija */}
                           <Box sx={{ height: '120px' }}>
@@ -1083,7 +1076,7 @@ const AdminSolicitudes = () => {
                                 {selectedSolicitud.comentarios_admin_sol || 'Sin comentarios del administrador'}
                             </Typography>
                             </Paper>
-                          </Box>
+                        </Box>
 
                           {/* Planificación - Altura fija */}
                           <Box sx={{ height: '140px' }}>
@@ -1114,14 +1107,12 @@ const AdminSolicitudes = () => {
                               <Typography variant="body2" sx={{ height: '20px' }}>
                                 <strong>Desarrollador:</strong> {selectedSolicitud.desarrollador_asignado?.nombre_completo || 'No asignado'}
                           </Typography>
-                            </Box>
-                          </Box>
                         </Box>
                       </Paper>
                     </Box>
                   </Box>
                 </Box>
-              
+              )}
             </Box>
           )}
           </DialogContent>

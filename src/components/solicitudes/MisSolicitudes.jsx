@@ -127,6 +127,21 @@ const MisSolicitudes = () => {
     }
   };
 
+  const getPrioridadColor = (prioridad) => {
+    const colores = {
+      'BAJA': '#4caf50',
+      'MEDIA': '#2196f3',
+      'ALTA': '#ff9800',
+      'CRITICA': '#d32f2f',
+      'URGENTE': '#f44336'
+    };
+    return colores[prioridad] || '#9e9e9e';
+  };
+
+  const formatearFecha = (fecha) => {
+    return new Date(fecha).toLocaleDateString('es-ES');
+  };
+
   const renderSolicitudCard = (solicitud) => (
     <Card key={solicitud.id_sol} elevation={1} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardContent sx={{ flexGrow: 1, p: 3 }}>
@@ -134,10 +149,10 @@ const MisSolicitudes = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Chip
             icon={getIconoEstado(solicitud.estado_sol)}
-            label={estados.find(e => e.value === solicitud.estado_sol)?.label || solicitud.estado_sol}
+            label={solicitudesService.getEstadoInfo(solicitud.estado_sol).label}
             size="small"
             sx={{
-              bgcolor: solicitudesService.getColorPorEstado(solicitud.estado_sol),
+              bgcolor: solicitudesService.getEstadoInfo(solicitud.estado_sol).color,
               color: 'white',
               fontWeight: 500
             }}
@@ -146,7 +161,7 @@ const MisSolicitudes = () => {
             label={solicitud.prioridad_sol}
             size="small"
             sx={{
-              bgcolor: solicitudesService.getColorPorPrioridad(solicitud.prioridad_sol),
+              bgcolor: getPrioridadColor(solicitud.prioridad_sol),
               color: 'white'
             }}
           />
@@ -180,7 +195,7 @@ const MisSolicitudes = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
           <Typography variant="caption" color="text.secondary">
-            Creada: {solicitudesService.formatearFecha(solicitud.fec_creacion_sol)}
+            Creada: {formatearFecha(solicitud.fec_creacion_sol)}
           </Typography>
         </Box>
 
@@ -203,11 +218,11 @@ const MisSolicitudes = () => {
             onClick={() => verDetalle(solicitud)}
             size="small"
             sx={{
-              borderColor: '#6d1313', // ✅ AGREGAR COLOR
-              color: '#6d1313', // ✅ AGREGAR COLOR
+              borderColor: '#b91c1c',
+              color: '#b91c1c',
               '&:hover': {
-                borderColor: '#5a1010', // ✅ AGREGAR COLOR
-                backgroundColor: 'rgba(109, 19, 19, 0.04)', // ✅ AGREGAR COLOR
+                borderColor: '#991b1b',
+                backgroundColor: 'rgba(185, 28, 28, 0.04)',
               },
             }}
           >
@@ -228,28 +243,55 @@ const MisSolicitudes = () => {
 
   return (
     <Box>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 3 
+      }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#6d1313' }}>
+          Mis Solicitudes
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<Refresh />}
+          onClick={cargarSolicitudes}
+          disabled={loading}
+          sx={{
+            borderColor: '#b91c1c',
+            color: '#b91c1c',
+            '&:hover': {
+              borderColor: '#991b1b',
+              backgroundColor: 'rgba(185, 28, 28, 0.04)',
+            }
+          }}
+        >
+          Actualizar
+        </Button>
+      </Box>
+
       {/* Filtros */}
       <Paper elevation={1} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <FilterList sx={{ color: '#6d1313' }} />
+          <FilterList sx={{ color: '#b91c1c' }} />
           <Typography variant="h6" sx={{ color: '#6d1313' }}>Filtros</Typography>
         </Box>
         
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth size="small">
-              <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Estado</InputLabel>
+              <InputLabel sx={{ '&.Mui-focused': { color: '#b91c1c' } }}>Estado</InputLabel>
               <Select
                 value={filtros.estado}
-                label="Estado"
                 onChange={handleFiltroChange('estado')}
+                label="Estado"
                 sx={{
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#6d1313',
-                  },
+                    borderColor: '#b91c1c',
+                  }
                 }}
               >
-                <MenuItem value="">Todos los estados</MenuItem>
+                <MenuItem value="">Todos</MenuItem>
                 {estados.map((estado) => (
                   <MenuItem key={estado.value} value={estado.value}>
                     {estado.label}
@@ -260,19 +302,19 @@ const MisSolicitudes = () => {
           </Grid>
           
           <Grid item xs={12} sm={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Tipo de Cambio</InputLabel>
+            <FormControl fullSize="small">
+              <InputLabel sx={{ '&.Mui-focused': { color: '#b91c1c' } }}>Tipo de Cambio</InputLabel>
               <Select
                 value={filtros.tipo_cambio}
-                label="Tipo de Cambio"
                 onChange={handleFiltroChange('tipo_cambio')}
+                label="Tipo de Cambio"
                 sx={{
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#6d1313',
-                  },
+                    borderColor: '#b91c1c',
+                  }
                 }}
               >
-                <MenuItem value="">Todos los tipos</MenuItem>
+                <MenuItem value="">Todos</MenuItem>
                 {tiposCambio.map((tipo) => (
                   <MenuItem key={tipo.value} value={tipo.value}>
                     {tipo.label}
@@ -283,28 +325,21 @@ const MisSolicitudes = () => {
           </Grid>
           
           <Grid item xs={12} sm={4}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button 
-                variant="outlined" 
-                onClick={limpiarFiltros} 
-                size="small"
-                sx={{
-                  borderColor: '#6d1313',
-                  color: '#6d1313',
-                  '&:hover': {
-                    borderColor: '#5a1010',
-                    backgroundColor: 'rgba(109, 19, 19, 0.04)',
-                  },
-                }}
-              >
-                Limpiar
-              </Button>
-              <Tooltip title="Actualizar">
-                <IconButton onClick={cargarSolicitudes} size="small">
-                  <Refresh />
-                </IconButton>
-              </Tooltip>
-            </Box>
+            <Button
+              variant="outlined"
+              onClick={limpiarFiltros}
+              fullWidth
+              sx={{
+                borderColor: '#b91c1c',
+                color: '#b91c1c',
+                '&:hover': {
+                  borderColor: '#991b1b',
+                  backgroundColor: 'rgba(185, 28, 28, 0.04)',
+                }
+              }}
+            >
+              Limpiar Filtros
+            </Button>
           </Grid>
         </Grid>
       </Paper>
@@ -383,15 +418,17 @@ const MisSolicitudes = () => {
         PaperProps={{ sx: { borderRadius: 2 } }}
       >
         <DialogTitle>
-          <Typography variant="h6" sx={{ 
+          <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
             gap: 1,
             color: '#6d1313'
           }}>
             <Description sx={{ color: '#6d1313' }} />
-            Detalles de la Solicitud
-          </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#6d1313' }}>
+              Detalles de la Solicitud
+            </Typography>
+          </Box>
         </DialogTitle>
         
         <DialogContent>
@@ -401,9 +438,9 @@ const MisSolicitudes = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Chip
                   icon={getIconoEstado(selectedSolicitud.estado_sol)}
-                  label={estados.find(e => e.value === selectedSolicitud.estado_sol)?.label}
+                  label={solicitudesService.getEstadoInfo(selectedSolicitud.estado_sol).label}
                   sx={{
-                    bgcolor: solicitudesService.getColorPorEstado(selectedSolicitud.estado_sol),
+                    bgcolor: solicitudesService.getEstadoInfo(selectedSolicitud.estado_sol).color,
                     color: 'white',
                     fontWeight: 500
                   }}
@@ -411,7 +448,7 @@ const MisSolicitudes = () => {
                 <Chip
                   label={selectedSolicitud.prioridad_sol}
                   sx={{
-                    bgcolor: solicitudesService.getColorPorPrioridad(selectedSolicitud.prioridad_sol),
+                    bgcolor: getPrioridadColor(selectedSolicitud.prioridad_sol),
                     color: 'white'
                   }}
                 />
@@ -429,7 +466,7 @@ const MisSolicitudes = () => {
               <Divider />
 
               <Box>
-                <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313' }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ color: '#b91c1c' }}>
                   Descripción
                 </Typography>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -438,7 +475,7 @@ const MisSolicitudes = () => {
               </Box>
 
               <Box>
-                <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313' }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ color: '#b91c1c' }}>
                   Justificación
                 </Typography>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -449,15 +486,15 @@ const MisSolicitudes = () => {
               <Divider />
 
               <Box>
-                <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313' }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ color: '#b91c1c' }}>
                   Información Adicional
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Fecha de creación:</strong> {solicitudesService.formatearFecha(selectedSolicitud.fec_creacion_sol)}
+                  <strong>Fecha de creación:</strong> {formatearFecha(selectedSolicitud.fec_creacion_sol)}
                 </Typography>
                 {selectedSolicitud.fec_respuesta_sol && (
                   <Typography variant="body2">
-                    <strong>Fecha de respuesta:</strong> {solicitudesService.formatearFecha(selectedSolicitud.fec_respuesta_sol)}
+                    <strong>Fecha de respuesta:</strong> {formatearFecha(selectedSolicitud.fec_respuesta_sol)}
                   </Typography>
                 )}
                 {selectedSolicitud.adminResponsable && (
@@ -471,7 +508,7 @@ const MisSolicitudes = () => {
                 <>
                   <Divider />
                   <Box>
-                    <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313' }}>
+                    <Typography variant="subtitle2" gutterBottom sx={{ color: '#b91c1c' }}>
                       Comentarios del Administrador
                     </Typography>
                     <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -485,13 +522,14 @@ const MisSolicitudes = () => {
         </DialogContent>
         
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => setDialogOpen(false)}
+            variant="contained"
             sx={{
-              color: '#6d1313',
+              color: '#b91c1c',
               '&:hover': {
-                backgroundColor: 'rgba(109, 19, 19, 0.04)',
-              },
+                backgroundColor: 'rgba(185, 28, 28, 0.04)',
+              }
             }}
           >
             Cerrar

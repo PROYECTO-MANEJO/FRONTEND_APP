@@ -36,7 +36,9 @@ import {
   Cancel,
   Build,
   Assignment,
-  Close
+  Close,
+  Help,
+  Description
 } from '@mui/icons-material';
 import UserSidebar from '../user/UserSidebar';
 import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
@@ -184,22 +186,23 @@ const SolicitudesUsuario = () => {
   };
 
   const getEstadoInfo = (estado) => {
-    const estados = {
+    const estadosInfo = {
       'BORRADOR': { color: '#9e9e9e', icon: <Edit />, label: 'Borrador' },
       'PENDIENTE': { color: '#ff9800', icon: <Schedule />, label: 'Pendiente' },
       'EN_REVISION': { color: '#2196f3', icon: <Assignment />, label: 'En Revisión' },
-      'APROBADA': { color: '#2196f3', icon: <CheckCircle />, label: 'Aprobada' },
+      'APROBADA': { color: '#4caf50', icon: <CheckCircle />, label: 'Aprobada' },
       'RECHAZADA': { color: '#f44336', icon: <Cancel />, label: 'Rechazada' },
-      'CANCELADA': { color: '#757575', icon: <Cancel />, label: 'Cancelada' },
+      'CANCELADA': { color: '#6b7280', icon: <Cancel />, label: 'Cancelada' },
       'EN_DESARROLLO': { color: '#9c27b0', icon: <Build />, label: 'En Desarrollo' },
-      'PLANES_PENDIENTES_APROBACION': { color: '#ff9800', icon: <Schedule />, label: 'Planes Pendientes' },
-      'LISTO_PARA_IMPLEMENTAR': { color: '#3f51b5', icon: <Assignment />, label: 'Listo para Implementar' },
-      'EN_TESTING': { color: '#ff5722', icon: <Assignment />, label: 'En Testing' },
+      'PLANES_PENDIENTES_APROBACION': { color: '#ff5722', icon: <Schedule />, label: 'Planes Pendientes' },
+      'LISTO_PARA_IMPLEMENTAR': { color: '#00bcd4', icon: <Assignment />, label: 'Listo para Implementar' },
+      'EN_TESTING': { color: '#ffc107', icon: <Assignment />, label: 'En Testing' },
       'EN_DESPLIEGUE': { color: '#e91e63', icon: <Build />, label: 'En Despliegue' },
       'COMPLETADA': { color: '#4caf50', icon: <CheckCircle />, label: 'Completada' },
-      'FALLIDA': { color: '#d32f2f', icon: <Cancel />, label: 'Fallida' }
+      'FALLIDA': { color: '#dc2626', icon: <Cancel />, label: 'Fallida' }
     };
-    return estados[estado] || estados['BORRADOR'];
+    
+    return estadosInfo[estado] || { color: '#9e9e9e', icon: <Help />, label: 'Desconocido' };
   };
 
   const puedeEditar = (estado) => {
@@ -269,7 +272,7 @@ const SolicitudesUsuario = () => {
           {/* Page Header */}
           <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box>
-              <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#333' }}>
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#6d1313' }}>
                 Mis Solicitudes de Cambio
               </Typography>
               <Typography variant="body1" color="text.secondary">
@@ -280,8 +283,8 @@ const SolicitudesUsuario = () => {
             <Button
               variant="contained"
               startIcon={<Add />}
-              onClick={() => navigate('/solicitudes/crear')}
-              sx={{ bgcolor: '#333', '&:hover': { bgcolor: '#555' } }}
+              onClick={() => navigate('/user/solicitudes/crear')}
+              sx={{ bgcolor: '#b91c1c', '&:hover': { bgcolor: '#991b1b' } }}
             >
               Nueva Solicitud
             </Button>
@@ -299,7 +302,7 @@ const SolicitudesUsuario = () => {
             <Grid item xs={12} sm={6} md={2}>
               <Card>
                 <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ color: '#333', fontWeight: 'bold' }}>
+                  <Typography variant="h4" sx={{ color: '#6d1313', fontWeight: 'bold' }}>
                     {estadisticas.total}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -325,7 +328,7 @@ const SolicitudesUsuario = () => {
             <Grid item xs={12} sm={6} md={2}>
               <Card>
                 <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
+                  <Typography variant="h4" sx={{ color: '#b91c1c', fontWeight: 'bold' }}>
                     {estadisticas.pendientes}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -338,7 +341,7 @@ const SolicitudesUsuario = () => {
             <Grid item xs={12} sm={6} md={2}>
               <Card>
                 <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ color: '#2196f3', fontWeight: 'bold' }}>
+                  <Typography variant="h4" sx={{ color: '#dc2626', fontWeight: 'bold' }}>
                     {estadisticas.en_proceso}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -351,7 +354,7 @@ const SolicitudesUsuario = () => {
             <Grid item xs={12} sm={6} md={2}>
               <Card>
                 <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ color: '#4caf50', fontWeight: 'bold' }}>
+                  <Typography variant="h4" sx={{ color: '#991b1b', fontWeight: 'bold' }}>
                     {estadisticas.completadas}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -364,7 +367,7 @@ const SolicitudesUsuario = () => {
             <Grid item xs={12} sm={6} md={2}>
               <Card>
                 <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ color: '#757575', fontWeight: 'bold' }}>
+                  <Typography variant="h4" sx={{ color: '#6b7280', fontWeight: 'bold' }}>
                     {estadisticas.canceladas}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -449,7 +452,7 @@ const SolicitudesUsuario = () => {
                                   <IconButton
                                     size="small"
                                     onClick={() => handleEditarSolicitud(solicitud.id_sol)}
-                                    sx={{ color: '#666' }}
+                                    sx={{ color: '#6d1313' }}
                                   >
                                     <Edit />
                                   </IconButton>
@@ -461,7 +464,7 @@ const SolicitudesUsuario = () => {
                                   <IconButton
                                     size="small"
                                     onClick={() => handleEnviarSolicitud(solicitud.id_sol)}
-                                    sx={{ color: '#4caf50' }}
+                                    sx={{ color: '#991b1b' }}
                                   >
                                     <Send />
                                   </IconButton>
@@ -473,7 +476,7 @@ const SolicitudesUsuario = () => {
                                   <IconButton
                                     size="small"
                                     onClick={() => handleEliminarBorrador(solicitud.id_sol)}
-                                    sx={{ color: '#f44336' }}
+                                    sx={{ color: '#ef4444' }}
                                   >
                                     <Delete />
                                   </IconButton>
@@ -507,19 +510,28 @@ const SolicitudesUsuario = () => {
       <Dialog
         open={dialogDetalles}
         onClose={handleCerrarDetalles}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
       >
         <DialogTitle sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          bgcolor: '#333',
-          color: 'white'
+          bgcolor: '#6d1313',
+          color: 'white',
+          py: 2
         }}>
-          <Typography variant="h6">
-            Detalles de Solicitud
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Assignment sx={{ fontSize: 28 }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 600, color: 'white' }}>
+                Solicitud #{solicitudSeleccionada?.id_sol || 'N/A'}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'white', fontStyle: 'italic', opacity: 0.9 }}>
+                Detalles de mi solicitud de cambio
+              </Typography>
+            </Box>
+          </Box>
           <IconButton
             onClick={handleCerrarDetalles}
             sx={{ color: 'white' }}
@@ -528,143 +540,290 @@ const SolicitudesUsuario = () => {
           </IconButton>
         </DialogTitle>
 
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ p: 0 }}>
           {solicitudSeleccionada && (
-            <Box sx={{ py: 2 }}>
-              <Grid container spacing={3}>
-                {/* Información básica */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ mb: 2, color: '#333' }}>
-                    Información Básica
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        ID de Solicitud
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        #{solicitudSeleccionada.id_sol}
-                      </Typography>
-                    </Grid>
-                    
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Estado
+            <Box>
+              {/* Header con información clave */}
+              <Box sx={{ 
+                bgcolor: '#fef2f2', 
+                p: 3, 
+                borderBottom: '1px solid #fecaca'
+              }}>
+                <Grid container spacing={3} alignItems="center">
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 600, color: '#6d1313' }}>
+                        {solicitudSeleccionada.titulo_sol}
                       </Typography>
                       <Chip
-                        icon={getEstadoInfo(solicitudSeleccionada.estado_sol).icon}
                         label={getEstadoInfo(solicitudSeleccionada.estado_sol).label}
-                        size="small"
                         sx={{
                           bgcolor: getEstadoInfo(solicitudSeleccionada.estado_sol).color,
                           color: 'white',
                           fontWeight: 'bold'
                         }}
                       />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <Typography variant="body2" color="text.secondary">
-                        Título
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {solicitudSeleccionada.titulo_sol}
-                      </Typography>
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <Typography variant="body2" color="text.secondary">
-                        Descripción
-                      </Typography>
-                      <Typography variant="body1">
-                        {solicitudSeleccionada.descripcion_sol}
-                      </Typography>
-                    </Grid>
-                    
-                    {solicitudSeleccionada.justificacion_sol && (
-                      <Grid item xs={12}>
-                        <Typography variant="body2" color="text.secondary">
-                          Justificación
-                        </Typography>
-                        <Typography variant="body1">
-                          {solicitudSeleccionada.justificacion_sol}
-                        </Typography>
-                      </Grid>
-                    )}
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>ID:</strong> #{solicitudSeleccionada.id_sol}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Fecha de creación:</strong> {new Date(solicitudSeleccionada.fec_creacion_sol).toLocaleDateString('es-ES')}
+                    </Typography>
                   </Grid>
-                </Grid>
-                
-                {/* Información adicional */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ mb: 2, color: '#333' }}>
-                    Información Adicional
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
                   
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <Typography variant="body2" color="text.secondary">
-                        Tipo de Cambio
-                      </Typography>
-                      <Typography variant="body1">
-                        {solicitudSeleccionada.tipo_cambio_sol}
-                      </Typography>
-                    </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Assignment sx={{ fontSize: 16, color: '#b91c1c' }} />
+                        <Typography variant="body2">
+                          <strong>Tipo:</strong> {solicitudSeleccionada.tipo_cambio_sol}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Schedule sx={{ fontSize: 16, color: '#b91c1c' }} />
+                        <Typography variant="body2">
+                          <strong>Prioridad:</strong> {solicitudSeleccionada.prioridad_sol}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Help sx={{ fontSize: 16, color: '#b91c1c' }} />
+                        <Typography variant="body2">
+                          <strong>Urgencia:</strong> {solicitudSeleccionada.urgencia_sol}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Grid>
                 </Grid>
-                
-                {/* Fechas importantes */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ mb: 2, color: '#333' }}>
-                    Fechas
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Fecha de Creación
+              </Box>
+
+              {/* Contenido principal - DISEÑO ESTÁTICO 50-50 */}
+              <Box sx={{ p: 2 }}>
+                <Box sx={{ 
+                  display: 'flex',
+                  height: '600px',
+                  gap: 2
+                }}>
+                  {/* Columna izquierda - EXACTAMENTE 50% */}
+                  <Box sx={{ 
+                    width: '50%',
+                    height: '600px'
+                  }}>
+                    <Paper elevation={1} sx={{ 
+                      p: 2.5, 
+                      height: '600px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      overflow: 'hidden'
+                    }}>
+                      <Typography variant="h6" sx={{ 
+                        mb: 2, 
+                        color: '#6d1313', 
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        height: '40px'
+                      }}>
+                        <Description sx={{ color: '#b91c1c' }} />
+                        Mi Solicitud
                       </Typography>
-                      <Typography variant="body1">
-                        {new Date(solicitudSeleccionada.fec_creacion_sol).toLocaleString('es-ES')}
+                      <Divider sx={{ mb: 2 }} />
+                      
+                      <Box sx={{ 
+                        height: '530px',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}>
+                        {/* Descripción - Reducida */}
+                        <Box sx={{ height: '220px', mb: 3 }}>
+                          <Typography variant="subtitle2" sx={{ 
+                            color: '#6d1313', 
+                            fontWeight: 600, 
+                            mb: 1,
+                            height: '25px',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}>
+                            Descripción del Cambio
+                          </Typography>
+                          <Paper variant="outlined" sx={{ 
+                            p: 2, 
+                            bgcolor: '#fef2f2',
+                            height: '185px',
+                            overflow: 'auto',
+                            borderRadius: 2
+                          }}>
+                            <Typography variant="body2" sx={{ 
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              lineHeight: 1.5
+                            }}>
+                              {solicitudSeleccionada.descripcion_sol || 'Sin descripción'}
+                            </Typography>
+                          </Paper>
+                        </Box>
+
+                        {/* Justificación - Reducida */}
+                        <Box sx={{ height: '220px' }}>
+                          <Typography variant="subtitle2" sx={{ 
+                            color: '#6d1313', 
+                            fontWeight: 600, 
+                            mb: 1,
+                            height: '25px',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}>
+                            Justificación del Negocio
+                          </Typography>
+                          <Paper variant="outlined" sx={{ 
+                            p: 2, 
+                            bgcolor: '#fef2f2',
+                            height: '185px',
+                            overflow: 'auto',
+                            borderRadius: 2
+                          }}>
+                            <Typography variant="body2" sx={{ 
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              lineHeight: 1.5
+                            }}>
+                              {solicitudSeleccionada.justificacion_sol || 'Sin justificación'}
+                            </Typography>
+                          </Paper>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Box>
+
+                  {/* Columna derecha - EXACTAMENTE 50% */}
+                  <Box sx={{ 
+                    width: '50%',
+                    height: '600px'
+                  }}>
+                    <Paper elevation={1} sx={{ 
+                      p: 2.5, 
+                      height: '600px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      overflow: 'hidden'
+                    }}>
+                      <Typography variant="h6" sx={{ 
+                        mb: 2, 
+                        color: '#6d1313', 
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        height: '40px'
+                      }}>
+                        <Schedule sx={{ color: '#b91c1c' }} />
+                        Estado y Seguimiento
                       </Typography>
-                    </Grid>
-                    
-                    {solicitudSeleccionada.fecha_limite_deseada_sol && (
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          Fecha Límite Deseada
-                        </Typography>
-                        <Typography variant="body1">
-                          {new Date(solicitudSeleccionada.fecha_limite_deseada_sol).toLocaleString('es-ES')}
-                        </Typography>
-                      </Grid>
-                    )}
-                    
-                    {solicitudSeleccionada.fecha_ultima_actualizacion_sol && (
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          Última Actualización
-                        </Typography>
-                        <Typography variant="body1">
-                          {new Date(solicitudSeleccionada.fecha_ultima_actualizacion_sol).toLocaleString('es-ES')}
-                        </Typography>
-                      </Grid>
-                    )}
-                  </Grid>
-                </Grid>
-              </Grid>
+                      <Divider sx={{ mb: 2 }} />
+                      
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                        {/* Estado y Fechas - En una sola sección compacta */}
+                        <Box sx={{ height: '160px' }}>
+                          <Typography variant="subtitle2" sx={{ 
+                            color: '#6d1313', 
+                            fontWeight: 600, 
+                            mb: 2,
+                            height: '20px'
+                          }}>
+                            Estado y Fechas
+                          </Typography>
+                          <Box sx={{ 
+                            height: '130px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1.5
+                          }}>
+                            {/* Estado actual */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, height: '32px' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, minWidth: '60px' }}>
+                                <strong>Estado:</strong>
+                              </Typography>
+                              <Chip
+                                icon={getEstadoInfo(solicitudSeleccionada.estado_sol).icon}
+                                label={getEstadoInfo(solicitudSeleccionada.estado_sol).label}
+                                sx={{
+                                  bgcolor: getEstadoInfo(solicitudSeleccionada.estado_sol).color,
+                                  color: 'white',
+                                  fontWeight: 'bold',
+                                  fontSize: '12px',
+                                  height: '28px'
+                                }}
+                              />
+                            </Box>
+                            
+                            {/* Fecha de aprobación */}
+                            {solicitudSeleccionada.fec_respuesta_sol && (
+                              <Typography variant="body2" sx={{ height: '20px', display: 'flex', alignItems: 'center' }}>
+                                <strong>Aprobada:</strong> {new Date(solicitudSeleccionada.fec_respuesta_sol).toLocaleDateString('es-ES')} {new Date(solicitudSeleccionada.fec_respuesta_sol).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                              </Typography>
+                            )}
+                            
+                            {/* Fecha deseada */}
+                            {solicitudSeleccionada.fecha_limite_deseada_sol && (
+                              <Typography variant="body2" sx={{ height: '20px', display: 'flex', alignItems: 'center' }}>
+                                <strong>Fecha deseada:</strong> {new Date(solicitudSeleccionada.fecha_limite_deseada_sol).toLocaleDateString('es-ES')}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+
+                        {/* Comentarios del administrador si existen - Espacio reducido */}
+                        {solicitudSeleccionada.comentarios_admin_sol && (
+                          <Box sx={{ height: '300px' }}>
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#6d1313', 
+                              fontWeight: 600, 
+                              mb: 2,
+                              height: '20px'
+                            }}>
+                              Comentarios del Administrador
+                            </Typography>
+                            <Paper variant="outlined" sx={{ 
+                              p: 2, 
+                              bgcolor: '#f0fdf4',
+                              height: '270px',
+                              overflow: 'auto',
+                              borderRadius: 2
+                            }}>
+                              <Typography variant="body2" sx={{ 
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                lineHeight: 1.5
+                              }}>
+                                {solicitudSeleccionada.comentarios_admin_sol}
+                              </Typography>
+                            </Paper>
+                          </Box>
+                        )}
+                      </Box>
+                    </Paper>
+                  </Box>
+                </Box>
+              </Box>
             </Box>
           )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 2 }}>
+        <DialogActions sx={{ 
+          p: 3, 
+          gap: 2, 
+          bgcolor: '#fef2f2',
+          borderTop: '1px solid #fecaca'
+        }}>
           <Button 
             onClick={handleCerrarDetalles} 
-            variant="contained"
-            sx={{ bgcolor: '#333', '&:hover': { bgcolor: '#555' } }}
+            variant="outlined"
+            sx={{ 
+              color: '#6d1313', 
+              borderColor: '#b91c1c',
+              '&:hover': { borderColor: '#991b1b', color: '#991b1b' }
+            }}
           >
             Cerrar
           </Button>

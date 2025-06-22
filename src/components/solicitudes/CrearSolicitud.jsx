@@ -235,7 +235,7 @@ const CrearSolicitud = () => {
             </Button>
             
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#333', mb: 1 }}>
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#6d1313' }}>
                 {modoEdicion ? 'Editar Solicitud' : 'Nueva Solicitud de Cambio'}
               </Typography>
               <Typography variant="body1" color="text.secondary">
