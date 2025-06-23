@@ -40,7 +40,7 @@ import {
   Refresh
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
-import solicitudesService from '../../services/solicitudesService';
+import desarrolladorService from '../../services/desarrolladorService';
 
 const SolicitudesDesarrollador = () => {
   const { user } = useAuth();
@@ -92,7 +92,7 @@ const SolicitudesDesarrollador = () => {
         return;
       }
       
-      const response = await solicitudesService.getSolicitudesAsignadas(userId);
+      const response = await desarrolladorService.obtenerSolicitudesAsignadas(userId);
       let solicitudesFiltradas = response.data || [];
       
       // Aplicar filtro de estado si existe
@@ -136,7 +136,9 @@ const SolicitudesDesarrollador = () => {
 
   const handleAccionRapida = async (solicitudId, nuevoEstado) => {
     try {
-      await solicitudesService.actualizarEstadoSolicitud(solicitudId, nuevoEstado);
+      await desarrolladorService.actualizarEstado(solicitudId, nuevoEstado);
+      console.log('Estado actualizadoaaaaaaaaaaaaaaaaaaaaaaaaaa:', nuevoEstado);
+      console.log('Solicitud ID:', solicitudId);
       loadSolicitudesAsignadas();
     } catch (error) {
       console.error('Error actualizando estado:', error);
@@ -146,7 +148,7 @@ const SolicitudesDesarrollador = () => {
 
   const handleEnviarPlanesARevision = async (solicitudId) => {
     try {
-      await solicitudesService.enviarPlanesARevision(solicitudId);
+      await desarrolladorService.enviarPlanesARevision(solicitudId);
       loadSolicitudesAsignadas();
       setError(null);
     } catch (error) {

@@ -57,7 +57,7 @@ import {
   Edit,
   Cancel
 } from '@mui/icons-material';
-import solicitudesService from '../../services/solicitudesService';
+import desarrolladorService from '../../services/desarrolladorService';
 
 const DetalleSolicitudDesarrollador = () => {
   const { id } = useParams();
@@ -89,7 +89,7 @@ const DetalleSolicitudDesarrollador = () => {
       setLoading(true);
       setError(null);
       
-      const response = await solicitudesService.obtenerSolicitudDesarrollador(id);
+      const response = await desarrolladorService.obtenerSolicitudEspecifica(id);
       setSolicitud(response.data);
       
       // Cargar planes técnicos existentes
@@ -112,7 +112,7 @@ const DetalleSolicitudDesarrollador = () => {
   const handleCambiarEstado = async (nuevoEstado) => {
     try {
       setProcesando(true);
-      await solicitudesService.actualizarEstadoSolicitud(id, nuevoEstado);
+      await desarrolladorService.actualizarEstado(id, nuevoEstado);
       await cargarSolicitud();
     } catch (error) {
       console.error('Error cambiando estado:', error);
@@ -127,7 +127,7 @@ const DetalleSolicitudDesarrollador = () => {
 
     try {
       setProcesando(true);
-      await solicitudesService.agregarComentarioDesarrollo(id, nuevoComentario);
+      await desarrolladorService.agregarComentario(id, nuevoComentario);
       setNuevoComentario('');
       setComentarioDialog(false);
       await cargarSolicitud();
@@ -142,7 +142,7 @@ const DetalleSolicitudDesarrollador = () => {
   const handleGuardarPlanes = async () => {
     try {
       setProcesando(true);
-      await solicitudesService.actualizarPlanesTecnicos(id, planes);
+      await desarrolladorService.actualizarPlanesTecnicos(id, planes);
       setEditandoPlanes(false);
       await cargarSolicitud();
     } catch (error) {
@@ -156,7 +156,7 @@ const DetalleSolicitudDesarrollador = () => {
   const handleEnviarPlanesARevision = async () => {
     try {
       setProcesando(true);
-      await solicitudesService.enviarPlanesARevision(id);
+      await desarrolladorService.enviarPlanesARevision(id);
       await cargarSolicitud();
     } catch (error) {
       console.error('Error enviando planes a revisión:', error);
@@ -405,7 +405,7 @@ const DetalleSolicitudDesarrollador = () => {
 
               {/* Stepper Horizontal */}
               <Stepper activeStep={steps.findIndex(step => step.active)} alternativeLabel>
-                {steps.map((step, index) => (
+                {steps.map((step) => (
                   <Step key={step.label} completed={step.completed}>
                     <StepLabel>{step.label}</StepLabel>
                   </Step>

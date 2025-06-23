@@ -73,7 +73,7 @@ const GestionTecnicaSolicitud = ({
     plan_implementacion_sol: '',
     plan_rollout_sol: '',
     plan_backout_sol: '',
-    plan_rollback_sol: '',
+
     plan_testing_sol: '',
     observaciones_implementacion_sol: '',
     
@@ -153,7 +153,7 @@ const GestionTecnicaSolicitud = ({
         plan_implementacion_sol: solicitud.plan_implementacion_sol || '',
         plan_rollout_sol: solicitud.plan_rollout_sol || '',
         plan_backout_sol: solicitud.plan_backout_sol || '',
-        plan_rollback_sol: solicitud.plan_rollback_sol || '',
+
         plan_testing_sol: solicitud.plan_testing_sol || '',
         observaciones_implementacion_sol: solicitud.observaciones_implementacion_sol || '',
         
@@ -674,17 +674,7 @@ const GestionTecnicaSolicitud = ({
               helperText="Estrategia de salida de emergencia"
             />
 
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Plan de Rollback *"
-              value={formData.plan_rollback_sol}
-              onChange={handleChange('plan_rollback_sol')}
-              placeholder="Pasos específicos para revertir completamente el cambio..."
-              required
-              helperText="Procedimiento técnico para volver al estado anterior"
-            />
+
             
             <TextField
               fullWidth
