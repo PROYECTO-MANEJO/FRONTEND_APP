@@ -70,14 +70,7 @@ const DetalleSolicitudDesarrollador = () => {
   const [nuevoComentario, setNuevoComentario] = useState('');
   const [procesando, setProcesando] = useState(false);
   
-  // Estados para planes técnicos
-  const [editandoPlanes, setEditandoPlanes] = useState(false);
-  const [planes, setPlanes] = useState({
-    plan_implementacion_sol: '',
-    plan_rollout_sol: '',
-    plan_backout_sol: '',
-    plan_testing_sol: ''
-  });
+
 
 
 
@@ -92,14 +85,6 @@ const DetalleSolicitudDesarrollador = () => {
       
       const response = await desarrolladorService.obtenerSolicitudEspecifica(id);
       setSolicitud(response.data);
-      
-      // Cargar planes técnicos existentes
-      setPlanes({
-        plan_implementacion_sol: response.data.plan_implementacion_sol || '',
-        plan_rollout_sol: response.data.plan_rollout_sol || '',
-        plan_backout_sol: response.data.plan_backout_sol || '',
-        plan_testing_sol: response.data.plan_testing_sol || ''
-      });
       
     } catch (error) {
       console.error('Error cargando solicitud:', error);
@@ -203,39 +188,7 @@ const DetalleSolicitudDesarrollador = () => {
     }
   };
 
-  const handleGuardarPlanes = async () => {
-    try {
-      setProcesando(true);
-      await desarrolladorService.actualizarPlanesTecnicos(id, planes);
-      setEditandoPlanes(false);
-      await cargarSolicitud();
-    } catch (error) {
-      console.error('Error guardando planes:', error);
-      setError('Error al guardar los planes técnicos');
-    } finally {
-      setProcesando(false);
-    }
-  };
 
-  const handleEnviarPlanesARevision = async () => {
-    try {
-      setProcesando(true);
-      await desarrolladorService.enviarPlanesARevision(id);
-      await cargarSolicitud();
-    } catch (error) {
-      console.error('Error enviando planes a revisión:', error);
-      setError(error.message);
-    } finally {
-      setProcesando(false);
-    }
-  };
-
-  const handleCampoPlaneChange = (campo, valor) => {
-    setPlanes(prev => ({
-      ...prev,
-      [campo]: valor
-    }));
-  };
 
   const getEstadoColor = (estado) => {
     const colores = {
@@ -263,11 +216,11 @@ const DetalleSolicitudDesarrollador = () => {
 
   const getProgresoSegunEstado = (estado) => {
     const progreso = {
-      'APROBADA': 10,
-      'EN_DESARROLLO': 30,
-      'PLANES_PENDIENTES_APROBACION': 50,
-      'LISTO_PARA_IMPLEMENTAR': 70,
-      'EN_TESTING': 85,
+      'APROBADA': 20,
+      'EN_DESARROLLO': 40,
+      'LISTO_PARA_IMPLEMENTAR': 60,
+      'EN_TESTING': 80,
+      'EN_DESPLIEGUE': 90,
       'COMPLETADA': 100,
       'EN_PAUSA': 25
     };
@@ -604,163 +557,63 @@ const DetalleSolicitudDesarrollador = () => {
           </Card>
 
           {/* Planes Técnicos */}
-          {(['APROBADA', 'EN_DESARROLLO', 'PLANES_PENDIENTES_APROBACION', 'LISTO_PARA_IMPLEMENTAR'].includes(solicitud.estado_sol)) && (
+          {(['EN_DESARROLLO', 'LISTO_PARA_IMPLEMENTAR', 'EN_TESTING', 'EN_DESPLIEGUE', 'COMPLETADA'].includes(solicitud.estado_sol)) && (
             <Card sx={{ mb: 3 }}>
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Assignment />
-                    Planes Técnicos
-                  </Typography>
-                  {(solicitud.estado_sol === 'APROBADA' || solicitud.estado_sol === 'EN_DESARROLLO') && (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      {editandoPlanes ? (
-                        <>
-                          <Button
-                            variant="outlined"
-                            startIcon={<Cancel />}
-                            onClick={() => setEditandoPlanes(false)}
-                            disabled={procesando}
-                          >
-                            Cancelar
-                          </Button>
-                          <Button
-                            variant="contained"
-                            startIcon={<Save />}
-                            onClick={handleGuardarPlanes}
-                            disabled={procesando}
-                          >
-                            Guardar
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          variant="outlined"
-                          startIcon={<Edit />}
-                          onClick={() => setEditandoPlanes(true)}
-                          disabled={procesando}
-                        >
-                          Editar Planes
-                        </Button>
-                      )}
-                    </Box>
-                  )}
-                </Box>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Assignment />
+                  Planes Técnicos (Definidos por MASTER)
+                </Typography>
 
-                {solicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    Los planes técnicos están siendo revisados por el MASTER
-                  </Alert>
-                )}
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  Estos planes técnicos fueron definidos por el MASTER durante la aprobación de la solicitud.
+                </Alert>
 
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                      Plan de Implementación:
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#1976d2' }}>
+                      📋 Plan de Implementación:
                     </Typography>
-                    {editandoPlanes ? (
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={planes.plan_implementacion_sol}
-                        onChange={(e) => handleCampoPlaneChange('plan_implementacion_sol', e.target.value)}
-                        placeholder="Describe cómo se implementará la solicitud..."
-                      />
-                    ) : (
-                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
-                        <Typography variant="body2">
-                          {planes.plan_implementacion_sol || 'No especificado'}
-                        </Typography>
-                      </Paper>
-                    )}
+                    <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 120, border: '1px solid #e0e0e0' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitud.plan_implementacion_sol || 'No especificado por el MASTER'}
+                      </Typography>
+                    </Paper>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                      Plan de Roll-out:
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#2e7d32' }}>
+                      🚀 Plan de Roll-out:
                     </Typography>
-                    {editandoPlanes ? (
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={planes.plan_rollout_sol}
-                        onChange={(e) => handleCampoPlaneChange('plan_rollout_sol', e.target.value)}
-                        placeholder="Describe el plan de despliegue..."
-                      />
-                    ) : (
-                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
-                        <Typography variant="body2">
-                          {planes.plan_rollout_sol || 'No especificado'}
-                        </Typography>
-                      </Paper>
-                    )}
+                    <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 120, border: '1px solid #e0e0e0' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitud.plan_rollout_sol || 'No especificado por el MASTER'}
+                      </Typography>
+                    </Paper>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                      Plan de Back-out:
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#d32f2f' }}>
+                      🔄 Plan de Back-out:
                     </Typography>
-                    {editandoPlanes ? (
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={planes.plan_backout_sol}
-                        onChange={(e) => handleCampoPlaneChange('plan_backout_sol', e.target.value)}
-                        placeholder="Describe el plan de reversión en caso de falla..."
-                      />
-                    ) : (
-                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
-                        <Typography variant="body2">
-                          {planes.plan_backout_sol || 'No especificado'}
-                        </Typography>
-                      </Paper>
-                    )}
+                    <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 120, border: '1px solid #e0e0e0' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitud.plan_backout_sol || 'No especificado por el MASTER'}
+                      </Typography>
+                    </Paper>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                      Plan de Testing:
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#ed6c02' }}>
+                      🧪 Plan de Testing:
                     </Typography>
-                    {editandoPlanes ? (
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={planes.plan_testing_sol}
-                        onChange={(e) => handleCampoPlaneChange('plan_testing_sol', e.target.value)}
-                        placeholder="Describe cómo se van a probar los cambios..."
-                      />
-                    ) : (
-                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
-                        <Typography variant="body2">
-                          {planes.plan_testing_sol || 'No especificado'}
-                        </Typography>
-                      </Paper>
-                    )}
+                    <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 120, border: '1px solid #e0e0e0' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitud.plan_testing_sol || 'No especificado por el MASTER'}
+                      </Typography>
+                    </Paper>
                   </Grid>
                 </Grid>
-
-                {(solicitud.estado_sol === 'APROBADA' || solicitud.estado_sol === 'EN_DESARROLLO') && !editandoPlanes && (
-                  <Box sx={{ mt: 3, textAlign: 'center' }}>
-                    <Button
-                      variant="contained"
-                      size="large"
-                      startIcon={<Send />}
-                      onClick={handleEnviarPlanesARevision}
-                      disabled={procesando || !planes.plan_implementacion_sol || !planes.plan_rollout_sol || !planes.plan_backout_sol || !planes.plan_testing_sol}
-                    >
-                      Enviar Planes a Revisión del MASTER
-                    </Button>
-                    {(!planes.plan_implementacion_sol || !planes.plan_rollout_sol || !planes.plan_backout_sol || !planes.plan_testing_sol) && (
-                      <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                        Complete todos los planes técnicos antes de enviar a revisión
-                      </Typography>
-                    )}
-                  </Box>
-                )}
               </CardContent>
             </Card>
           )}
@@ -773,41 +626,13 @@ const DetalleSolicitudDesarrollador = () => {
               </Typography>
               
               <Stack spacing={2}>
-                {/* Estado: APROBADA */}
-                {solicitud.estado_sol === 'APROBADA' && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      La solicitud ha sido aprobada. Puedes crear los planes técnicos y luego iniciar el desarrollo.
-                    </Typography>
-                    <Stack direction="row" spacing={2} flexWrap="wrap">
-                      <Button
-                        variant="contained"
-                        startIcon={<Engineering />}
-                        onClick={() => setEditandoPlanes(true)}
-                        disabled={procesando}
-                        sx={{ bgcolor: '#2196f3', '&:hover': { bgcolor: '#1976d2' } }}
-                      >
-                        Crear Planes Técnicos
-                      </Button>
-                    </Stack>
-                  </Box>
-                )}
-
                 {/* Estado: EN_DESARROLLO */}
                 {solicitud.estado_sol === 'EN_DESARROLLO' && (
                   <Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Desarrollo en progreso. Puedes editar planes, agregar comentarios o enviar a testing.
+                      La solicitud está asignada para desarrollo. Sigue los planes técnicos definidos por el MASTER.
                     </Typography>
                     <Stack direction="row" spacing={2} flexWrap="wrap">
-                      <Button
-                        variant="outlined"
-                        startIcon={<Edit />}
-                        onClick={() => setEditandoPlanes(true)}
-                        disabled={procesando}
-                      >
-                        Editar Planes
-                      </Button>
                       <Button
                         variant="contained"
                         startIcon={<BugReport />}
@@ -816,6 +641,14 @@ const DetalleSolicitudDesarrollador = () => {
                         sx={{ bgcolor: '#ff9800', '&:hover': { bgcolor: '#f57c00' } }}
                       >
                         Pasar a Testing
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<GitHub />}
+                        onClick={handleVerGitHub}
+                        disabled={procesando || !solicitud.github_repo_url}
+                      >
+                        Ver en GitHub
                       </Button>
                       <Button
                         variant="outlined"
@@ -829,20 +662,11 @@ const DetalleSolicitudDesarrollador = () => {
                   </Box>
                 )}
 
-                {/* Estado: PLANES_PENDIENTES_APROBACION */}
-                {solicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
-                  <Box>
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      Los planes técnicos están siendo revisados por el MASTER. Esperando aprobación.
-                    </Alert>
-                  </Box>
-                )}
-
                 {/* Estado: LISTO_PARA_IMPLEMENTAR */}
                 {solicitud.estado_sol === 'LISTO_PARA_IMPLEMENTAR' && (
                   <Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Los planes han sido aprobados. Puedes iniciar la implementación.
+                      Los planes han sido definidos. Puedes continuar con la implementación.
                     </Typography>
                     <Stack direction="row" spacing={2} flexWrap="wrap">
                       <Button
@@ -852,7 +676,7 @@ const DetalleSolicitudDesarrollador = () => {
                         disabled={procesando}
                         sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#388e3c' } }}
                       >
-                        Iniciar Implementación
+                        Continuar Implementación
                       </Button>
                       <Button
                         variant="outlined"

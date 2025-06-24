@@ -51,7 +51,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import solicitudesAdminService, { aprobarPlanesTecnicos } from '../../services/solicitudesAdminService';
+import solicitudesAdminService from '../../services/solicitudesAdminService';
 import solicitudesService from '../../services/solicitudesService';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
@@ -97,7 +97,12 @@ const AdminSolicitudes = () => {
     hora_planificada_inicio_sol: '',
     hora_planificada_fin_sol: '',
     tiempo_estimado_horas_sol: '',
-    id_desarrollador_asignado: ''
+    id_desarrollador_asignado: '',
+    // Nuevos campos para planes técnicos
+    plan_implementacion_sol: '',
+    plan_rollout_sol: '',
+    plan_backout_sol: '',
+    plan_testing_sol: ''
   });
 
   // Formulario de aprobación/rechazo
@@ -207,7 +212,12 @@ const AdminSolicitudes = () => {
       hora_planificada_inicio_sol: solicitud.hora_planificada_inicio_sol || '',
       hora_planificada_fin_sol: solicitud.hora_planificada_fin_sol || '',
       tiempo_estimado_horas_sol: solicitud.tiempo_estimado_horas_sol || '',
-      id_desarrollador_asignado: solicitud.id_desarrollador_asignado || ''
+      id_desarrollador_asignado: solicitud.id_desarrollador_asignado || '',
+      // Cargar planes técnicos existentes
+      plan_implementacion_sol: solicitud.plan_implementacion_sol || '',
+      plan_rollout_sol: solicitud.plan_rollout_sol || '',
+      plan_backout_sol: solicitud.plan_backout_sol || '',
+      plan_testing_sol: solicitud.plan_testing_sol || ''
     });
     setDialogGestion(true);
   };
@@ -233,7 +243,19 @@ const AdminSolicitudes = () => {
       setError(null);
       setSuccess(null);
       
-      const response = await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, gestionForm);
+      // Si la solicitud está aprobada y se asigna desarrollador con planes técnicos,
+      // cambiar estado directamente a EN_DESARROLLO
+      let datosActualizados = { ...gestionForm };
+      if (selectedSolicitud.estado_sol === 'APROBADA' && 
+          gestionForm.id_desarrollador_asignado && 
+          (gestionForm.plan_implementacion_sol || 
+           gestionForm.plan_rollout_sol || 
+           gestionForm.plan_backout_sol || 
+           gestionForm.plan_testing_sol)) {
+        datosActualizados.estado_sol = 'EN_DESARROLLO';
+      }
+      
+      const response = await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, datosActualizados);
       setSuccess(response.message);
       setDialogGestion(false);
       await cargarSolicitudes();
@@ -282,26 +304,7 @@ const AdminSolicitudes = () => {
     }
   };
 
-  const handleAprobarPlanes = async (aprobado) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      await aprobarPlanesTecnicos(selectedSolicitud.id_sol, aprobado);
-      
-      setSuccess(`Planes técnicos ${aprobado ? 'aprobados' : 'rechazados'} exitosamente`);
-      setDialogDetalles(false);
-      
-      // Recargar datos
-      await cargarSolicitudes();
-      await cargarEstadisticas();
-      
-    } catch (err) {
-      setError('Error al procesar la revisión de planes: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   // Función para obtener información del estado con colores distintivos
   const getEstadoInfo = (estado) => {
@@ -1379,36 +1382,7 @@ const AdminSolicitudes = () => {
                 </>
               )}
 
-            {selectedSolicitud?.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
-              <>
-                            <Button
-                  onClick={() => handleAprobarPlanes(false)}
-                  variant="contained"
-                  startIcon={<Close />}
-                  sx={{ 
-                    bgcolor: '#ef4444', 
-                    '&:hover': { bgcolor: '#dc2626' },
-                    minWidth: 150
-                  }}
-                  disabled={loading}
-                >
-                  Rechazar Planes
-                            </Button>
-                <Button 
-                  onClick={() => handleAprobarPlanes(true)}
-                  variant="contained"
-                  startIcon={<Check />}
-                  sx={{ 
-                    bgcolor: '#16a34a', 
-                    '&:hover': { bgcolor: '#15803d' },
-                    minWidth: 150
-                  }}
-                  disabled={loading}
-                >
-                  Aprobar Planes
-                </Button>
-                </>
-              )}
+
         </DialogActions>
       </Dialog>
 
@@ -1566,6 +1540,60 @@ const AdminSolicitudes = () => {
                   placeholder="Ej: 8, 16, 24"
                   helperText="Estimación en horas totales de trabajo"
                   inputProps={{ min: 0, step: 0.5 }}
+                />
+              </Box>
+
+              <Typography variant="h6" gutterBottom sx={{ color: '#6d1313', fontWeight: 600, mt: 4 }}>
+                Planes Técnicos
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {/* Plan de Implementación */}
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="📋 Plan de Implementación"
+                  value={gestionForm.plan_implementacion_sol || ''}
+                  onChange={(e) => setGestionForm({...gestionForm, plan_implementacion_sol: e.target.value})}
+                  placeholder="Detalle los pasos específicos para implementar el cambio..."
+                  helperText="Incluye tareas técnicas, dependencias, y secuencia de implementación"
+                />
+
+                {/* Plan de Roll-out */}
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="🚀 Plan de Roll-out"
+                  value={gestionForm.plan_rollout_sol || ''}
+                  onChange={(e) => setGestionForm({...gestionForm, plan_rollout_sol: e.target.value})}
+                  placeholder="Estrategia para el despliegue y puesta en producción..."
+                  helperText="Incluye ambiente de despliegue, validaciones, y comunicaciones"
+                />
+
+                {/* Plan de Back-out */}
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="🔄 Plan de Back-out"
+                  value={gestionForm.plan_backout_sol || ''}
+                  onChange={(e) => setGestionForm({...gestionForm, plan_backout_sol: e.target.value})}
+                  placeholder="Procedimiento de reversa en caso de fallas..."
+                  helperText="Incluye pasos de reversión, tiempo estimado, y validaciones"
+                />
+
+                {/* Plan de Testing */}
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="🧪 Plan de Testing"
+                  value={gestionForm.plan_testing_sol || ''}
+                  onChange={(e) => setGestionForm({...gestionForm, plan_testing_sol: e.target.value})}
+                  placeholder="Estrategia de pruebas y validación..."
+                  helperText="Incluye tipos de pruebas, casos de prueba, y criterios de aceptación"
                 />
               </Box>
 

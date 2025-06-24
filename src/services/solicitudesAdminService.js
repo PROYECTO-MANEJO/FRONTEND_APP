@@ -99,22 +99,7 @@ export const rechazarSolicitud = async (id, comentarios = '', motivoRechazo = ''
   }
 };
 
-/**
- * Aprobar o rechazar planes técnicos (PLANES_PENDIENTES_APROBACION → LISTO_PARA_IMPLEMENTAR/EN_DESARROLLO)
- */
-export const aprobarPlanesTecnicos = async (id, aprobado, comentarios = '') => {
-  try {
-    const datos = {
-      planes_aprobados: aprobado,
-      comentarios_aprobacion_planes: comentarios
-    };
-    const response = await api.post(`${ADMIN_SOLICITUDES_API_URL}/${id}/aprobar-planes`, datos);
-    return response.data;
-  } catch (error) {
-    console.error('Error al aprobar/rechazar planes técnicos:', error);
-    throw error;
-  }
-};
+
 
 /**
  * Obtener estadísticas generales (para admin/master)

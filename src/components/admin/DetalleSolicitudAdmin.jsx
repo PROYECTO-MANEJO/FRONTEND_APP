@@ -56,7 +56,6 @@ import {
 } from '@mui/icons-material';
 // Timeline components - usando alternativa si @mui/lab no está disponible
 import solicitudesService from '../../services/solicitudesService';
-import { aprobarPlanesTecnicos } from '../../services/solicitudesAdminService';
 
 function CustomTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -203,29 +202,7 @@ const DetalleSolicitudAdmin = () => {
     }
   };
 
-  const handleAprobarPlanes = async (aprobado) => {
-    try {
-      setProcesando(true);
-      await aprobarPlanesTecnicos(
-        id, 
-        aprobado, 
-        respuestaForm.comentarios_aprobacion_planes || ''
-      );
-      
-      // Limpiar el campo de comentarios
-      setRespuestaForm(prev => ({
-        ...prev,
-        comentarios_aprobacion_planes: ''
-      }));
-      
-      await cargarSolicitud();
-    } catch (error) {
-      console.error('Error aprobando/rechazando planes:', error);
-      setError('Error al procesar la revisión de planes');
-    } finally {
-      setProcesando(false);
-    }
-  };
+
 
   const getEstadoColor = (estado) => {
     const colores = {
@@ -258,10 +235,9 @@ const DetalleSolicitudAdmin = () => {
   const getProgresoSegunEstado = (estado) => {
     const progreso = {
       'BORRADOR': 0,
-      'PENDIENTE': 5,
-      'APROBADA': 10,
-      'EN_DESARROLLO': 30,
-      'PLANES_PENDIENTES_APROBACION': 50,
+      'PENDIENTE': 15,
+      'APROBADA': 30,
+      'EN_DESARROLLO': 50,
       'LISTO_PARA_IMPLEMENTAR': 70,
       'EN_TESTING': 85,
       'COMPLETADA': 100,
@@ -361,27 +337,22 @@ const DetalleSolicitudAdmin = () => {
       },
       {
         label: 'Aprobada',
-        completed: ['APROBADA', 'EN_DESARROLLO', 'PLANES_PENDIENTES_APROBACION', 'LISTO_PARA_IMPLEMENTAR', 'EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol),
+        completed: ['APROBADA', 'EN_DESARROLLO', 'LISTO_PARA_IMPLEMENTAR', 'EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol),
         active: solicitud.estado_sol === 'APROBADA'
       },
       {
         label: 'En Desarrollo',
-        completed: ['EN_DESARROLLO', 'PLANES_PENDIENTES_APROBACION', 'LISTO_PARA_IMPLEMENTAR', 'EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol),
+        completed: ['EN_DESARROLLO', 'LISTO_PARA_IMPLEMENTAR', 'EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol),
         active: solicitud.estado_sol === 'EN_DESARROLLO'
       },
       {
-        label: 'Planes en Revisión',
-        completed: ['LISTO_PARA_IMPLEMENTAR', 'EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol),
-        active: solicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION'
-      },
-      {
         label: 'Lista para Implementar',
-        completed: ['EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol),
+        completed: ['LISTO_PARA_IMPLEMENTAR', 'EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol),
         active: solicitud.estado_sol === 'LISTO_PARA_IMPLEMENTAR'
       },
       {
         label: 'En Testing',
-        completed: solicitud.estado_sol === 'COMPLETADA',
+        completed: ['EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol),
         active: solicitud.estado_sol === 'EN_TESTING'
       },
       {
@@ -590,16 +561,7 @@ const DetalleSolicitudAdmin = () => {
                     </Button>
                   )}
 
-                  {solicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
-                    <Button
-                      variant="contained"
-                      startIcon={<Visibility />}
-                      onClick={() => navigate(`/admin/revision-planes`)}
-                      disabled={procesando}
-                    >
-                      Revisar Planes Técnicos
-                    </Button>
-                  )}
+
 
                   <Button
                     variant="outlined"
@@ -881,52 +843,7 @@ const DetalleSolicitudAdmin = () => {
                   </Grid>
                 </Grid>
 
-                {/* Botones de aprobación/rechazo para MASTER */}
-                {solicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
-                  <Box sx={{ mt: 4, p: 3, bgcolor: '#fafafa', borderRadius: 2, border: '1px solid #e0e0e0' }}>
-                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AdminPanelSettings />
-                      Revisión de Planes (MASTER)
-                    </Typography>
-                    
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={3}
-                      label="Comentarios de revisión (opcional)"
-                      placeholder="Agregue comentarios sobre la revisión de los planes técnicos..."
-                      value={respuestaForm.comentarios_aprobacion_planes || ''}
-                      onChange={(e) => setRespuestaForm(prev => ({
-                        ...prev,
-                        comentarios_aprobacion_planes: e.target.value
-                      }))}
-                      sx={{ mb: 3 }}
-                    />
-                    
-                    <Stack direction="row" spacing={2}>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<CheckCircle />}
-                        onClick={() => handleAprobarPlanes(true)}
-                        disabled={procesando}
-                        sx={{ minWidth: 150 }}
-                      >
-                        Aprobar Planes
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        startIcon={<Cancel />}
-                        onClick={() => handleAprobarPlanes(false)}
-                        disabled={procesando}
-                        sx={{ minWidth: 150 }}
-                      >
-                        Rechazar Planes
-                      </Button>
-                    </Stack>
-                  </Box>
-                )}
+
 
                 {/* Comentarios de aprobación existentes */}
                 {solicitud.comentarios_aprobacion_planes && (
