@@ -27,15 +27,13 @@ import {
 } from '@mui/material';
 import {
   Assignment,
-  Code,
-  BugReport,
-  CheckCircle,
   Schedule,
+  Code,
+  CheckCircle,
+  BugReport,
+  Pause,
   GitHub,
   Visibility,
-  PlayArrow,
-  Pause,
-  Done,
   FilterList,
   Refresh
 } from '@mui/icons-material';
@@ -134,28 +132,7 @@ const SolicitudesDesarrollador = () => {
     }
   };
 
-  const handleAccionRapida = async (solicitudId, nuevoEstado) => {
-    try {
-      await desarrolladorService.actualizarEstado(solicitudId, nuevoEstado);
-      console.log('Estado actualizadoaaaaaaaaaaaaaaaaaaaaaaaaaa:', nuevoEstado);
-      console.log('Solicitud ID:', solicitudId);
-      loadSolicitudesAsignadas();
-    } catch (error) {
-      console.error('Error actualizando estado:', error);
-      setError('Error al actualizar el estado');
-    }
-  };
 
-  const handleEnviarPlanesARevision = async (solicitudId) => {
-    try {
-      await desarrolladorService.enviarPlanesARevision(solicitudId);
-      loadSolicitudesAsignadas();
-      setError(null);
-    } catch (error) {
-      console.error('Error enviando planes a revisión:', error);
-      setError(error.message);
-    }
-  };
 
   const getEstadoColor = (estado) => {
     const colores = {
@@ -523,76 +500,20 @@ const SolicitudesDesarrollador = () => {
                       
                       <TableCell>
                         <Box sx={{ display: 'flex', gap: 1 }}>
-                          {/* Acciones rápidas según el estado */}
-                          {solicitud.estado_sol === 'APROBADA' && (
-                            <Tooltip title="Iniciar Desarrollo">
-                              <IconButton 
-                                size="small" 
-                                color="primary"
-                                onClick={() => handleAccionRapida(solicitud.id_sol, 'EN_DESARROLLO')}
-                              >
-                                <PlayArrow />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          
-                          {solicitud.estado_sol === 'EN_DESARROLLO' && (
-                            <>
-                              <Tooltip title="Enviar Planes a Revisión">
-                                <IconButton 
-                                  size="small" 
-                                  color="primary"
-                                  onClick={() => handleEnviarPlanesARevision(solicitud.id_sol)}
-                                >
-                                  <Assignment />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Pausar">
-                                <IconButton 
-                                  size="small" 
-                                  color="warning"
-                                  onClick={() => handleAccionRapida(solicitud.id_sol, 'EN_PAUSA')}
-                                >
-                                  <Pause />
-                                </IconButton>
-                              </Tooltip>
-                            </>
-                          )}
-                          
-                          {solicitud.estado_sol === 'EN_PAUSA' && (
-                            <Tooltip title="Reanudar">
-                              <IconButton 
-                                size="small" 
-                                color="primary"
-                                onClick={() => handleAccionRapida(solicitud.id_sol, 'EN_DESARROLLO')}
-                              >
-                                <PlayArrow />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          
-                          {solicitud.estado_sol === 'EN_TESTING' && (
-                            <Tooltip title="Reportar Bug">
-                              <IconButton 
-                                size="small" 
-                                color="warning"
-                                onClick={() => handleAccionRapida(solicitud.id_sol, 'EN_DESARROLLO')}
-                              >
-                                <BugReport />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          
-                          {/* Ver detalles - siempre disponible */}
-                          <Tooltip title="Ver Detalles">
-                            <IconButton 
-                              size="small" 
-                              color="info"
-                              onClick={() => navigate(`/developer/solicitud/${solicitud.id_sol}`)}
-                            >
-                              <Visibility />
-                            </IconButton>
-                          </Tooltip>
+                          {/* Solo botón de ver detalles */}
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<Visibility />}
+                            onClick={() => navigate(`/developer/solicitud/${solicitud.id_sol}`)}
+                            sx={{ 
+                              bgcolor: '#7b1fa2', 
+                              '&:hover': { bgcolor: '#6a1b9a' },
+                              minWidth: '120px'
+                            }}
+                          >
+                            Ver Detalles
+                          </Button>
                           
                           {/* GitHub - si existe */}
                           {solicitud.github_repo_url && (

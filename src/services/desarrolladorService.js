@@ -121,7 +121,11 @@ const desarrolladorService = {
   // Completar solicitud (EN_DESPLIEGUE → COMPLETADA/FALLIDA)
   completarSolicitud: async (id, datos) => {
     try {
-      const response = await api.post(`/desarrollador/solicitud/${id}/completar`, datos);
+      const response = await api.post(`/desarrollador/solicitud/${id}/completar`, {
+        exito_implementacion: datos.exito_implementacion,
+        comentarios_tecnicos_sol: datos.comentarios_tecnicos_sol,
+        tiempo_real_horas_sol: datos.tiempo_real_horas_sol
+      });
       return response.data;
     } catch (error) {
       console.error('Error completando solicitud:', error);

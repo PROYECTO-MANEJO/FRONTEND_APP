@@ -51,7 +51,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import solicitudesAdminService from '../../services/solicitudesAdminService';
+import solicitudesAdminService, { aprobarPlanesTecnicos } from '../../services/solicitudesAdminService';
 import solicitudesService from '../../services/solicitudesService';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
@@ -282,6 +282,27 @@ const AdminSolicitudes = () => {
     }
   };
 
+  const handleAprobarPlanes = async (aprobado) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await aprobarPlanesTecnicos(selectedSolicitud.id_sol, aprobado);
+      
+      setSuccess(`Planes técnicos ${aprobado ? 'aprobados' : 'rechazados'} exitosamente`);
+      setDialogDetalles(false);
+      
+      // Recargar datos
+      await cargarSolicitudes();
+      await cargarEstadisticas();
+      
+    } catch (err) {
+      setError('Error al procesar la revisión de planes: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Función para obtener información del estado con colores distintivos
   const getEstadoInfo = (estado) => {
     const estadosInfo = {
@@ -309,6 +330,46 @@ const AdminSolicitudes = () => {
         color: '#f44336',
         bgcolor: '#ffebee',
         label: 'Rechazada' 
+      },
+      'CANCELADA': { 
+        color: '#6b7280',
+        bgcolor: '#f9fafb',
+        label: 'Cancelada' 
+      },
+      'EN_DESARROLLO': { 
+        color: '#7c3aed',
+        bgcolor: '#f3e8ff',
+        label: 'En Desarrollo' 
+      },
+      'PLANES_PENDIENTES_APROBACION': { 
+        color: '#ea580c',
+        bgcolor: '#fed7aa',
+        label: 'Planes en Revisión' 
+      },
+      'LISTO_PARA_IMPLEMENTAR': { 
+        color: '#059669',
+        bgcolor: '#d1fae5',
+        label: 'Listo para Implementar' 
+      },
+      'EN_TESTING': { 
+        color: '#dc2626',
+        bgcolor: '#fee2e2',
+        label: 'En Testing' 
+      },
+      'EN_DESPLIEGUE': { 
+        color: '#be185d',
+        bgcolor: '#fce7f3',
+        label: 'En Despliegue' 
+      },
+      'COMPLETADA': { 
+        color: '#16a34a',
+        bgcolor: '#dcfce7',
+        label: 'Completada' 
+      },
+      'FALLIDA': { 
+        color: '#dc2626',
+        bgcolor: '#fef2f2',
+        label: 'Fallida' 
       }
     };
     
@@ -1120,6 +1181,145 @@ const AdminSolicitudes = () => {
                       </Paper>
                     </Box>
                   </Box>
+
+                  {/* Sección de Planes Técnicos del Desarrollador */}
+                  {(selectedSolicitud.plan_implementacion_sol || selectedSolicitud.plan_rollout_sol || 
+                    selectedSolicitud.plan_backout_sol || selectedSolicitud.plan_testing_sol) && (
+                    <Box sx={{ mt: 3 }}>
+                      <Paper elevation={1} sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ 
+                          mb: 3, 
+                          color: '#6d1313', 
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <Assignment sx={{ color: '#b91c1c' }} />
+                          Planes Técnicos del Desarrollador
+                        </Typography>
+
+                        {/* Estado de los planes */}
+                        {selectedSolicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
+                          <Alert severity="warning" sx={{ mb: 3 }}>
+                            <strong>Planes pendientes de aprobación</strong> - El desarrollador ha enviado los planes técnicos para revisión.
+                            {selectedSolicitud.fecha_envio_planes && (
+                              <Typography variant="body2" sx={{ mt: 1 }}>
+                                Enviados el {new Date(selectedSolicitud.fecha_envio_planes).toLocaleDateString('es-ES')}
+                              </Typography>
+                            )}
+                          </Alert>
+                        )}
+
+                        {selectedSolicitud.planes_aprobados === true && (
+                          <Alert severity="success" sx={{ mb: 3 }}>
+                            <strong>Planes aprobados</strong> - Los planes técnicos han sido revisados y aprobados.
+                            {selectedSolicitud.fecha_aprobacion_planes && (
+                              <Typography variant="body2" sx={{ mt: 1 }}>
+                                Aprobados el {new Date(selectedSolicitud.fecha_aprobacion_planes).toLocaleDateString('es-ES')}
+                              </Typography>
+                            )}
+                          </Alert>
+                        )}
+
+                        {selectedSolicitud.planes_aprobados === false && selectedSolicitud.fecha_aprobacion_planes && (
+                          <Alert severity="error" sx={{ mb: 3 }}>
+                            <strong>Planes rechazados</strong> - Los planes técnicos requieren revisión.
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                              Revisados el {new Date(selectedSolicitud.fecha_aprobacion_planes).toLocaleDateString('es-ES')}
+                            </Typography>
+                          </Alert>
+                        )}
+
+                        {/* Planes técnicos uno debajo del otro */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {selectedSolicitud.plan_implementacion_sol && (
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#1976d2' }}>
+                                📋 Plan de Implementación:
+                              </Typography>
+                              <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 100, border: '1px solid #e0e0e0' }}>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                  {selectedSolicitud.plan_implementacion_sol}
+                                </Typography>
+                              </Paper>
+                            </Box>
+                          )}
+
+                          {selectedSolicitud.plan_rollout_sol && (
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#2e7d32' }}>
+                                🚀 Plan de Roll-out:
+                              </Typography>
+                              <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 100, border: '1px solid #e0e0e0' }}>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                  {selectedSolicitud.plan_rollout_sol}
+                                </Typography>
+                              </Paper>
+                            </Box>
+                          )}
+
+                          {selectedSolicitud.plan_backout_sol && (
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#d32f2f' }}>
+                                🔄 Plan de Back-out:
+                              </Typography>
+                              <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 100, border: '1px solid #e0e0e0' }}>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                  {selectedSolicitud.plan_backout_sol}
+                                </Typography>
+                              </Paper>
+                            </Box>
+                          )}
+
+                          {selectedSolicitud.plan_testing_sol && (
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#ed6c02' }}>
+                                🧪 Plan de Testing:
+                              </Typography>
+                              <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 100, border: '1px solid #e0e0e0' }}>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                  {selectedSolicitud.plan_testing_sol}
+                                </Typography>
+                              </Paper>
+                            </Box>
+                          )}
+                        </Box>
+
+                        {/* Comentarios de aprobación existentes */}
+                        {selectedSolicitud.comentarios_aprobacion_planes && (
+                          <Paper sx={{ 
+                            mt: 3, 
+                            p: 3, 
+                            bgcolor: selectedSolicitud.planes_aprobados ? '#e8f5e8' : '#ffebee',
+                            border: `1px solid ${selectedSolicitud.planes_aprobados ? '#4caf50' : '#f44336'}`
+                          }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                              <Avatar sx={{ 
+                                bgcolor: selectedSolicitud.planes_aprobados ? '#4caf50' : '#f44336', 
+                                width: 32, 
+                                height: 32 
+                              }}>
+                                <Assignment />
+                              </Avatar>
+                              <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                  MASTER - {selectedSolicitud.planes_aprobados ? 'Planes Aprobados' : 'Planes Rechazados'}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {selectedSolicitud.fecha_aprobacion_planes && 
+                                    new Date(selectedSolicitud.fecha_aprobacion_planes).toLocaleDateString('es-ES')}
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {selectedSolicitud.comentarios_aprobacion_planes}
+                            </Typography>
+                          </Paper>
+                        )}
+                      </Paper>
+                    </Box>
+                  )}
                 </Box>
               
             </Box>
@@ -1175,6 +1375,37 @@ const AdminSolicitudes = () => {
                   }}
                 >
                   Aprobar
+                </Button>
+                </>
+              )}
+
+            {selectedSolicitud?.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
+              <>
+                            <Button
+                  onClick={() => handleAprobarPlanes(false)}
+                  variant="contained"
+                  startIcon={<Close />}
+                  sx={{ 
+                    bgcolor: '#ef4444', 
+                    '&:hover': { bgcolor: '#dc2626' },
+                    minWidth: 150
+                  }}
+                  disabled={loading}
+                >
+                  Rechazar Planes
+                            </Button>
+                <Button 
+                  onClick={() => handleAprobarPlanes(true)}
+                  variant="contained"
+                  startIcon={<Check />}
+                  sx={{ 
+                    bgcolor: '#16a34a', 
+                    '&:hover': { bgcolor: '#15803d' },
+                    minWidth: 150
+                  }}
+                  disabled={loading}
+                >
+                  Aprobar Planes
                 </Button>
                 </>
               )}

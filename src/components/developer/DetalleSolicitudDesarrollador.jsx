@@ -73,12 +73,13 @@ const DetalleSolicitudDesarrollador = () => {
   // Estados para planes técnicos
   const [editandoPlanes, setEditandoPlanes] = useState(false);
   const [planes, setPlanes] = useState({
+    plan_implementacion_sol: '',
     plan_rollout_sol: '',
     plan_backout_sol: '',
-    plan_testing_sol: '',
-    plan_implementacion_sol: '',
-    observaciones_implementacion_sol: ''
+    plan_testing_sol: ''
   });
+
+
 
   useEffect(() => {
     cargarSolicitud();
@@ -94,11 +95,10 @@ const DetalleSolicitudDesarrollador = () => {
       
       // Cargar planes técnicos existentes
       setPlanes({
+        plan_implementacion_sol: response.data.plan_implementacion_sol || '',
         plan_rollout_sol: response.data.plan_rollout_sol || '',
         plan_backout_sol: response.data.plan_backout_sol || '',
-        plan_testing_sol: response.data.plan_testing_sol || '',
-        plan_implementacion_sol: response.data.plan_implementacion_sol || '',
-        observaciones_implementacion_sol: response.data.observaciones_implementacion_sol || ''
+        plan_testing_sol: response.data.plan_testing_sol || ''
       });
       
     } catch (error) {
@@ -109,16 +109,80 @@ const DetalleSolicitudDesarrollador = () => {
     }
   };
 
-  const handleCambiarEstado = async (nuevoEstado) => {
+  // Funciones específicas para cada acción
+  const handleIniciarDesarrollo = async () => {
     try {
       setProcesando(true);
-      await desarrolladorService.actualizarEstado(id, nuevoEstado);
+      await desarrolladorService.iniciarDesarrollo(id);
       await cargarSolicitud();
     } catch (error) {
-      console.error('Error cambiando estado:', error);
-      setError('Error al cambiar el estado');
+      console.error('Error iniciando desarrollo:', error);
+      setError('Error al iniciar el desarrollo');
     } finally {
       setProcesando(false);
+    }
+  };
+
+  const handlePasarATesting = async () => {
+    try {
+      setProcesando(true);
+      await desarrolladorService.pasarATesting(id);
+      await cargarSolicitud();
+    } catch (error) {
+      console.error('Error pasando a testing:', error);
+      setError('Error al pasar a testing');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const handlePasarADespliegue = async () => {
+    try {
+      setProcesando(true);
+      await desarrolladorService.pasarADespliegue(id);
+      await cargarSolicitud();
+    } catch (error) {
+      console.error('Error pasando a despliegue:', error);
+      setError('Error al pasar a despliegue');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const handleCompletarSolicitud = async (exito) => {
+    try {
+      setProcesando(true);
+      await desarrolladorService.completarSolicitud(id, {
+        exito_implementacion: exito,
+        comentarios_tecnicos_sol: `Solicitud ${exito ? 'completada exitosamente' : 'marcada como fallida'} el ${new Date().toLocaleString('es-ES')}`
+      });
+      await cargarSolicitud();
+    } catch (error) {
+      console.error('Error completando solicitud:', error);
+      setError('Error al completar la solicitud');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const handleReportarBug = async () => {
+    try {
+      setProcesando(true);
+      await desarrolladorService.actualizarEstado(id, 'EN_DESARROLLO', 'Bug reportado - regresando a desarrollo');
+      await cargarSolicitud();
+    } catch (error) {
+      console.error('Error reportando bug:', error);
+      setError('Error al reportar bug');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const handleVerGitHub = () => {
+    if (solicitud.github_repo_url) {
+      window.open(solicitud.github_repo_url, '_blank');
+    } else {
+      alert('No hay repositorio asociado a esta solicitud aún.');
     }
   };
 
@@ -540,7 +604,7 @@ const DetalleSolicitudDesarrollador = () => {
           </Card>
 
           {/* Planes Técnicos */}
-          {(['EN_DESARROLLO', 'PLANES_PENDIENTES_APROBACION', 'LISTO_PARA_IMPLEMENTAR'].includes(solicitud.estado_sol)) && (
+          {(['APROBADA', 'EN_DESARROLLO', 'PLANES_PENDIENTES_APROBACION', 'LISTO_PARA_IMPLEMENTAR'].includes(solicitud.estado_sol)) && (
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -548,7 +612,7 @@ const DetalleSolicitudDesarrollador = () => {
                     <Assignment />
                     Planes Técnicos
                   </Typography>
-                  {solicitud.estado_sol === 'EN_DESARROLLO' && (
+                  {(solicitud.estado_sol === 'APROBADA' || solicitud.estado_sol === 'EN_DESARROLLO') && (
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       {editandoPlanes ? (
                         <>
@@ -592,6 +656,28 @@ const DetalleSolicitudDesarrollador = () => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                      Plan de Implementación:
+                    </Typography>
+                    {editandoPlanes ? (
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={planes.plan_implementacion_sol}
+                        onChange={(e) => handleCampoPlaneChange('plan_implementacion_sol', e.target.value)}
+                        placeholder="Describe cómo se implementará la solicitud..."
+                      />
+                    ) : (
+                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
+                        <Typography variant="body2">
+                          {planes.plan_implementacion_sol || 'No especificado'}
+                        </Typography>
+                      </Paper>
+                    )}
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
                       Plan de Roll-out:
                     </Typography>
                     {editandoPlanes ? (
@@ -601,7 +687,7 @@ const DetalleSolicitudDesarrollador = () => {
                         rows={4}
                         value={planes.plan_rollout_sol}
                         onChange={(e) => handleCampoPlaneChange('plan_rollout_sol', e.target.value)}
-                        placeholder="Describe el plan de implementación..."
+                        placeholder="Describe el plan de despliegue..."
                       />
                     ) : (
                       <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
@@ -623,7 +709,7 @@ const DetalleSolicitudDesarrollador = () => {
                         rows={4}
                         value={planes.plan_backout_sol}
                         onChange={(e) => handleCampoPlaneChange('plan_backout_sol', e.target.value)}
-                        placeholder="Describe el plan de reversión..."
+                        placeholder="Describe el plan de reversión en caso de falla..."
                       />
                     ) : (
                       <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
@@ -645,7 +731,7 @@ const DetalleSolicitudDesarrollador = () => {
                         rows={4}
                         value={planes.plan_testing_sol}
                         onChange={(e) => handleCampoPlaneChange('plan_testing_sol', e.target.value)}
-                        placeholder="Describe el plan de pruebas..."
+                        placeholder="Describe cómo se van a probar los cambios..."
                       />
                     ) : (
                       <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
@@ -655,42 +741,20 @@ const DetalleSolicitudDesarrollador = () => {
                       </Paper>
                     )}
                   </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                      Observaciones de Implementación:
-                    </Typography>
-                    {editandoPlanes ? (
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={planes.observaciones_implementacion_sol}
-                        onChange={(e) => handleCampoPlaneChange('observaciones_implementacion_sol', e.target.value)}
-                        placeholder="Observaciones adicionales..."
-                      />
-                    ) : (
-                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 100 }}>
-                        <Typography variant="body2">
-                          {planes.observaciones_implementacion_sol || 'No especificado'}
-                        </Typography>
-                      </Paper>
-                    )}
-                  </Grid>
                 </Grid>
 
-                {solicitud.estado_sol === 'EN_DESARROLLO' && !editandoPlanes && (
+                {(solicitud.estado_sol === 'APROBADA' || solicitud.estado_sol === 'EN_DESARROLLO') && !editandoPlanes && (
                   <Box sx={{ mt: 3, textAlign: 'center' }}>
                     <Button
                       variant="contained"
                       size="large"
                       startIcon={<Send />}
                       onClick={handleEnviarPlanesARevision}
-                      disabled={procesando || !planes.plan_rollout_sol || !planes.plan_backout_sol || !planes.plan_testing_sol}
+                      disabled={procesando || !planes.plan_implementacion_sol || !planes.plan_rollout_sol || !planes.plan_backout_sol || !planes.plan_testing_sol}
                     >
                       Enviar Planes a Revisión del MASTER
                     </Button>
-                    {(!planes.plan_rollout_sol || !planes.plan_backout_sol || !planes.plan_testing_sol) && (
+                    {(!planes.plan_implementacion_sol || !planes.plan_rollout_sol || !planes.plan_backout_sol || !planes.plan_testing_sol) && (
                       <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
                         Complete todos los planes técnicos antes de enviar a revisión
                       </Typography>
@@ -708,70 +772,189 @@ const DetalleSolicitudDesarrollador = () => {
                 Acciones Disponibles
               </Typography>
               
-              <Stack direction="row" spacing={2} flexWrap="wrap">
+              <Stack spacing={2}>
+                {/* Estado: APROBADA */}
                 {solicitud.estado_sol === 'APROBADA' && (
-                  <Button
-                    variant="contained"
-                    startIcon={<PlayArrow />}
-                    onClick={() => handleCambiarEstado('EN_DESARROLLO')}
-                    disabled={procesando}
-                  >
-                    Iniciar Desarrollo
-                  </Button>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      La solicitud ha sido aprobada. Puedes crear los planes técnicos y luego iniciar el desarrollo.
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Button
+                        variant="contained"
+                        startIcon={<Engineering />}
+                        onClick={() => setEditandoPlanes(true)}
+                        disabled={procesando}
+                        sx={{ bgcolor: '#2196f3', '&:hover': { bgcolor: '#1976d2' } }}
+                      >
+                        Crear Planes Técnicos
+                      </Button>
+                    </Stack>
+                  </Box>
                 )}
 
+                {/* Estado: EN_DESARROLLO */}
                 {solicitud.estado_sol === 'EN_DESARROLLO' && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<Pause />}
-                    onClick={() => handleCambiarEstado('EN_PAUSA')}
-                    disabled={procesando}
-                  >
-                    Pausar Desarrollo
-                  </Button>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Desarrollo en progreso. Puedes editar planes, agregar comentarios o enviar a testing.
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Button
+                        variant="outlined"
+                        startIcon={<Edit />}
+                        onClick={() => setEditandoPlanes(true)}
+                        disabled={procesando}
+                      >
+                        Editar Planes
+                      </Button>
+                      <Button
+                        variant="contained"
+                        startIcon={<BugReport />}
+                        onClick={handlePasarATesting}
+                        disabled={procesando}
+                        sx={{ bgcolor: '#ff9800', '&:hover': { bgcolor: '#f57c00' } }}
+                      >
+                        Pasar a Testing
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Comment />}
+                        onClick={() => setComentarioDialog(true)}
+                        disabled={procesando}
+                      >
+                        Agregar Comentario
+                      </Button>
+                    </Stack>
+                  </Box>
                 )}
 
-                {solicitud.estado_sol === 'EN_PAUSA' && (
-                  <Button
-                    variant="contained"
-                    startIcon={<PlayArrow />}
-                    onClick={() => handleCambiarEstado('EN_DESARROLLO')}
-                    disabled={procesando}
-                  >
-                    Reanudar Desarrollo
-                  </Button>
+                {/* Estado: PLANES_PENDIENTES_APROBACION */}
+                {solicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
+                  <Box>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      Los planes técnicos están siendo revisados por el MASTER. Esperando aprobación.
+                    </Alert>
+                  </Box>
                 )}
 
+                {/* Estado: LISTO_PARA_IMPLEMENTAR */}
                 {solicitud.estado_sol === 'LISTO_PARA_IMPLEMENTAR' && (
-                  <>
-                    <Button
-                      variant="contained"
-                      startIcon={<PlayArrow />}
-                      onClick={() => handleCambiarEstado('EN_TESTING')}
-                      disabled={procesando}
-                    >
-                      Iniciar Testing
-                    </Button>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Los planes han sido aprobados. Puedes iniciar la implementación.
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Button
+                        variant="contained"
+                        startIcon={<PlayArrow />}
+                        onClick={handleIniciarDesarrollo}
+                        disabled={procesando}
+                        sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#388e3c' } }}
+                      >
+                        Iniciar Implementación
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<GitHub />}
+                        onClick={handleVerGitHub}
+                        disabled={procesando || !solicitud.github_repo_url}
+                      >
+                        Ver en GitHub
+                      </Button>
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* Estado: EN_TESTING */}
+                {solicitud.estado_sol === 'EN_TESTING' && (
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      En fase de testing. Puedes pasar a despliegue o reportar bugs.
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Button
+                        variant="contained"
+                        startIcon={<Assignment />}
+                        onClick={handlePasarADespliegue}
+                        disabled={procesando}
+                        sx={{ bgcolor: '#9c27b0', '&:hover': { bgcolor: '#7b1fa2' } }}
+                      >
+                        Pasar a Despliegue
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<BugReport />}
+                        onClick={() => handleReportarBug()}
+                        disabled={procesando}
+                      >
+                        Reportar Bug
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Comment />}
+                        onClick={() => setComentarioDialog(true)}
+                        disabled={procesando}
+                      >
+                        Agregar Comentario
+                      </Button>
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* Estado: EN_DESPLIEGUE */}
+                {solicitud.estado_sol === 'EN_DESPLIEGUE' && (
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      En fase de despliegue. Puedes completar la solicitud o marcarla como fallida.
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<CheckCircle />}
+                        onClick={() => handleCompletarSolicitud(true)}
+                        disabled={procesando}
+                      >
+                        Completar Exitosamente
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        startIcon={<Cancel />}
+                        onClick={() => handleCompletarSolicitud(false)}
+                        disabled={procesando}
+                      >
+                        Marcar como Fallida
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Comment />}
+                        onClick={() => setComentarioDialog(true)}
+                        disabled={procesando}
+                      >
+                        Agregar Comentario
+                      </Button>
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* Estados finales */}
+                {(solicitud.estado_sol === 'COMPLETADA' || solicitud.estado_sol === 'FALLIDA') && (
+                  <Box>
+                    <Alert severity={solicitud.estado_sol === 'COMPLETADA' ? 'success' : 'error'} sx={{ mb: 2 }}>
+                      Solicitud {solicitud.estado_sol === 'COMPLETADA' ? 'completada exitosamente' : 'marcada como fallida'}.
+                    </Alert>
                     <Button
                       variant="outlined"
-                      startIcon={<GitHub />}
+                      startIcon={<Visibility />}
+                      onClick={() => {/* Ver resumen final */}}
                       disabled={procesando}
                     >
-                      Ver en GitHub
+                      Ver Resumen Final
                     </Button>
-                  </>
-                )}
-
-                {solicitud.estado_sol === 'EN_TESTING' && (
-                  <Button
-                    variant="contained"
-                    color="success"
-                    startIcon={<Done />}
-                    onClick={() => handleCambiarEstado('COMPLETADA')}
-                    disabled={procesando}
-                  >
-                    Marcar como Completada
-                  </Button>
+                  </Box>
                 )}
               </Stack>
             </CardContent>

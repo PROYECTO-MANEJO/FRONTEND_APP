@@ -56,6 +56,7 @@ import {
 } from '@mui/icons-material';
 // Timeline components - usando alternativa si @mui/lab no está disponible
 import solicitudesService from '../../services/solicitudesService';
+import { aprobarPlanesTecnicos } from '../../services/solicitudesAdminService';
 
 function CustomTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -197,6 +198,30 @@ const DetalleSolicitudAdmin = () => {
     } catch (error) {
       console.error('Error cambiando estado:', error);
       setError('Error al cambiar el estado');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const handleAprobarPlanes = async (aprobado) => {
+    try {
+      setProcesando(true);
+      await aprobarPlanesTecnicos(
+        id, 
+        aprobado, 
+        respuestaForm.comentarios_aprobacion_planes || ''
+      );
+      
+      // Limpiar el campo de comentarios
+      setRespuestaForm(prev => ({
+        ...prev,
+        comentarios_aprobacion_planes: ''
+      }));
+      
+      await cargarSolicitud();
+    } catch (error) {
+      console.error('Error aprobando/rechazando planes:', error);
+      setError('Error al procesar la revisión de planes');
     } finally {
       setProcesando(false);
     }
@@ -769,58 +794,179 @@ const DetalleSolicitudAdmin = () => {
           <CardContent>
             <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
               <Assignment />
-              Planes Técnicos
+              Planes Técnicos del Desarrollador
             </Typography>
 
-            {(['EN_DESARROLLO', 'PLANES_PENDIENTES_APROBACION', 'LISTO_PARA_IMPLEMENTAR', 'EN_TESTING', 'COMPLETADA'].includes(solicitud.estado_sol)) ? (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                    Plan de Roll-out:
-                  </Typography>
-                  <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 120 }}>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {solicitud.plan_rollout_sol || 'No especificado'}
+            {/* Verificar si existen planes técnicos */}
+            {(solicitud.plan_implementacion_sol || solicitud.plan_rollout_sol || solicitud.plan_backout_sol || solicitud.plan_testing_sol) ? (
+              <>
+                {/* Estado de los planes */}
+                {solicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
+                  <Alert severity="warning" sx={{ mb: 3 }}>
+                    <strong>Planes pendientes de aprobación</strong> - El desarrollador ha enviado los planes técnicos para revisión.
+                    {solicitud.fecha_envio_planes && (
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        Enviados el {formatearFecha(solicitud.fecha_envio_planes)}
+                      </Typography>
+                    )}
+                  </Alert>
+                )}
+
+                {solicitud.planes_aprobados === true && (
+                  <Alert severity="success" sx={{ mb: 3 }}>
+                    <strong>Planes aprobados</strong> - Los planes técnicos han sido revisados y aprobados.
+                    {solicitud.fecha_aprobacion_planes && (
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        Aprobados el {formatearFecha(solicitud.fecha_aprobacion_planes)}
+                      </Typography>
+                    )}
+                  </Alert>
+                )}
+
+                {solicitud.planes_aprobados === false && (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    <strong>Planes rechazados</strong> - Los planes técnicos requieren revisión.
+                    {solicitud.fecha_aprobacion_planes && (
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        Revisados el {formatearFecha(solicitud.fecha_aprobacion_planes)}
+                      </Typography>
+                    )}
+                  </Alert>
+                )}
+
+                {/* Planes técnicos */}
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#1976d2' }}>
+                      📋 Plan de Implementación:
                     </Typography>
-                  </Paper>
+                    <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 120, border: '1px solid #e0e0e0' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitud.plan_implementacion_sol || 'No especificado'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#2e7d32' }}>
+                      🚀 Plan de Roll-out:
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 120, border: '1px solid #e0e0e0' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitud.plan_rollout_sol || 'No especificado'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#d32f2f' }}>
+                      🔄 Plan de Back-out:
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 120, border: '1px solid #e0e0e0' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitud.plan_backout_sol || 'No especificado'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: '#ed6c02' }}>
+                      🧪 Plan de Testing:
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: '#f8f9fa', minHeight: 120, border: '1px solid #e0e0e0' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitud.plan_testing_sol || 'No especificado'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                    Plan de Back-out:
-                  </Typography>
-                  <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 120 }}>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {solicitud.plan_backout_sol || 'No especificado'}
+                {/* Botones de aprobación/rechazo para MASTER */}
+                {solicitud.estado_sol === 'PLANES_PENDIENTES_APROBACION' && (
+                  <Box sx={{ mt: 4, p: 3, bgcolor: '#fafafa', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <AdminPanelSettings />
+                      Revisión de Planes (MASTER)
                     </Typography>
-                  </Paper>
-                </Grid>
+                    
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      label="Comentarios de revisión (opcional)"
+                      placeholder="Agregue comentarios sobre la revisión de los planes técnicos..."
+                      value={respuestaForm.comentarios_aprobacion_planes || ''}
+                      onChange={(e) => setRespuestaForm(prev => ({
+                        ...prev,
+                        comentarios_aprobacion_planes: e.target.value
+                      }))}
+                      sx={{ mb: 3 }}
+                    />
+                    
+                    <Stack direction="row" spacing={2}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<CheckCircle />}
+                        onClick={() => handleAprobarPlanes(true)}
+                        disabled={procesando}
+                        sx={{ minWidth: 150 }}
+                      >
+                        Aprobar Planes
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        startIcon={<Cancel />}
+                        onClick={() => handleAprobarPlanes(false)}
+                        disabled={procesando}
+                        sx={{ minWidth: 150 }}
+                      >
+                        Rechazar Planes
+                      </Button>
+                    </Stack>
+                  </Box>
+                )}
 
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                    Plan de Testing:
-                  </Typography>
-                  <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 120 }}>
+                {/* Comentarios de aprobación existentes */}
+                {solicitud.comentarios_aprobacion_planes && (
+                  <Paper sx={{ 
+                    mt: 3, 
+                    p: 3, 
+                    bgcolor: solicitud.planes_aprobados ? '#e8f5e8' : '#ffebee',
+                    border: `1px solid ${solicitud.planes_aprobados ? '#4caf50' : '#f44336'}`
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                      <Avatar sx={{ 
+                        bgcolor: solicitud.planes_aprobados ? '#4caf50' : '#f44336', 
+                        width: 32, 
+                        height: 32 
+                      }}>
+                        <AdminPanelSettings />
+                      </Avatar>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                          MASTER - {solicitud.planes_aprobados ? 'Planes Aprobados' : 'Planes Rechazados'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatearFecha(solicitud.fecha_aprobacion_planes)}
+                        </Typography>
+                      </Box>
+                    </Box>
                     <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {solicitud.plan_testing_sol || 'No especificado'}
+                      {solicitud.comentarios_aprobacion_planes}
                     </Typography>
                   </Paper>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                    Observaciones de Implementación:
-                  </Typography>
-                  <Paper sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 120 }}>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {solicitud.observaciones_implementacion_sol || 'No especificado'}
-                    </Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
+                )}
+              </>
             ) : (
-              <Alert severity="info">
-                Los planes técnicos estarán disponibles cuando la solicitud esté en desarrollo
+              <Alert severity="info" sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  No hay planes técnicos disponibles
+                </Typography>
+                <Typography variant="body2">
+                  Los planes técnicos aparecerán aquí cuando el desarrollador los haya creado y enviado para revisión.
+                </Typography>
               </Alert>
             )}
           </CardContent>
