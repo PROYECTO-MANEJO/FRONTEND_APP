@@ -40,7 +40,7 @@ class GitHubService {
   // Obtener información de GitHub para una solicitud
   async obtenerInfoGitHub(solicitudId) {
     try {
-      const response = await api.get(`/github/solicitud/${solicitudId}`);
+      const response = await api.get(`/github/dev/solicitud/${solicitudId}`);
       return response.data;
     } catch (error) {
       console.error('Error obteniendo información de GitHub:', error);
@@ -223,6 +223,200 @@ class GitHubService {
     if (minutos < 60) return `Sincronizado hace ${minutos} minuto${minutos > 1 ? 's' : ''}`;
     if (horas < 24) return `Sincronizado hace ${horas} hora${horas > 1 ? 's' : ''}`;
     return `Sincronizado hace ${dias} día${dias > 1 ? 's' : ''}`;
+  }
+
+  // ===================================
+  // NUEVAS FUNCIONALIDADES PARA DESARROLLADORES
+  // ===================================
+
+  // Crear branch con GitFlow
+  async crearBranchGitFlow(solicitudId, branchType, baseBranch, repoType) {
+    try {
+      const response = await api.post(`/github/dev/solicitud/${solicitudId}/crear-branch-gitflow`, {
+        branchType,
+        baseBranch,
+        repoType
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creando branch GitFlow:', error);
+      throw error;
+    }
+  }
+
+  // Crear Pull Request para desarrolladores
+  async crearPullRequestDesarrollador(solicitudId, branchName, repoType, baseBranch) {
+    try {
+      const response = await api.post(`/github/dev/solicitud/${solicitudId}/crear-pull-request`, {
+        branchName,
+        repoType,
+        baseBranch
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creando Pull Request:', error);
+      throw error;
+    }
+  }
+
+  // Cambiar estado a ESPERANDO_APROBACION
+  async cambiarAEsperandoAprobacion(solicitudId) {
+    try {
+      const response = await api.put(`/github/dev/solicitud/${solicitudId}/esperando-aprobacion`);
+      return response.data;
+    } catch (error) {
+      console.error('Error cambiando estado:', error);
+      throw error;
+    }
+  }
+
+  // Obtener tipos GitFlow disponibles
+  async obtenerTiposGitFlow() {
+    try {
+      const response = await api.get('/github/dev/gitflow-types');
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo tipos GitFlow:', error);
+      
+      // Si es error 503 (GitHub no configurado), lanzar error específico
+      if (error.response?.status === 503) {
+        const configError = new Error('GitHub no está configurado en el servidor');
+        configError.code = 'GITHUB_NOT_CONFIGURED';
+        configError.suggestion = error.response.data.suggestion;
+        throw configError;
+      }
+      
+      throw error;
+    }
+  }
+
+  // Obtener branches disponibles en repositorio
+  async obtenerBranchesRepositorio(repoType) {
+    try {
+      const response = await api.get(`/github/dev/branches/${repoType}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo branches:', error);
+      
+      // Si es error 503 (GitHub no configurado), lanzar error específico
+      if (error.response?.status === 503) {
+        const configError = new Error('GitHub no está configurado en el servidor');
+        configError.code = 'GITHUB_NOT_CONFIGURED';
+        configError.suggestion = error.response.data.suggestion;
+        throw configError;
+      }
+      
+      throw error;
+    }
+  }
+
+  // Detectar PRs automáticamente (para polling)
+  async detectarPullRequests() {
+    try {
+      const response = await api.post('/github/detectar-prs');
+      return response.data;
+    } catch (error) {
+      console.error('Error detectando PRs:', error);
+      throw error;
+    }
+  }
+
+  // Verificar merges (para polling)
+  async verificarMerges() {
+    try {
+      const response = await api.post('/github/verificar-merges');
+      return response.data;
+    } catch (error) {
+      console.error('Error verificando merges:', error);
+      throw error;
+    }
+  }
+
+  // Formatear nombre de branch para mostrar
+  formatearNombreBranch(branchName) {
+    if (!branchName) return 'Sin branch';
+    
+    // Extraer información del nombre del branch GitFlow
+    const parts = branchName.split('/');
+    if (parts.length >= 2) {
+      const type = parts[0];
+      const name = parts[1];
+      return {
+        tipo: type,
+        nombre: name,
+        completo: branchName,
+        tipoFormateado: this.formatearTipoBranch(type)
+      };
+    }
+    
+    return {
+      tipo: 'custom',
+      nombre: branchName,
+      completo: branchName,
+      tipoFormateado: 'Personalizado'
+    };
+  }
+
+  // Formatear tipo de branch para mostrar
+  formatearTipoBranch(tipo) {
+    const tipos = {
+      'feature': 'Funcionalidad',
+      'hotfix': 'Corrección Urgente',
+      'bugfix': 'Corrección de Bug',
+      'release': 'Versión'
+    };
+    return tipos[tipo] || tipo;
+  }
+
+  // Obtener icono para tipo de branch
+  obtenerIconoTipoBranch(tipo) {
+    const iconos = {
+      'feature': '🔧',
+      'hotfix': '🚨',
+      'bugfix': '🐛',
+      'release': '🚀'
+    };
+    return iconos[tipo] || '📝';
+  }
+
+  // Validar si un branch name es válido para GitFlow
+  validarNombreBranchGitFlow(branchName) {
+    if (!branchName) return false;
+    
+    const gitFlowPattern = /^(feature|hotfix|bugfix|release)\/[a-zA-Z0-9_-]+$/;
+    return gitFlowPattern.test(branchName);
+  }
+
+  // Generar sugerencias de nombres de branch
+  generarSugerenciasNombreBranch(solicitud, tipoSelected) {
+    if (!solicitud || !tipoSelected) return [];
+    
+    const shortId = solicitud.id_sol.substring(0, 5);
+    const cleanTitle = solicitud.titulo_sol
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '_')
+      .substring(0, 25);
+    
+    const sugerencias = [
+      `${tipoSelected}/${shortId}_${cleanTitle}`,
+      `${tipoSelected}/${shortId}_fix`,
+      `${tipoSelected}/${shortId}_update`,
+      `${tipoSelected}/${shortId}_improvement`
+    ];
+    
+    return sugerencias.filter((s, i, arr) => arr.indexOf(s) === i); // Remover duplicados
+  }
+
+  // Validar token personal de GitHub
+  async validarTokenPersonal(token) {
+    try {
+      const response = await api.post('/github/dev/validate-token', { token });
+      return response.data;
+    } catch (error) {
+      console.error('Error validando token personal:', error);
+      throw error;
+    }
   }
 }
 

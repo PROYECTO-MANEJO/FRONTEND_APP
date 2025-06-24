@@ -23,11 +23,15 @@ import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { AuthContext } from '../../context/AuthContext';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
+import useGitHubPolling from '../../hooks/useGitHubPolling';
 
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const { getMainContentStyle } = useSidebarLayout();
+  
+  // Iniciar polling automático de GitHub para MASTER/ADMIN
+  useGitHubPolling(180000); // 3 minutos
 
 
   const quickActions = [

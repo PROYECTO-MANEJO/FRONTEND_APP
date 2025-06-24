@@ -58,6 +58,7 @@ import {
   Cancel
 } from '@mui/icons-material';
 import desarrolladorService from '../../services/desarrolladorService';
+import GitHubSection from './GitHubSection';
 
 const DetalleSolicitudDesarrollador = () => {
   const { id } = useParams();
@@ -196,6 +197,7 @@ const DetalleSolicitudDesarrollador = () => {
       'EN_DESARROLLO': 'primary',
       'PLANES_PENDIENTES_APROBACION': 'warning',
       'LISTO_PARA_IMPLEMENTAR': 'success',
+      'ESPERANDO_APROBACION': 'warning',
       'EN_TESTING': 'info',
       'EN_PAUSA': 'default',
       'COMPLETADA': 'success'
@@ -218,6 +220,7 @@ const DetalleSolicitudDesarrollador = () => {
     const progreso = {
       'APROBADA': 20,
       'EN_DESARROLLO': 40,
+      'ESPERANDO_APROBACION': 70,
       'LISTO_PARA_IMPLEMENTAR': 60,
       'EN_TESTING': 80,
       'EN_DESPLIEGUE': 90,
@@ -618,6 +621,18 @@ const DetalleSolicitudDesarrollador = () => {
             </Card>
           )}
 
+          {/* Sección de GitHub */}
+          {(['EN_DESARROLLO', 'LISTO_PARA_IMPLEMENTAR', 'ESPERANDO_APROBACION', 'EN_TESTING', 'EN_DESPLIEGUE', 'COMPLETADA'].includes(solicitud.estado_sol)) && (
+            <Box sx={{ mb: 3 }}>
+              <GitHubSection 
+                solicitud={solicitud} 
+                onSolicitudUpdate={(solicitudActualizada) => {
+                  setSolicitud(solicitudActualizada);
+                }}
+              />
+            </Box>
+          )}
+
           {/* Acciones según Estado */}
           <Card>
             <CardContent>
@@ -714,6 +729,36 @@ const DetalleSolicitudDesarrollador = () => {
                         disabled={procesando}
                       >
                         Reportar Bug
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Comment />}
+                        onClick={() => setComentarioDialog(true)}
+                        disabled={procesando}
+                      >
+                        Agregar Comentario
+                      </Button>
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* Estado: ESPERANDO_APROBACION */}
+                {solicitud.estado_sol === 'ESPERANDO_APROBACION' && (
+                  <Box>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      Tu desarrollo está listo y esperando aprobación del MASTER. El PR será revisado pronto.
+                    </Alert>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Has marcado la solicitud como lista para revisión. El MASTER revisará tu Pull Request.
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Button
+                        variant="outlined"
+                        startIcon={<GitHub />}
+                        onClick={handleVerGitHub}
+                        disabled={procesando || !solicitud.github_repo_url}
+                      >
+                        Ver PR en GitHub
                       </Button>
                       <Button
                         variant="outlined"
