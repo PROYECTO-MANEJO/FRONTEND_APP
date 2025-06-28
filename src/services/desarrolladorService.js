@@ -150,12 +150,25 @@ const desarrolladorService = {
   // Agregar comentario de desarrollo
   agregarComentario: async (id, comentario) => {
     try {
-        const response = await api.post(`/desarrollador/solicitud/${id}/comentario`, {
-        comentario: comentario
+      const response = await api.post(`/desarrollador/solicitud/${id}/comentario`, {
+        comentarios_tecnicos_sol: comentario
       });
       return response.data;
     } catch (error) {
       console.error('Error agregando comentario:', error);
+      throw error;
+    }
+  },
+
+  // Enviar a testing con comentarios
+  enviarATesting: async (id, comentarios) => {
+    try {
+      const response = await api.post(`/desarrollador/solicitud/${id}/enviar-testing`, {
+        comentarios_tecnicos_sol: comentarios
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error enviando a testing:', error);
       throw error;
     }
   },

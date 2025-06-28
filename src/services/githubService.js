@@ -259,16 +259,7 @@ class GitHubService {
     }
   }
 
-  // Cambiar estado a ESPERANDO_APROBACION
-  async cambiarAEsperandoAprobacion(solicitudId) {
-    try {
-      const response = await api.put(`/github/dev/solicitud/${solicitudId}/esperando-aprobacion`);
-      return response.data;
-    } catch (error) {
-      console.error('Error cambiando estado:', error);
-      throw error;
-    }
-  }
+
 
   // Obtener tipos GitFlow disponibles
   async obtenerTiposGitFlow() {
@@ -415,6 +406,95 @@ class GitHubService {
       return response.data;
     } catch (error) {
       console.error('Error validando token personal:', error);
+      throw error;
+    }
+  }
+
+  // Obtener información completa de un Pull Request para revisión del MASTER
+  async obtenerInformacionCompletaPR(prNumber, repoUrl) {
+    try {
+      // Codificar la URL del repositorio para que sea segura en la URL
+      const encodedRepoUrl = encodeURIComponent(repoUrl);
+      
+      const response = await api.get(`/github/master/pr/${prNumber}/repo/${encodedRepoUrl}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo información completa del PR:', error);
+      throw error;
+    }
+  }
+
+  // Función helper para formatear información de commits del PR
+  formatearCommitsPR(commits) {
+    if (!commits || !Array.isArray(commits)) return [];
+    
+    return commits.map(commit => ({
+      ...commit,
+      formattedDate: new Date(commit.date).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      shortMessage: commit.message && commit.message.length > 80 
+        ? commit.message.substring(0, 80) + '...' 
+        : commit.message
+    }));
+  }
+
+  // Función helper para formatear archivos modificados del PR
+  formatearArchivosPR(files) {
+    if (!files || !Array.isArray(files)) return [];
+    
+    return files.map(file => ({
+      ...file,
+      statusLabel: this.obtenerEtiquetaEstadoArchivo(file.status),
+      statusColor: this.obtenerColorEstadoArchivo(file.status),
+      extension: this.obtenerExtensionArchivo(file.filename)
+    }));
+  }
+
+  // Helper para obtener etiqueta de estado de archivo
+  obtenerEtiquetaEstadoArchivo(status) {
+    const statusMap = {
+      'added': 'Agregado',
+      'modified': 'Modificado', 
+      'removed': 'Eliminado',
+      'renamed': 'Renombrado'
+    };
+    return statusMap[status] || status;
+  }
+
+  // Helper para obtener color de estado de archivo
+  obtenerColorEstadoArchivo(status) {
+    const colorMap = {
+      'added': '#22c55e',
+      'modified': '#3b82f6',
+      'removed': '#ef4444',
+      'renamed': '#f59e0b'
+    };
+    return colorMap[status] || '#6b7280';
+  }
+
+  // Helper para obtener extensión de archivo
+  obtenerExtensionArchivo(filename) {
+    if (!filename) return '';
+    const parts = filename.split('.');
+    return parts.length > 1 ? parts[parts.length - 1] : '';
+  }
+
+  // Hacer merge automático de un Pull Request
+  async mergePullRequestAutomatico(prNumber, repoType = 'frontend', mergeMethod = 'merge') {
+    try {
+      const response = await api.post('/github/master/merge-pr', {
+        prNumber,
+        repoType,
+        mergeMethod
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error en merge automático:', error);
       throw error;
     }
   }

@@ -52,10 +52,14 @@ import {
   Visibility,
   GitHub,
   PriorityHigh,
-  Done
+  Done,
+  CallMerge,
+  CheckCircleOutline,
+  Error
 } from '@mui/icons-material';
 // Timeline components - usando alternativa si @mui/lab no está disponible
 import solicitudesService from '../../services/solicitudesService';
+import { actualizarSolicitudMaster } from '../../services/solicitudesAdminService';
 
 function CustomTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -201,8 +205,6 @@ const DetalleSolicitudAdmin = () => {
       setProcesando(false);
     }
   };
-
-
 
   const getEstadoColor = (estado) => {
     const colores = {
@@ -561,7 +563,41 @@ const DetalleSolicitudAdmin = () => {
                     </Button>
                   )}
 
+                  {/* BOTÓN TEMPORAL PARA PRUEBAS - Simular estado EN_TESTING */}
+                  {(solicitud.estado_sol === 'EN_DESARROLLO' || solicitud.estado_sol === 'APROBADA') && (
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      onClick={async () => {
+                        try {
+                          setProcesando(true);
+                          await actualizarSolicitudMaster(solicitud.id_sol, {
+                            estado_sol: 'EN_TESTING',
+                            github_pr_number: 123,
+                            github_pr_url: 'https://github.com/PROYECTO-MANEJO/FRONTEND_APP/pull/123',
+                            github_repo_url: 'https://github.com/PROYECTO-MANEJO/FRONTEND_APP',
+                            comentarios_internos_sol: 'Estado EN_TESTING simulado para pruebas - PR ficticio #123'
+                          });
+                          await cargarSolicitud();
+                        } catch (error) {
+                          setError('Error al simular estado EN_TESTING: ' + error.message);
+                        } finally {
+                          setProcesando(false);
+                        }
+                      }}
+                      disabled={procesando}
+                      sx={{ 
+                        bgcolor: '#ff9800',
+                        '&:hover': { bgcolor: '#f57c00' }
+                      }}
+                    >
+                      🧪 SIMULAR EN_TESTING (Prueba)
+                    </Button>
+                  )}
 
+                  {solicitud.estado_sol === 'EN_TESTING' && solicitud.github_pr_number && (
+                    <></>
+                  )}
 
                   <Button
                     variant="outlined"

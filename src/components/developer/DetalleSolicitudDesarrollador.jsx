@@ -55,10 +55,15 @@ import {
   History,
   Visibility,
   Edit,
-  Cancel
+  Cancel,
+  Warning,
+  Close,
+  Info,
+  Key
 } from '@mui/icons-material';
 import desarrolladorService from '../../services/desarrolladorService';
 import GitHubSection from './GitHubSection';
+import Snackbar from '@mui/material/Snackbar';
 
 const DetalleSolicitudDesarrollador = () => {
   const { id } = useParams();
@@ -92,75 +97,6 @@ const DetalleSolicitudDesarrollador = () => {
       setError('Error al cargar la solicitud');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Funciones específicas para cada acción
-  const handleIniciarDesarrollo = async () => {
-    try {
-      setProcesando(true);
-      await desarrolladorService.iniciarDesarrollo(id);
-      await cargarSolicitud();
-    } catch (error) {
-      console.error('Error iniciando desarrollo:', error);
-      setError('Error al iniciar el desarrollo');
-    } finally {
-      setProcesando(false);
-    }
-  };
-
-  const handlePasarATesting = async () => {
-    try {
-      setProcesando(true);
-      await desarrolladorService.pasarATesting(id);
-      await cargarSolicitud();
-    } catch (error) {
-      console.error('Error pasando a testing:', error);
-      setError('Error al pasar a testing');
-    } finally {
-      setProcesando(false);
-    }
-  };
-
-  const handlePasarADespliegue = async () => {
-    try {
-      setProcesando(true);
-      await desarrolladorService.pasarADespliegue(id);
-      await cargarSolicitud();
-    } catch (error) {
-      console.error('Error pasando a despliegue:', error);
-      setError('Error al pasar a despliegue');
-    } finally {
-      setProcesando(false);
-    }
-  };
-
-  const handleCompletarSolicitud = async (exito) => {
-    try {
-      setProcesando(true);
-      await desarrolladorService.completarSolicitud(id, {
-        exito_implementacion: exito,
-        comentarios_tecnicos_sol: `Solicitud ${exito ? 'completada exitosamente' : 'marcada como fallida'} el ${new Date().toLocaleString('es-ES')}`
-      });
-      await cargarSolicitud();
-    } catch (error) {
-      console.error('Error completando solicitud:', error);
-      setError('Error al completar la solicitud');
-    } finally {
-      setProcesando(false);
-    }
-  };
-
-  const handleReportarBug = async () => {
-    try {
-      setProcesando(true);
-      await desarrolladorService.actualizarEstado(id, 'EN_DESARROLLO', 'Bug reportado - regresando a desarrollo');
-      await cargarSolicitud();
-    } catch (error) {
-      console.error('Error reportando bug:', error);
-      setError('Error al reportar bug');
-    } finally {
-      setProcesando(false);
     }
   };
 
@@ -230,75 +166,11 @@ const DetalleSolicitudDesarrollador = () => {
     return progreso[estado] || 0;
   };
 
-  const getTimelineData = () => {
-    const timeline = [];
-    
-    // Creación
-    timeline.push({
-      fecha: solicitud.fec_creacion_sol,
-      titulo: 'Solicitud Creada',
-      descripcion: `Creada por ${solicitud.solicitante}`,
-      tipo: 'creacion',
-      icono: <Assignment />,
-      color: 'primary'
-    });
-
-    // Aprobación
-    if (solicitud.fec_respuesta_sol) {
-      timeline.push({
-        fecha: solicitud.fec_respuesta_sol,
-        titulo: 'Solicitud Aprobada',
-        descripcion: 'Aprobada por el administrador',
-        tipo: 'aprobacion',
-        icono: <CheckCircle />,
-        color: 'success'
-      });
-    }
-
-    // Asignación a desarrollador
-    if (solicitud.desarrollador_asignado) {
-      timeline.push({
-        fecha: solicitud.fec_respuesta_sol, // Usar la misma fecha por ahora
-        titulo: 'Asignada a Desarrollador',
-        descripcion: `Asignada a ${solicitud.desarrollador_asignado}`,
-        tipo: 'asignacion',
-        icono: <Engineering />,
-        color: 'info'
-      });
-    }
-
-    // Envío de planes
-    if (solicitud.fecha_envio_planes) {
-      timeline.push({
-        fecha: solicitud.fecha_envio_planes,
-        titulo: 'Planes Enviados a Revisión',
-        descripcion: 'Planes técnicos enviados al MASTER',
-        tipo: 'planes_enviados',
-        icono: <Send />,
-        color: 'warning'
-      });
-    }
-
-    // Aprobación de planes
-    if (solicitud.fecha_aprobacion_planes) {
-      timeline.push({
-        fecha: solicitud.fecha_aprobacion_planes,
-        titulo: solicitud.planes_aprobados ? 'Planes Aprobados' : 'Planes Rechazados',
-        descripcion: solicitud.comentarios_aprobacion_planes || 'Sin comentarios',
-        tipo: 'planes_aprobados',
-        icono: solicitud.planes_aprobados ? <CheckCircle /> : <Cancel />,
-        color: solicitud.planes_aprobados ? 'success' : 'error'
-      });
-    }
-
-    return timeline.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-  };
-
   const formatearFecha = (fecha) => {
     if (!fecha) return 'No especificada';
     return new Date(fecha).toLocaleString('es-ES', {
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -347,19 +219,18 @@ const DetalleSolicitudDesarrollador = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />
       </Box>
     );
   }
 
-  if (error || !solicitud) {
+  if (!solicitud) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          {error || 'Solicitud no encontrada'}
-        </Alert>
+        <Alert severity="error">No se encontró la solicitud</Alert>
         <Button
+          variant="contained"
           startIcon={<ArrowBack />}
           onClick={() => navigate('/developer/solicitudes')}
           sx={{ mt: 2 }}
@@ -370,11 +241,10 @@ const DetalleSolicitudDesarrollador = () => {
     );
   }
 
-  const timelineData = getTimelineData();
   const steps = getSteps();
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
+    <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
         <IconButton onClick={() => navigate('/developer/solicitudes')}>
@@ -395,15 +265,9 @@ const DetalleSolicitudDesarrollador = () => {
         />
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      <Grid container spacing={3}>
-        {/* Columna Principal */}
-        <Grid item xs={12} lg={8}>
+      <Box sx={{ display: 'flex', gap: 3 }}>
+        {/* Contenido Principal */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           {/* Progreso Visual */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
@@ -476,16 +340,19 @@ const DetalleSolicitudDesarrollador = () => {
             </CardContent>
           </Card>
 
-          {/* Comentarios y Comunicación */}
+          {/* Comunicación y Acciones */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <Chat />
-                  Comunicación
+                Comunicación y Acciones
                 </Typography>
+
+              {/* Botón para agregar comentario */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Button
-                  variant="outlined"
+                  variant="contained"
+                  color="primary"
                   startIcon={<Comment />}
                   onClick={() => setComentarioDialog(true)}
                   disabled={procesando}
@@ -494,8 +361,170 @@ const DetalleSolicitudDesarrollador = () => {
                 </Button>
               </Box>
 
+              {/* Historial de Comunicación */}
+              {solicitud.comentarios_tecnicos_sol && (
+                <Paper sx={{ p: 2, mb: 2, bgcolor: '#f8f9fa' }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Engineering />
+                    Comentarios del Desarrollador:
+                  </Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {solicitud.comentarios_tecnicos_sol}
+                  </Typography>
+                </Paper>
+              )}
+
+              {/* Diálogo para agregar comentario */}
+              <Dialog 
+                open={comentarioDialog} 
+                onClose={() => setComentarioDialog(false)}
+                fullWidth
+                maxWidth="md"
+              >
+                <DialogTitle>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Comment />
+                    Agregar Comentario Técnico
+                  </Box>
+                </DialogTitle>
+                <DialogContent>
+                  <TextField
+                    autoFocus
+                    multiline
+                    rows={4}
+                    fullWidth
+                    variant="outlined"
+                    placeholder="Escribe tu comentario técnico aquí..."
+                    value={nuevoComentario}
+                    onChange={(e) => setNuevoComentario(e.target.value)}
+                    sx={{ mt: 2 }}
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button 
+                    onClick={() => setComentarioDialog(false)} 
+                    disabled={procesando}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleAgregarComentario}
+                    variant="contained" 
+                    disabled={procesando || !nuevoComentario.trim()}
+                  >
+                    {procesando ? 'Guardando...' : 'Guardar Comentario'}
+                  </Button>
+                </DialogActions>
+              </Dialog>
+
+              {/* Estado: EN_DESARROLLO con comentarios internos */}
+              {solicitud.estado_sol === 'EN_DESARROLLO' && solicitud.comentarios_internos_sol && (
+                <Paper sx={{ p: 2, mb: 3, bgcolor: '#fff8e1', border: '1px solid #ffcc02' }}>
+                  {/* Encabezado del mensaje */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <Avatar sx={{ bgcolor: '#f57c00', width: 32, height: 32 }}>
+                      <AdminPanelSettings />
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+                          MASTER - Comentarios Técnicos
+                    </Typography>
+                        <Chip 
+                          label="Solo para Desarrollador" 
+                          size="small" 
+                          sx={{ 
+                            bgcolor: '#f57c00', 
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            height: '20px'
+                          }} 
+                        />
+                      </Box>
+                    <Typography variant="caption" color="text.secondary">
+                        {formatearFecha(solicitud.fec_ultima_actualizacion)}
+                    </Typography>
+                  </Box>
+                  </Box>
+
+                  {/* Mensaje principal */}
+                  <Alert 
+                    severity="warning" 
+                    sx={{ 
+                      mb: 2,
+                      '& .MuiAlert-message': {
+                        width: '100%'
+                      }
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Warning fontSize="small" />
+                      El MASTER ha rechazado el Pull Request anterior
+                  </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Por favor revisa los comentarios técnicos y realiza las correcciones necesarias:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', pl: 2, borderLeft: '2px solid #f57c00' }}>
+                      {solicitud.comentarios_internos_sol}
+                    </Typography>
+                  </Alert>
+
+                  {/* Acciones */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<Send />}
+                      onClick={async () => {
+                        try {
+                          setProcesando(true);
+                          await desarrolladorService.pasarATesting(solicitud.id_sol, 
+                            'Cambios solicitados por el MASTER implementados. PR listo para nueva revisión.'
+                          );
+                          await cargarSolicitud();
+                        } catch (error) {
+                          console.error('Error enviando a testing:', error);
+                          setError('Error al enviar a testing: ' + error.message);
+                        } finally {
+                          setProcesando(false);
+                        }
+                      }}
+                      disabled={procesando}
+                      sx={{ 
+                        bgcolor: '#2196f3', 
+                        '&:hover': { bgcolor: '#1976d2' }
+                      }}
+                    >
+                      Enviar a Nueva Revisión
+                    </Button>
+                  </Box>
+                </Paper>
+              )}
+
+              {/* Estado: EN_DESARROLLO sin comentarios internos */}
+              {solicitud.estado_sol === 'EN_DESARROLLO' && !solicitud.comentarios_internos_sol && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  La solicitud está en desarrollo. Crea un Pull Request para que pase automáticamente a revisión del MASTER.
+                  Sigue los planes técnicos definidos por el MASTER.
+                </Alert>
+              )}
+
+              {/* Estado: EN_TESTING */}
+              {solicitud.estado_sol === 'EN_TESTING' && (
+                <Alert severity="warning" sx={{ mb: 3 }}>
+                  El Pull Request está siendo revisado por el MASTER. Espera la aprobación o feedback.
+                </Alert>
+              )}
+
+              {/* Estado: ESPERANDO_APROBACION */}
+              {solicitud.estado_sol === 'ESPERANDO_APROBACION' && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  Tu desarrollo está listo y esperando aprobación del MASTER. El PR será revisado pronto.
+                </Alert>
+              )}
+
               {/* Comentarios del Admin */}
-              {solicitud.comentarios_admin_sol && (
+              {solicitud.comentarios_admin_sol && !solicitud.comentarios_internos_sol && (
                 <Paper sx={{ p: 2, mb: 2, bgcolor: '#f3e5f5' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <Avatar sx={{ bgcolor: '#7b1fa2', width: 24, height: 24 }}>
@@ -510,26 +539,6 @@ const DetalleSolicitudDesarrollador = () => {
                   </Box>
                   <Typography variant="body2">
                     {solicitud.comentarios_admin_sol}
-                  </Typography>
-                </Paper>
-              )}
-
-              {/* Comentarios de aprobación de planes */}
-              {solicitud.comentarios_aprobacion_planes && (
-                <Paper sx={{ p: 2, mb: 2, bgcolor: solicitud.planes_aprobados ? '#e8f5e8' : '#ffebee' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Avatar sx={{ bgcolor: solicitud.planes_aprobados ? '#4caf50' : '#f44336', width: 24, height: 24 }}>
-                      <AdminPanelSettings sx={{ fontSize: 16 }} />
-                    </Avatar>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                      MASTER - Revisión de Planes
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatearFecha(solicitud.fecha_aprobacion_planes)}
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2">
-                    {solicitud.comentarios_aprobacion_planes}
                   </Typography>
                 </Paper>
               )}
@@ -551,7 +560,7 @@ const DetalleSolicitudDesarrollador = () => {
                 </Paper>
               )}
 
-              {(!solicitud.comentarios_admin_sol && !solicitud.comentarios_desarrollo_sol && !solicitud.comentarios_aprobacion_planes) && (
+              {(!solicitud.comentarios_admin_sol && !solicitud.comentarios_desarrollo_sol && !solicitud.comentarios_internos_sol) && (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
                   No hay comentarios aún
                 </Typography>
@@ -567,10 +576,6 @@ const DetalleSolicitudDesarrollador = () => {
                   <Assignment />
                   Planes Técnicos (Definidos por MASTER)
                 </Typography>
-
-                <Alert severity="info" sx={{ mb: 3 }}>
-                  Estos planes técnicos fueron definidos por el MASTER durante la aprobación de la solicitud.
-                </Alert>
 
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
@@ -620,220 +625,12 @@ const DetalleSolicitudDesarrollador = () => {
               </CardContent>
             </Card>
           )}
-
-          {/* Sección de GitHub */}
-          {(['EN_DESARROLLO', 'LISTO_PARA_IMPLEMENTAR', 'ESPERANDO_APROBACION', 'EN_TESTING', 'EN_DESPLIEGUE', 'COMPLETADA'].includes(solicitud.estado_sol)) && (
-            <Box sx={{ mb: 3 }}>
-              <GitHubSection 
-                solicitud={solicitud} 
-                onSolicitudUpdate={(solicitudActualizada) => {
-                  setSolicitud(solicitudActualizada);
-                }}
-              />
             </Box>
-          )}
 
-          {/* Acciones según Estado */}
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Acciones Disponibles
-              </Typography>
-              
-              <Stack spacing={2}>
-                {/* Estado: EN_DESARROLLO */}
-                {solicitud.estado_sol === 'EN_DESARROLLO' && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      La solicitud está asignada para desarrollo. Sigue los planes técnicos definidos por el MASTER.
-                    </Typography>
-                    <Stack direction="row" spacing={2} flexWrap="wrap">
-                      <Button
-                        variant="contained"
-                        startIcon={<BugReport />}
-                        onClick={handlePasarATesting}
-                        disabled={procesando}
-                        sx={{ bgcolor: '#ff9800', '&:hover': { bgcolor: '#f57c00' } }}
-                      >
-                        Pasar a Testing
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<GitHub />}
-                        onClick={handleVerGitHub}
-                        disabled={procesando || !solicitud.github_repo_url}
-                      >
-                        Ver en GitHub
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Comment />}
-                        onClick={() => setComentarioDialog(true)}
-                        disabled={procesando}
-                      >
-                        Agregar Comentario
-                      </Button>
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Estado: LISTO_PARA_IMPLEMENTAR */}
-                {solicitud.estado_sol === 'LISTO_PARA_IMPLEMENTAR' && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Los planes han sido definidos. Puedes continuar con la implementación.
-                    </Typography>
-                    <Stack direction="row" spacing={2} flexWrap="wrap">
-                      <Button
-                        variant="contained"
-                        startIcon={<PlayArrow />}
-                        onClick={handleIniciarDesarrollo}
-                        disabled={procesando}
-                        sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#388e3c' } }}
-                      >
-                        Continuar Implementación
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<GitHub />}
-                        onClick={handleVerGitHub}
-                        disabled={procesando || !solicitud.github_repo_url}
-                      >
-                        Ver en GitHub
-                      </Button>
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Estado: EN_TESTING */}
-                {solicitud.estado_sol === 'EN_TESTING' && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      En fase de testing. Puedes pasar a despliegue o reportar bugs.
-                    </Typography>
-                    <Stack direction="row" spacing={2} flexWrap="wrap">
-                      <Button
-                        variant="contained"
-                        startIcon={<Assignment />}
-                        onClick={handlePasarADespliegue}
-                        disabled={procesando}
-                        sx={{ bgcolor: '#9c27b0', '&:hover': { bgcolor: '#7b1fa2' } }}
-                      >
-                        Pasar a Despliegue
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="warning"
-                        startIcon={<BugReport />}
-                        onClick={() => handleReportarBug()}
-                        disabled={procesando}
-                      >
-                        Reportar Bug
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Comment />}
-                        onClick={() => setComentarioDialog(true)}
-                        disabled={procesando}
-                      >
-                        Agregar Comentario
-                      </Button>
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Estado: ESPERANDO_APROBACION */}
-                {solicitud.estado_sol === 'ESPERANDO_APROBACION' && (
-                  <Box>
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      Tu desarrollo está listo y esperando aprobación del MASTER. El PR será revisado pronto.
-                    </Alert>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Has marcado la solicitud como lista para revisión. El MASTER revisará tu Pull Request.
-                    </Typography>
-                    <Stack direction="row" spacing={2} flexWrap="wrap">
-                      <Button
-                        variant="outlined"
-                        startIcon={<GitHub />}
-                        onClick={handleVerGitHub}
-                        disabled={procesando || !solicitud.github_repo_url}
-                      >
-                        Ver PR en GitHub
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Comment />}
-                        onClick={() => setComentarioDialog(true)}
-                        disabled={procesando}
-                      >
-                        Agregar Comentario
-                      </Button>
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Estado: EN_DESPLIEGUE */}
-                {solicitud.estado_sol === 'EN_DESPLIEGUE' && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      En fase de despliegue. Puedes completar la solicitud o marcarla como fallida.
-                    </Typography>
-                    <Stack direction="row" spacing={2} flexWrap="wrap">
-                      <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<CheckCircle />}
-                        onClick={() => handleCompletarSolicitud(true)}
-                        disabled={procesando}
-                      >
-                        Completar Exitosamente
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        startIcon={<Cancel />}
-                        onClick={() => handleCompletarSolicitud(false)}
-                        disabled={procesando}
-                      >
-                        Marcar como Fallida
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Comment />}
-                        onClick={() => setComentarioDialog(true)}
-                        disabled={procesando}
-                      >
-                        Agregar Comentario
-                      </Button>
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Estados finales */}
-                {(solicitud.estado_sol === 'COMPLETADA' || solicitud.estado_sol === 'FALLIDA') && (
-                  <Box>
-                    <Alert severity={solicitud.estado_sol === 'COMPLETADA' ? 'success' : 'error'} sx={{ mb: 2 }}>
-                      Solicitud {solicitud.estado_sol === 'COMPLETADA' ? 'completada exitosamente' : 'marcada como fallida'}.
-                    </Alert>
-                    <Button
-                      variant="outlined"
-                      startIcon={<Visibility />}
-                      onClick={() => {/* Ver resumen final */}}
-                      disabled={procesando}
-                    >
-                      Ver Resumen Final
-                    </Button>
-                  </Box>
-                )}
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Sidebar Derecho */}
-        <Grid item xs={12} lg={4}>
-          {/* Timeline */}
-          <Card sx={{ mb: 3 }}>
+        {/* Sidebar */}
+        <Box sx={{ width: '300px', flexShrink: 0 }}>
+          {/* Historial */}
+          <Card sx={{ mb: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <History />
@@ -841,10 +638,32 @@ const DetalleSolicitudDesarrollador = () => {
               </Typography>
               
                                             <Box sx={{ position: 'relative' }}>
-                 {timelineData.map((item, index) => (
-                   <Box key={item.tipo} sx={{ display: 'flex', mb: 3, position: 'relative' }}>
+                {[
+                  {
+                    titulo: 'Solicitud Creada',
+                    descripcion: `Creada por ${solicitud.solicitante}`,
+                    fecha: solicitud.fec_creacion_sol,
+                    icono: <Assignment />,
+                    color: 'primary'
+                  },
+                  solicitud.fec_respuesta_sol && {
+                    titulo: 'Solicitud Aprobada',
+                    descripcion: 'Aprobada por el administrador',
+                    fecha: solicitud.fec_respuesta_sol,
+                    icono: <CheckCircle />,
+                    color: 'success'
+                  },
+                  solicitud.desarrollador_asignado && {
+                    titulo: 'Asignada a Desarrollador',
+                    descripcion: `Asignada a ${solicitud.desarrollador_asignado}`,
+                    fecha: solicitud.fec_respuesta_sol,
+                    icono: <Engineering />,
+                    color: 'info'
+                  }
+                ].filter(Boolean).map((item, index, array) => (
+                  <Box key={item.titulo} sx={{ display: 'flex', mb: index < array.length - 1 ? 3 : 0, position: 'relative' }}>
                      {/* Línea vertical */}
-                     {index < timelineData.length - 1 && (
+                    {index < array.length - 1 && (
                        <Box
                          sx={{
                            position: 'absolute',
@@ -891,70 +710,146 @@ const DetalleSolicitudDesarrollador = () => {
           </Card>
 
           {/* Información Adicional */}
-          <Card>
+          <Card sx={{ mb: 2 }}>
             <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Info />
                 Información Adicional
               </Typography>
               
-              <Box sx={{ mb: 2 }}>
+              <Stack spacing={2}>
+                <Box>
                 <Typography variant="body2" color="text.secondary">Estado:</Typography>
-                <Chip 
-                  label={solicitud.estado_sol.replace(/_/g, ' ')} 
-                  color={getEstadoColor(solicitud.estado_sol)}
-                  sx={{ mt: 0.5 }}
-                />
+                  <Typography variant="body1" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                    {solicitud.estado_sol.replace(/_/g, ' ')}
+                  </Typography>
               </Box>
 
-              <Box sx={{ mb: 2 }}>
+                <Box>
                 <Typography variant="body2" color="text.secondary">Desarrollador Asignado:</Typography>
-                <Typography variant="body1">{solicitud.desarrollador_asignado || 'No asignado'}</Typography>
+                  <Typography variant="body1">{solicitud.desarrollador_asignado}</Typography>
               </Box>
 
-              <Box sx={{ mb: 2 }}>
+                <Box>
                 <Typography variant="body2" color="text.secondary">Última Actualización:</Typography>
                 <Typography variant="body1">{formatearFecha(solicitud.fec_ultima_actualizacion)}</Typography>
               </Box>
 
-              {solicitud.urgencia_sol && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">Urgencia:</Typography>
-                  <Typography variant="body1">{solicitud.urgencia_sol}</Typography>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Prioridad:</Typography>
+                  <Chip 
+                    label={solicitud.prioridad_sol}
+                    color={getPrioridadColor(solicitud.prioridad_sol)}
+                    size="small"
+                    sx={{ mt: 0.5 }}
+                  />
                 </Box>
-              )}
+              </Stack>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
 
-      {/* Dialog para Agregar Comentario */}
-      <Dialog open={comentarioDialog} onClose={() => setComentarioDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Agregar Comentario de Desarrollo</DialogTitle>
-        <DialogContent>
-          <TextField
+          {/* Sección de GitHub */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <GitHub />
+                Gestión de GitHub
+              </Typography>
+              
+              <Stack spacing={2}>
+                {/* Botones principales */}
+                <Stack direction="row" spacing={2}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<GitHub />}
+                    onClick={handleVerGitHub}
+                    disabled={procesando || !solicitud.github_repo_url}
             fullWidth
-            multiline
-            rows={4}
-            label="Comentario"
-            value={nuevoComentario}
-            onChange={(e) => setNuevoComentario(e.target.value)}
-            placeholder="Describe el progreso, problemas encontrados, etc..."
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setComentarioDialog(false)}>
-            Cancelar
+                  >
+                    Ver en GitHub
           </Button>
           <Button 
-            onClick={handleAgregarComentario}
-            variant="contained"
-            disabled={!nuevoComentario.trim() || procesando}
-          >
-            Agregar
+                    variant="outlined"
+                    startIcon={<Key />}
+                    onClick={() => {/* Validar Token */}}
+                    disabled={procesando}
+                    fullWidth
+                  >
+                    Validar Token
           </Button>
-        </DialogActions>
-      </Dialog>
+                </Stack>
+
+                {/* Botones de acción */}
+                <Button
+                  variant="outlined"
+                  startIcon={<Edit />}
+                  onClick={() => {/* Crear Branch */}}
+                  disabled={procesando}
+                  fullWidth
+                >
+                  Crear Branch
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="success"
+                  startIcon={<GitHub />}
+                  onClick={() => {/* Crear PR */}}
+                  disabled={procesando}
+                  fullWidth
+                  sx={{ borderColor: '#2da44e', color: '#2da44e', '&:hover': { borderColor: '#2c974b', bgcolor: 'rgba(45, 164, 78, 0.08)' } }}
+                >
+                  Crear PR
+                </Button>
+
+                {/* Información de Branch y PR */}
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Branch:
+                  </Typography>
+                  <Chip 
+                    label="feature/c3374_solicitud_1"
+                    size="small"
+                    sx={{ mt: 0.5, bgcolor: '#fff1f2', color: '#cf222e', borderColor: '#ff818a' }}
+                  />
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Pull Request:
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<GitHub />}
+                    onClick={handleVerGitHub}
+                    sx={{ ml: 1 }}
+                  >
+                    #40
+                  </Button>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
+      </Box>
+
+      {/* Snackbar para errores */}
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        message={error}
+        action={
+          <IconButton
+            size="small"
+            aria-label="close"
+            color="inherit"
+            onClick={() => setError(null)}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+        }
+      />
     </Box>
   );
 };

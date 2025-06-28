@@ -1,4 +1,40 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Grid,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Alert,
+  Box,
+  Chip,
+  Stack,
+  Paper,
+  Divider,
+  LinearProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import {
+  GitHub,
+  Create,
+  CallMerge,
+  CheckCircle,
+  Error,
+  Launch,
+  ExpandMore,
+  Refresh,
+  Visibility,
+  Security
+} from '@mui/icons-material';
 import githubService from '../../services/githubService';
 import { useAuth } from '../../context/AuthContext';
 
@@ -83,28 +119,74 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
 
   const cargarBranchesDisponibles = async () => {
     try {
+      // Valores por defecto seguros
+      const defaultBranches = [
+        { name: 'main', protected: true },
+        { name: 'develop', protected: false }
+      ];
+
       const [frontendResponse, backendResponse] = await Promise.all([
-        githubService.obtenerBranchesRepositorio('frontend').catch(e => ({ success: false, error: e.message })),
-        githubService.obtenerBranchesRepositorio('backend').catch(e => ({ success: false, error: e.message }))
+        githubService.obtenerBranchesRepositorio('frontend').catch(e => {
+          console.warn('Error cargando branches frontend:', e.message);
+          return { success: false, error: e.message };
+        }),
+        githubService.obtenerBranchesRepositorio('backend').catch(e => {
+          console.warn('Error cargando branches backend:', e.message);
+          return { success: false, error: e.message };
+        })
       ]);
 
+      // Validar y filtrar branches válidos
+      const validarBranches = (branches) => {
+        if (!Array.isArray(branches)) return defaultBranches;
+        
+        return branches.filter(branch => 
+          branch && 
+          typeof branch.name === 'string' && 
+          branch.name.trim() && 
+          branch.name.length < 100 && // Evitar nombres muy largos
+          !/[^\w\-./_]/.test(branch.name) // Solo caracteres válidos para branches
+        );
+      };
+
+      const frontendBranches = frontendResponse.success 
+        ? validarBranches(frontendResponse.data) 
+        : defaultBranches;
+        
+      const backendBranches = backendResponse.success 
+        ? validarBranches(backendResponse.data) 
+        : defaultBranches;
+
       setBranchesDisponibles({
-        frontend: frontendResponse.success ? frontendResponse.data : [
-          { name: 'main', protected: true },
-          { name: 'develop', protected: false }
-        ],
-        backend: backendResponse.success ? backendResponse.data : [
-          { name: 'main', protected: true },
-          { name: 'develop', protected: false }
-        ]
+        frontend: frontendBranches.length > 0 ? frontendBranches : defaultBranches,
+        backend: backendBranches.length > 0 ? backendBranches : defaultBranches
       });
+
+      // Asegurar que formCrearPR tenga un baseBranch válido
+      setFormCrearPR(prev => ({
+        ...prev,
+        baseBranch: prev.baseBranch && 
+                   (frontendBranches.some(b => b.name === prev.baseBranch) || 
+                    backendBranches.some(b => b.name === prev.baseBranch)) 
+                   ? prev.baseBranch 
+                   : 'main'
+      }));
+
     } catch (error) {
       console.error('Error cargando branches:', error);
-      // Valores por defecto
+      // Valores por defecto seguros
+      const defaultBranches = [
+        { name: 'main', protected: true },
+        { name: 'develop', protected: false }
+      ];
+      
       setBranchesDisponibles({
-        frontend: [{ name: 'main', protected: true }, { name: 'develop', protected: false }],
-        backend: [{ name: 'main', protected: true }, { name: 'develop', protected: false }]
+        frontend: defaultBranches,
+        backend: defaultBranches
       });
+      
+      // Asegurar baseBranch válido
+      setFormCrearPR(prev => ({ ...prev, baseBranch: 'main' }));
     }
   };
 
@@ -175,7 +257,7 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
       );
 
       if (response.success) {
-        alert(`Pull Request creado exitosamente: #${response.data.pullRequest.number}`);
+        alert(`Pull Request creado exitosamente: #${response.data.pullRequest.number}\n\nLa solicitud cambió automáticamente a estado EN_TESTING para revisión del MASTER.`);
         await cargarInfoGitHub();
         setShowCrearPR(false);
         onSolicitudUpdate?.(response.data.solicitud);
@@ -188,27 +270,7 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
     }
   };
 
-  const handlePasarAEsperandoAprobacion = async () => {
-    if (!window.confirm('¿Estás seguro de que quieres marcar esta solicitud como lista para revisión?')) {
-      return;
-    }
 
-    try {
-      setLoading(true);
-      
-      const response = await githubService.cambiarAEsperandoAprobacion(solicitud.id_sol);
-
-      if (response.success) {
-        alert('Estado actualizado a ESPERANDO_APROBACION');
-        onSolicitudUpdate?.(response.data);
-      }
-    } catch (error) {
-      console.error('Error cambiando estado:', error);
-      alert('Error cambiando estado: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const validarTokenPersonal = async () => {
     if (!user?.github_token) {
@@ -255,296 +317,267 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+    <Card>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <GitHub />
             Gestión de GitHub
-          </h3>
-          <div className="flex space-x-2">
-            <button
-              onClick={validarTokenPersonal}
-              className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 transition-colors"
-              disabled={validatingToken || !user?.github_token}
-              title={!user?.github_token ? 'Configura tu token GitHub en el perfil' : 'Validar token GitHub personal'}
+          </Typography>
+          
+          {solicitud.github_repo_url && (
+            <Button
+              variant="outlined"
+              startIcon={<Launch />}
+              onClick={() => window.open(solicitud.github_repo_url, '_blank')}
+              size="small"
             >
-              {validatingToken ? 'Validando...' : '🔑 Token'}
-            </button>
-            <button
-              onClick={() => setShowCrearBranch(!showCrearBranch)}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
-              disabled={loading}
-            >
-              Crear Branch
-            </button>
-            <button
-              onClick={() => setShowCrearPR(!showCrearPR)}
-              className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
-              disabled={loading}
-            >
-              Crear PR
-            </button>
-          </div>
-        </div>
-      </div>
+              Ver en GitHub
+            </Button>
+          )}
+        </Box>
+        
+        <Stack spacing={1} sx={{ mb: 2 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="small"
+            fullWidth
+            startIcon={<Security />}
+            onClick={validarTokenPersonal}
+            disabled={validatingToken || !user?.github_token}
+            title={!user?.github_token ? 'Configura tu token GitHub en el perfil' : 'Validar token GitHub personal'}
+          >
+            {validatingToken ? 'Validando...' : 'Validar Token'}
+          </Button>
+          
+          <Button
+            variant="outlined"
+            color="primary"
+            size="small"
+            fullWidth
+            startIcon={<Create />}
+            onClick={() => setShowCrearBranch(!showCrearBranch)}
+            disabled={loading}
+          >
+            Crear Branch
+          </Button>
+          
+          <Button
+            variant="outlined"
+            color="success"
+            size="small"
+            fullWidth
+            startIcon={<CallMerge />}
+            onClick={() => setShowCrearPR(!showCrearPR)}
+            disabled={loading}
+          >
+            Crear PR
+          </Button>
+        </Stack>
 
-      <div className="p-6 space-y-6">
-        {/* Alerta de configuración de GitHub */}
+        {/* Información compacta */}
         {githubConfigError && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-medium text-yellow-800 mb-2">⚠️ GitHub No Configurado</h4>
-            <p className="text-yellow-700 text-sm mb-3">
-              El servidor no tiene configuración de GitHub o hay problemas de conectividad. 
-              Puedes seguir trabajando con funcionalidad limitada:
-            </p>
-            <ul className="text-yellow-700 text-sm space-y-1 ml-4">
-              <li>• Los formularios están disponibles para testing</li>
-              <li>• No se pueden crear branches/PRs automáticamente</li>
-              <li>• Contacta al administrador para configurar GitHub</li>
-            </ul>
-          </div>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              GitHub no configurado - Funcionalidad limitada
+            </Typography>
+          </Alert>
         )}
 
-        {/* Información de Token GitHub */}
         {tokenValidation && (
-          <div className={`rounded-lg p-4 border ${tokenValidation.valid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-            <h4 className="font-medium mb-3 flex items-center">
-              {tokenValidation.valid ? '✅ Token GitHub Válido' : '❌ Token GitHub Inválido'}
-            </h4>
-            {tokenValidation.valid && tokenValidation.user && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Usuario:</span>
-                  <div className="font-mono text-xs">{tokenValidation.user.login}</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">Nombre:</span>
-                  <div className="text-xs">{tokenValidation.user.name || 'No especificado'}</div>
-                </div>
-                {tokenValidation.permissions && (
-                  <div className="md:col-span-2">
-                    <span className="text-gray-600">Permisos en repositorios:</span>
-                    <div className="mt-1 flex space-x-2">
-                      {Object.entries(tokenValidation.permissions).map(([repo, perms]) => (
-                        <span
-                          key={repo}
-                          className={`px-2 py-1 text-xs rounded ${perms.push ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}
-                        >
-                          {repo}: {perms.push ? 'Push ✓' : 'Solo lectura'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            {!tokenValidation.valid && (
-              <div className="text-red-700 text-sm">
-                {tokenValidation.error}
-              </div>
-            )}
-          </div>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">Token GitHub:</Typography>
+            <Chip 
+              label={tokenValidation.valid ? `${tokenValidation.user?.login || 'Válido'}` : 'Inválido'} 
+              color={tokenValidation.valid ? 'success' : 'error'}
+              size="small"
+              sx={{ mt: 0.5 }}
+            />
+          </Box>
         )}
 
-        {/* Estado actual */}
+        {/* Estado actual compacto */}
         {infoGitHub && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Estado Actual</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              {infoGitHub.github_branch_name && (
-                <div>
-                  <span className="text-gray-600">Branch:</span>
-                  <div className="mt-1">
-                    <span className="font-mono text-xs bg-gray-200 px-2 py-1 rounded">
-                      {infoGitHub.github_branch_name}
-                    </span>
-                  </div>
-                </div>
-              )}
-              
-              {infoGitHub.github_pr_number && (
-                <div>
-                  <span className="text-gray-600">Pull Request:</span>
-                  <div className="mt-1">
-                    <a
-                      href={infoGitHub.github_pr_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      #{infoGitHub.github_pr_number}
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <Box sx={{ mb: 2 }}>
+            {infoGitHub.github_branch_name && (
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">Branch:</Typography>
+                <Chip 
+                  label={infoGitHub.github_branch_name} 
+                  color="primary" 
+                  size="small"
+                  variant="outlined"
+                  sx={{ mt: 0.5 }}
+                />
+              </Box>
+            )}
+            
+            {infoGitHub.github_pr_number && (
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">Pull Request:</Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Launch />}
+                  href={infoGitHub.github_pr_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ mt: 0.5 }}
+                >
+                  #{infoGitHub.github_pr_number}
+                </Button>
+              </Box>
+            )}
+          </Box>
         )}
 
-        {/* Formulario crear branch */}
+        {/* Formularios compactos */}
         {showCrearBranch && (
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <h4 className="font-medium text-blue-900 mb-4">Crear Nuevo Branch</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de Branch
-                </label>
-                <select
+          <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Crear Branch</Typography>
+            <Stack spacing={1}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Tipo</InputLabel>
+                <Select
                   value={formCrearBranch.branchType}
+                  label="Tipo"
                   onChange={(e) => handleTipoBranchChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                   {tiposGitFlow.map(tipo => (
-                    <option key={tipo.type} value={tipo.type}>
-                      {tipo.type} - {tipo.description}
-                    </option>
+                    <MenuItem key={tipo.type} value={tipo.type}>
+                      {tipo.type}
+                    </MenuItem>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormControl>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Branch Base
-                </label>
-                <select
+              <FormControl fullWidth size="small">
+                <InputLabel>Base</InputLabel>
+                <Select
                   value={formCrearBranch.baseBranch}
+                  label="Base"
                   onChange={(e) => setFormCrearBranch(prev => ({ ...prev, baseBranch: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                   {branchesDisponibles[formCrearBranch.repoType]?.map(branch => (
-                    <option key={branch.name} value={branch.name}>
+                    <MenuItem key={branch.name} value={branch.name}>
                       {branch.name}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormControl>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Repositorio
-                </label>
-                <select
+              <FormControl fullWidth size="small">
+                <InputLabel>Repo</InputLabel>
+                <Select
                   value={formCrearBranch.repoType}
+                  label="Repo"
                   onChange={(e) => setFormCrearBranch(prev => ({ ...prev, repoType: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
-                  <option value="frontend">Frontend</option>
-                  <option value="backend">Backend</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={() => setShowCrearBranch(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
-                disabled={loading}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCrearBranch}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                disabled={loading}
-              >
-                {loading ? 'Creando...' : 'Crear Branch'}
-              </button>
-            </div>
-          </div>
+                  <MenuItem value="frontend">Frontend</MenuItem>
+                  <MenuItem value="backend">Backend</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowCrearBranch(false)}
+                  disabled={loading}
+                  fullWidth
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleCrearBranch}
+                  disabled={loading}
+                  fullWidth
+                >
+                  {loading ? 'Creando...' : 'Crear'}
+                </Button>
+              </Stack>
+            </Stack>
+          </Box>
         )}
 
-        {/* Formulario crear PR */}
         {showCrearPR && (
-          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-            <h4 className="font-medium text-green-900 mb-4">Crear Pull Request</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre del Branch
-                </label>
-                <input
-                  type="text"
-                  value={formCrearPR.branchName}
-                  onChange={(e) => setFormCrearPR(prev => ({ ...prev, branchName: e.target.value }))}
-                  placeholder="feature/12345_mi_branch"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                />
-              </div>
+          <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Crear Pull Request</Typography>
+            <Stack spacing={1}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Nombre del Branch"
+                value={formCrearPR.branchName}
+                onChange={(e) => setFormCrearPR(prev => ({ ...prev, branchName: e.target.value }))}
+                placeholder="feature/12345_mi_branch"
+              />
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Branch Base
-                </label>
-                <select
+              <FormControl fullWidth size="small">
+                <InputLabel>Base</InputLabel>
+                <Select
                   value={formCrearPR.baseBranch}
+                  label="Base"
                   onChange={(e) => setFormCrearPR(prev => ({ ...prev, baseBranch: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                   {branchesDisponibles[formCrearPR.repoType]?.map(branch => (
-                    <option key={branch.name} value={branch.name}>
+                    <MenuItem key={branch.name} value={branch.name}>
                       {branch.name}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormControl>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Repositorio
-                </label>
-                <select
+              <FormControl fullWidth size="small">
+                <InputLabel>Repo</InputLabel>
+                <Select
                   value={formCrearPR.repoType}
+                  label="Repo"
                   onChange={(e) => setFormCrearPR(prev => ({ ...prev, repoType: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
-                  <option value="frontend">Frontend</option>
-                  <option value="backend">Backend</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={() => setShowCrearPR(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
-                disabled={loading}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCrearPR}
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                disabled={loading || !formCrearPR.branchName}
-              >
-                {loading ? 'Creando...' : 'Crear Pull Request'}
-              </button>
-            </div>
-          </div>
+                  <MenuItem value="frontend">Frontend</MenuItem>
+                  <MenuItem value="backend">Backend</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowCrearPR(false)}
+                  disabled={loading}
+                  fullWidth
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  color="success"
+                  onClick={handleCrearPR}
+                  disabled={loading || !formCrearPR.branchName}
+                  fullWidth
+                >
+                  {loading ? 'Creando...' : 'Crear'}
+                </Button>
+              </Stack>
+            </Stack>
+          </Box>
         )}
 
-        {/* Botón pasar a esperando aprobación */}
-        {solicitud.estado_sol === 'EN_DESARROLLO' && infoGitHub?.github_pr_number && (
-          <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-yellow-900">¿Terminaste el desarrollo?</h4>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Marca la solicitud como lista para revisión cuando hayas completado todos los cambios.
-                </p>
-              </div>
-              <button
-                onClick={handlePasarAEsperandoAprobacion}
-                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                disabled={loading}
-              >
-                {loading ? 'Actualizando...' : 'Listo para Revisión'}
-              </button>
-            </div>
-          </div>
+        {/* Información de estado automático */}
+        {solicitud.estado_sol === 'EN_TESTING' && infoGitHub?.github_pr_number && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              El PR fue creado y la solicitud pasó automáticamente a revisión del MASTER.
+            </Typography>
+          </Alert>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

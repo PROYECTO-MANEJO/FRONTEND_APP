@@ -283,7 +283,7 @@ const SolicitudesUsuario = () => {
             <Button
               variant="contained"
               startIcon={<Add />}
-              onClick={() => navigate('/user/solicitudes/crear')}
+              onClick={() => navigate('/solicitudes/crear')}
               sx={{ bgcolor: '#b91c1c', '&:hover': { bgcolor: '#991b1b' } }}
             >
               Nueva Solicitud
