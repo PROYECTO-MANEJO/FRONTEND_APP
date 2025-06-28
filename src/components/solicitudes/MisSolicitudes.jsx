@@ -36,7 +36,7 @@ import {
   Check,
   Close,
 } from '@mui/icons-material';
-import solicitudesService from '../services/solicitudesService';
+import solicitudesService from '../../services/solicitudesService';
 
 const MisSolicitudes = () => {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -84,7 +84,7 @@ const MisSolicitudes = () => {
     setFiltros({
       ...filtros,
       [campo]: event.target.value,
-      page: 1 // Resetear a página 1 cuando se cambian filtros
+      page: 1
     });
   };
 
@@ -106,7 +106,6 @@ const MisSolicitudes = () => {
 
   const verDetalle = async (solicitud) => {
     try {
-      // Obtener detalles completos de la solicitud
       const response = await solicitudesService.obtenerMiSolicitud(solicitud.id_sol);
       setSelectedSolicitud(response.data);
       setDialogOpen(true);
@@ -203,6 +202,14 @@ const MisSolicitudes = () => {
             startIcon={<Visibility />}
             onClick={() => verDetalle(solicitud)}
             size="small"
+            sx={{
+              borderColor: '#6d1313', // ✅ AGREGAR COLOR
+              color: '#6d1313', // ✅ AGREGAR COLOR
+              '&:hover': {
+                borderColor: '#5a1010', // ✅ AGREGAR COLOR
+                backgroundColor: 'rgba(109, 19, 19, 0.04)', // ✅ AGREGAR COLOR
+              },
+            }}
           >
             Ver Detalles
           </Button>
@@ -221,32 +228,26 @@ const MisSolicitudes = () => {
 
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Description />
-          Mis Solicitudes de Cambio
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Aquí puedes ver todas las solicitudes que has enviado y su estado actual
-        </Typography>
-      </Box>
-
       {/* Filtros */}
       <Paper elevation={1} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <FilterList />
-          <Typography variant="h6">Filtros</Typography>
+          <FilterList sx={{ color: '#6d1313' }} />
+          <Typography variant="h6" sx={{ color: '#6d1313' }}>Filtros</Typography>
         </Box>
         
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth size="small">
-              <InputLabel>Estado</InputLabel>
+              <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Estado</InputLabel>
               <Select
                 value={filtros.estado}
                 label="Estado"
                 onChange={handleFiltroChange('estado')}
+                sx={{
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#6d1313',
+                  },
+                }}
               >
                 <MenuItem value="">Todos los estados</MenuItem>
                 {estados.map((estado) => (
@@ -260,11 +261,16 @@ const MisSolicitudes = () => {
           
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth size="small">
-              <InputLabel>Tipo de Cambio</InputLabel>
+              <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Tipo de Cambio</InputLabel>
               <Select
                 value={filtros.tipo_cambio}
                 label="Tipo de Cambio"
                 onChange={handleFiltroChange('tipo_cambio')}
+                sx={{
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#6d1313',
+                  },
+                }}
               >
                 <MenuItem value="">Todos los tipos</MenuItem>
                 {tiposCambio.map((tipo) => (
@@ -278,7 +284,19 @@ const MisSolicitudes = () => {
           
           <Grid item xs={12} sm={4}>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button variant="outlined" onClick={limpiarFiltros} size="small">
+              <Button 
+                variant="outlined" 
+                onClick={limpiarFiltros} 
+                size="small"
+                sx={{
+                  borderColor: '#6d1313',
+                  color: '#6d1313',
+                  '&:hover': {
+                    borderColor: '#5a1010',
+                    backgroundColor: 'rgba(109, 19, 19, 0.04)',
+                  },
+                }}
+              >
                 Limpiar
               </Button>
               <Tooltip title="Actualizar">
@@ -323,7 +341,14 @@ const MisSolicitudes = () => {
                 count={pagination.totalPages}
                 page={pagination.page}
                 onChange={handlePageChange}
-                color="primary"
+                sx={{
+                  '& .MuiPaginationItem-root.Mui-selected': {
+                    backgroundColor: '#6d1313',
+                    '&:hover': {
+                      backgroundColor: '#5a1010',
+                    },
+                  },
+                }}
                 size="large"
               />
             </Box>
@@ -358,8 +383,13 @@ const MisSolicitudes = () => {
         PaperProps={{ sx: { borderRadius: 2 } }}
       >
         <DialogTitle>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Description />
+          <Typography variant="h6" sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            color: '#6d1313'
+          }}>
+            <Description sx={{ color: '#6d1313' }} />
             Detalles de la Solicitud
           </Typography>
         </DialogTitle>
@@ -399,7 +429,7 @@ const MisSolicitudes = () => {
               <Divider />
 
               <Box>
-                <Typography variant="subtitle2" gutterBottom color="primary">
+                <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313' }}>
                   Descripción
                 </Typography>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -408,7 +438,7 @@ const MisSolicitudes = () => {
               </Box>
 
               <Box>
-                <Typography variant="subtitle2" gutterBottom color="primary">
+                <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313' }}>
                   Justificación
                 </Typography>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -419,7 +449,7 @@ const MisSolicitudes = () => {
               <Divider />
 
               <Box>
-                <Typography variant="subtitle2" gutterBottom color="primary">
+                <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313' }}>
                   Información Adicional
                 </Typography>
                 <Typography variant="body2">
@@ -441,7 +471,7 @@ const MisSolicitudes = () => {
                 <>
                   <Divider />
                   <Box>
-                    <Typography variant="subtitle2" gutterBottom color="primary">
+                    <Typography variant="subtitle2" gutterBottom sx={{ color: '#6d1313' }}>
                       Comentarios del Administrador
                     </Typography>
                     <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -455,7 +485,15 @@ const MisSolicitudes = () => {
         </DialogContent>
         
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>
+          <Button 
+            onClick={() => setDialogOpen(false)}
+            sx={{
+              color: '#6d1313',
+              '&:hover': {
+                backgroundColor: 'rgba(109, 19, 19, 0.04)',
+              },
+            }}
+          >
             Cerrar
           </Button>
         </DialogActions>
@@ -464,4 +502,4 @@ const MisSolicitudes = () => {
   );
 };
 
-export default MisSolicitudes; 
+export default MisSolicitudes;

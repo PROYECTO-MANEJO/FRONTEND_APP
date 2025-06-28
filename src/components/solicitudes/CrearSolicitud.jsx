@@ -26,8 +26,8 @@ import {
   PriorityHigh,
   CheckCircle,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
-import solicitudesService from '../services/solicitudesService';
+import { useAuth } from '../../context/AuthContext';
+import solicitudesService from '../../services/solicitudesService';
 
 const CrearSolicitud = ({ onSolicitudCreada }) => {
   const { user } = useAuth();
@@ -122,8 +122,8 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
   if (success) {
     return (
       <Paper elevation={2} sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
-        <CheckCircle sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
-        <Typography variant="h5" gutterBottom color="success.main">
+        <CheckCircle sx={{ fontSize: 60, color: '#6d1313', mb: 2 }} /> {/* ✅ CAMBIO DE COLOR */}
+        <Typography variant="h5" gutterBottom sx={{ color: '#6d1313' }}> {/* ✅ CAMBIO DE COLOR */}
           ¡Solicitud Creada Exitosamente!
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -147,19 +147,34 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
               helperText="Describe brevemente el cambio que solicitas (5-200 caracteres)"
               required
               inputProps={{ maxLength: 200 }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#6d1313', // ✅ CAMBIO DE COLOR
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#6d1313', // ✅ CAMBIO DE COLOR
+                },
+              }}
             />
 
             <FormControl fullWidth required>
-              <InputLabel>Tipo de Cambio</InputLabel>
+              <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Tipo de Cambio</InputLabel> {/* ✅ CAMBIO DE COLOR */}
               <Select
                 value={formData.tipo_cambio_sol}
                 label="Tipo de Cambio"
                 onChange={handleChange('tipo_cambio_sol')}
+                sx={{
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#6d1313', // ✅ CAMBIO DE COLOR
+                  },
+                }}
               >
                 {tiposCambio.map((tipo) => (
                   <MenuItem key={tipo.value} value={tipo.value}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Category sx={{ fontSize: 20, color: 'primary.main' }} />
+                      <Category sx={{ fontSize: 20, color: '#6d1313' }} /> {/* ✅ CAMBIO DE COLOR */}
                       {tipo.label}
                     </Box>
                   </MenuItem>
@@ -168,11 +183,16 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel>Prioridad</InputLabel>
+              <InputLabel sx={{ '&.Mui-focused': { color: '#6d1313' } }}>Prioridad</InputLabel> {/* ✅ CAMBIO DE COLOR */}
               <Select
                 value={formData.prioridad_sol}
                 label="Prioridad"
                 onChange={handleChange('prioridad_sol')}
+                sx={{
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#6d1313', // ✅ CAMBIO DE COLOR
+                  },
+                }}
               >
                 {prioridades.map((prioridad) => (
                   <MenuItem key={prioridad.value} value={prioridad.value}>
@@ -200,6 +220,16 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
               placeholder="Describe detalladamente el cambio que necesitas, incluyendo funcionalidades específicas..."
               helperText="Explica en detalle qué cambio necesitas (mínimo 10 caracteres)"
               required
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#6d1313', // ✅ CAMBIO DE COLOR
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#6d1313', // ✅ CAMBIO DE COLOR
+                },
+              }}
             />
 
             <TextField
@@ -212,6 +242,16 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
               placeholder="Explica por qué es necesario este cambio, qué problemas resuelve..."
               helperText="Justifica la necesidad del cambio (mínimo 10 caracteres)"
               required
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#6d1313', // ✅ CAMBIO DE COLOR
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#6d1313', // ✅ CAMBIO DE COLOR
+                },
+              }}
             />
           </Box>
         );
@@ -219,13 +259,13 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
       case 2:
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ color: '#6d1313' }}> {/* ✅ CAMBIO DE COLOR */}
               Revisión de la Solicitud
             </Typography>
             
             <Card elevation={1}>
               <CardContent>
-                <Typography variant="subtitle2" color="primary" gutterBottom>
+                <Typography variant="subtitle2" sx={{ color: '#6d1313', mb: 1 }}> {/* ✅ CAMBIO DE COLOR */}
                   Información del Solicitante
                 </Typography>
                 <Typography variant="body2">
@@ -237,7 +277,7 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
                 
                 <Divider sx={{ my: 2 }} />
                 
-                <Typography variant="subtitle2" color="primary" gutterBottom>
+                <Typography variant="subtitle2" sx={{ color: '#6d1313', mb: 1 }}> {/* ✅ CAMBIO DE COLOR */}
                   Detalles de la Solicitud
                 </Typography>
                 
@@ -253,7 +293,7 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
                   <Chip 
                     label={tiposCambio.find(t => t.value === formData.tipo_cambio_sol)?.label}
                     size="small"
-                    sx={{ mt: 0.5 }}
+                    sx={{ mt: 0.5, bgcolor: '#6d1313', color: 'white' }} // ✅ CAMBIO DE COLOR
                   />
                 </Box>
 
@@ -296,8 +336,8 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
   return (
     <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Description />
+        <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#6d1313' }}> {/* ✅ CAMBIO DE COLOR */}
+          <Description sx={{ color: '#6d1313' }} /> {/* ✅ CAMBIO DE COLOR */}
           Nueva Solicitud de Cambio
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -305,7 +345,15 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
         </Typography>
       </Box>
 
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+      <Stepper activeStep={activeStep} sx={{ 
+        mb: 4,
+        '& .MuiStepIcon-root.Mui-active': {
+          color: '#6d1313', // ✅ CAMBIO DE COLOR
+        },
+        '& .MuiStepIcon-root.Mui-completed': {
+          color: '#6d1313', // ✅ CAMBIO DE COLOR
+        }
+      }}>
         {steps.map((label) => (
           <Step key={label}>
             <StepLabel>{label}</StepLabel>
@@ -328,6 +376,14 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
           disabled={activeStep === 0}
           onClick={handleBack}
           variant="outlined"
+          sx={{
+            borderColor: '#6d1313', // ✅ CAMBIO DE COLOR
+            color: '#6d1313', // ✅ CAMBIO DE COLOR
+            '&:hover': {
+              borderColor: '#5a1010', // ✅ CAMBIO DE COLOR
+              backgroundColor: 'rgba(109, 19, 19, 0.04)', // ✅ CAMBIO DE COLOR
+            },
+          }}
         >
           Atrás
         </Button>
@@ -339,12 +395,27 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
               onClick={handleSubmit}
               disabled={loading}
               startIcon={loading ? <CircularProgress size={20} /> : <Send />}
-              sx={{ minWidth: 140 }}
+              sx={{ 
+                minWidth: 140,
+                backgroundColor: '#6d1313', // ✅ CAMBIO DE COLOR
+                '&:hover': {
+                  backgroundColor: '#5a1010', // ✅ CAMBIO DE COLOR
+                },
+              }}
             >
               {loading ? 'Enviando...' : 'Enviar Solicitud'}
             </Button>
           ) : (
-            <Button variant="contained" onClick={handleNext}>
+            <Button 
+              variant="contained" 
+              onClick={handleNext}
+              sx={{
+                backgroundColor: '#6d1313', // ✅ CAMBIO DE COLOR
+                '&:hover': {
+                  backgroundColor: '#5a1010', // ✅ CAMBIO DE COLOR
+                },
+              }}
+            >
               Siguiente
             </Button>
           )}
@@ -354,4 +425,4 @@ const CrearSolicitud = ({ onSolicitudCreada }) => {
   );
 };
 
-export default CrearSolicitud; 
+export default CrearSolicitud;

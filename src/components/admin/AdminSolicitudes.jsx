@@ -41,10 +41,14 @@ import {
   Category,
   PriorityHigh,
   AccessTime,
+  RequestPage,
 } from '@mui/icons-material';
-import solicitudesService from '../services/solicitudesService';
+import solicitudesService from '../../services/solicitudesService';
+import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 
 const AdminSolicitudes = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -128,13 +132,16 @@ const AdminSolicitudes = () => {
   };
 
   const limpiarFiltros = () => {
-    setFiltros({
+    console.log('Limpiando filtros...');
+    const nuevosFiltros = {
       estado: '',
       tipo_cambio: '',
       prioridad: '',
       page: 1,
       limit: 8
-    });
+    };
+    console.log('Nuevos filtros:', nuevosFiltros);
+    setFiltros(nuevosFiltros);
   };
 
   const verDetalle = async (solicitud) => {
@@ -421,11 +428,14 @@ const AdminSolicitudes = () => {
   );
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <AdminSidebar />
+      
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Assignment />
+          <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#6d1313', fontWeight: 'bold' }}>
+            <RequestPage />
           Gestión de Solicitudes de Cambio
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -434,7 +444,19 @@ const AdminSolicitudes = () => {
       </Box>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 3 }}>
+      <Tabs 
+        value={activeTab} 
+        onChange={(e, v) => setActiveTab(v)} 
+        sx={{ 
+          mb: 3,
+          '& .MuiTab-root.Mui-selected': {
+            color: '#6d1313'
+          },
+          '& .MuiTabs-indicator': {
+            backgroundColor: '#6d1313'
+          }
+        }}
+      >
         <Tab icon={<Assignment />} iconPosition="start" label="Solicitudes" />
         <Tab icon={<BarChart />} iconPosition="start" label="Estadísticas" />
       </Tabs>
@@ -448,7 +470,7 @@ const AdminSolicitudes = () => {
               <Grid container spacing={2}>
                 <Grid item xs={6} sm={3}>
                   <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h4" color="primary">{estadisticas.total}</Typography>
+                    <Typography variant="h4" sx={{ color: '#6d1313' }}>{estadisticas.total}</Typography>
                     <Typography variant="caption">Total</Typography>
                   </Box>
                 </Grid>
@@ -591,7 +613,12 @@ const AdminSolicitudes = () => {
                     count={pagination.totalPages}
                     page={pagination.page}
                     onChange={handlePageChange}
-                    color="primary"
+                    sx={{
+                      '& .MuiPaginationItem-root.Mui-selected': {
+                        backgroundColor: '#6d1313',
+                        color: 'white'
+                      }
+                    }}
                     size="large"
                   />
                 </Box>
@@ -865,6 +892,7 @@ const AdminSolicitudes = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      </Box>
     </Box>
   );
 };
