@@ -61,6 +61,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
     requiere_verificacion_docs: true,
     es_gratuito: true,
     precio: '',
+    requiere_carta_motivacion: true, // <--- NUEVO
+    carta_motivacion: '',            // <--- NUEVO
   });
 
   useEffect(() => {
@@ -93,6 +95,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         requiere_verificacion_docs: cursoEditado.requiere_verificacion_docs ?? true,
         es_gratuito: cursoEditado.es_gratuito !== undefined ? cursoEditado.es_gratuito : true,
         precio: cursoEditado.precio || '',
+        requiere_carta_motivacion: cursoEditado.requiere_carta_motivacion !== undefined ? cursoEditado.requiere_carta_motivacion : true,
+        carta_motivacion: cursoEditado.carta_motivacion || '',
       });
     }
   }, [cursoEditado]);
@@ -242,6 +246,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         requiere_verificacion_docs: !!curso.requiere_verificacion_docs,
         es_gratuito: curso.es_gratuito,
         precio: curso.es_gratuito ? null : parseFloat(curso.precio),
+        requiere_carta_motivacion: curso.requiere_carta_motivacion,
+        carta_motivacion: curso.requiere_carta_motivacion ? curso.carta_motivacion : '',
       };
       let idCur = cursoEditado ? cursoEditado.id_cur : undefined;
       if (cursoEditado) {
@@ -467,6 +473,43 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
                 ))}
               </Select>
             </FormControl>
+
+            {/* Nueva sección para carta de motivación */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+              <Checkbox
+                checked={curso.requiere_carta_motivacion}
+                onChange={e => setCurso({ ...curso, requiere_carta_motivacion: e.target.checked })}
+                sx={{
+                  color: '#6d1313',
+                  '&.Mui-checked': { color: '#6d1313' }
+                }}
+              />
+              <Typography variant="body1">
+                Se requiere carta de motivación
+              </Typography>
+            </Box>
+
+            {curso.requiere_carta_motivacion && (
+              <TextField
+                fullWidth
+                label="Carta de motivación del curso"
+                value={curso.carta_motivacion}
+                onChange={e => setCurso({ ...curso, carta_motivacion: e.target.value })}
+                multiline
+                minRows={10}
+                maxRows={10}
+                required
+                sx={{
+                  mt: 2,
+                  minHeight: 300,
+                  minWidth: 900,
+                  '& textarea': {
+                    fontSize: '1rem',
+                    resize: 'vertical'
+                  }
+                }}
+              />
+            )}
           </Box>
         );
       case 1:

@@ -90,7 +90,9 @@ const AdminCursos = () => {
     carreras_seleccionadas: [],
     requiere_verificacion_docs: true,
     es_gratuito: true,
-    precio: ''
+    precio: '',
+    requiere_carta_motivacion: true, // <--- NUEVO
+    carta_motivacion: '',            // <--- NUEVO
   });
 
   const TIPOS_AUDIENCIA = [
@@ -201,7 +203,9 @@ const AdminCursos = () => {
         carreras_seleccionadas: cursoData.carreras ? cursoData.carreras.map(c => c.id) : [],
         requiere_verificacion_docs: cursoData.requiere_verificacion_docs !== undefined ? cursoData.requiere_verificacion_docs : true,
         es_gratuito: cursoData.es_gratuito !== undefined ? cursoData.es_gratuito : true,
-        precio: cursoData.precio || ''
+        precio: cursoData.precio || '',
+        requiere_carta_motivacion: cursoData?.requiere_carta_motivacion !== undefined ? cursoData.requiere_carta_motivacion : true,
+        carta_motivacion: cursoData?.carta_motivacion || '',
       });
     } else {
       // Modo creación - limpiar formulario
@@ -218,7 +222,9 @@ const AdminCursos = () => {
         carreras_seleccionadas: [],
         requiere_verificacion_docs: true,
         es_gratuito: true,
-        precio: ''
+        precio: '',
+        requiere_carta_motivacion: true,
+        carta_motivacion: '',
       });
     }
     
@@ -316,7 +322,9 @@ const AdminCursos = () => {
         tipo_audiencia_cur: curso.tipo_audiencia_cur,
         requiere_verificacion_docs: curso.requiere_verificacion_docs,
         es_gratuito: curso.es_gratuito,
-        precio: curso.es_gratuito ? null : parseFloat(curso.precio)
+        precio: curso.es_gratuito ? null : parseFloat(curso.precio),
+        requiere_carta_motivacion: curso.requiere_carta_motivacion,
+        carta_motivacion: curso.requiere_carta_motivacion ? curso.carta_motivacion : '',
       };
 
       let cursoId;
@@ -981,6 +989,16 @@ const AdminCursos = () => {
                       <Typography>Requiere verificación de documentos</Typography>
                     </Box>
                   </Grid>
+
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Checkbox
+                        checked={curso.requiere_carta_motivacion}
+                        onChange={(e) => setCurso(prev => ({ ...prev, requiere_carta_motivacion: e.target.checked }))}
+                      />
+                      <Typography>Se requiere carta de motivación</Typography>
+                    </Box>
+                  </Grid>
                 </Grid>
               </Grid>
 
@@ -1052,6 +1070,31 @@ const AdminCursos = () => {
                   </Grid>
                 </Grid>
               </Grid>
+
+              {/* Carta de motivación */}
+              {curso.requiere_carta_motivacion && (
+                <Grid item xs={12} md={10}>
+                  <TextField
+                    fullWidth
+                    label="Carta de motivación del curso"
+                    value={curso.carta_motivacion}
+                    onChange={e => setCurso({ ...curso, carta_motivacion: e.target.value })}
+                    multiline
+                    minRows={10} // <-- Más alto verticalmente
+                    maxRows={10}
+                    required
+                    sx={{
+                      mt: 2,
+                      minHeight: 300,
+                      minWidth: 900, // <-- Aumenta el ancho mínimo
+                      '& textarea': {
+                        fontSize: '1rem',
+                        resize: 'vertical'
+                      }
+                    }}
+                  />
+                </Grid>
+              )}
             </Grid>
           </DialogContent>
 
@@ -1099,4 +1142,4 @@ const AdminCursos = () => {
   );
 };
 
-export default AdminCursos; 
+export default AdminCursos;
