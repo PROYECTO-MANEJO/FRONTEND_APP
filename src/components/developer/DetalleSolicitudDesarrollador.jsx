@@ -63,6 +63,7 @@ import {
 } from '@mui/icons-material';
 import desarrolladorService from '../../services/desarrolladorService';
 import RamasGitHub from '../shared/RamasGitHub';
+import GestionRamas from '../shared/GestionRamas';
 import Snackbar from '@mui/material/Snackbar';
 
 const DetalleSolicitudDesarrollador = () => {
@@ -613,6 +614,18 @@ const DetalleSolicitudDesarrollador = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Gestión de Ramas y Pull Requests */}
+          {(['APROBADA', 'EN_DESARROLLO', 'EN_TESTING'].includes(solicitud.estado_sol)) && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <GestionRamas 
+                  solicitud={solicitud} 
+                  onUpdate={cargarSolicitud}
+                />
+              </CardContent>
+            </Card>
+          )}
             </Box>
 
         {/* Sidebar */}
@@ -736,57 +749,12 @@ const DetalleSolicitudDesarrollador = () => {
             </CardContent>
           </Card>
 
-          {/* Sección de GitHub */}
-          <Card sx={{ mt: 3 }}>
-            <RamasGitHub 
-              solicitudId={id} 
-              onUpdate={cargarSolicitud}
-            />
-          </Card>
+
         </Box>
       </Box>
 
       {/* Acciones */}
       <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        {/* Botón de Enviar a Revisión cuando está en desarrollo y tiene PR */}
-        {solicitud.estado_sol === 'EN_DESARROLLO' && solicitud.github_pr_number && (
-          <Button
-            onClick={async () => {
-              try {
-                setProcesando(true);
-                await desarrolladorService.actualizarEstadoSolicitud(solicitud.id_sol, 'EN_TESTING', {
-                  comentarios_internos_sol: `Desarrollador envió la solicitud a revisión el ${new Date().toLocaleString()}`
-                });
-                await cargarSolicitud();
-                setSnackbar({
-                  open: true,
-                  message: 'Solicitud enviada a revisión exitosamente',
-                  severity: 'success'
-                });
-              } catch (error) {
-                console.error('Error al enviar a revisión:', error);
-                setSnackbar({
-                  open: true,
-                  message: 'Error al enviar a revisión: ' + error.message,
-                  severity: 'error'
-                });
-              } finally {
-                setProcesando(false);
-              }
-            }}
-            variant="contained"
-            startIcon={<Send />}
-            disabled={procesando}
-            sx={{ 
-              bgcolor: '#0891b2',
-              '&:hover': { bgcolor: '#0e7490' },
-              minWidth: 150
-            }}
-          >
-            Enviar a Revisión
-          </Button>
-        )}
-
         <Button
           variant="outlined"
           startIcon={<ArrowBack />}

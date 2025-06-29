@@ -66,31 +66,11 @@ const desarrolladorService = {
     }
   },
 
-  // Enviar planes a revisión del MASTER
-  enviarPlanesARevision: async (id) => {
-    try {
-      const response = await api.post(`/desarrollador/solicitud/${id}/enviar-planes`);
-      return response.data;
-    } catch (error) {
-      console.error('Error enviando planes a revisión:', error);
-      throw error;
-    }
-  },
+  // Esta función ya no es necesaria con el nuevo flujo
 
   // ========================================
   // GESTIÓN DE ESTADOS DE DESARROLLO
   // ========================================
-
-  // Iniciar desarrollo (LISTO_PARA_IMPLEMENTAR → EN_DESARROLLO)
-  iniciarDesarrollo: async (id) => {
-    try {
-      const response = await api.post(`/desarrollador/solicitud/${id}/iniciar-desarrollo`);
-      return response.data;
-    } catch (error) {
-      console.error('Error iniciando desarrollo:', error);
-      throw error;
-    }
-  },
 
   // Pasar a testing (EN_DESARROLLO → EN_TESTING)
   pasarATesting: async (id, comentarios = '') => {
@@ -101,34 +81,6 @@ const desarrolladorService = {
       return response.data;
     } catch (error) {
       console.error('Error pasando a testing:', error);
-      throw error;
-    }
-  },
-
-  // Pasar a despliegue (EN_TESTING → EN_DESPLIEGUE)
-  pasarADespliegue: async (id, comentarios = '') => {
-    try {
-      const response = await api.post(`/desarrollador/solicitud/${id}/pasar-despliegue`, {
-        comentarios: comentarios
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error pasando a despliegue:', error);
-      throw error;
-    }
-  },
-
-  // Completar solicitud (EN_DESPLIEGUE → COMPLETADA/FALLIDA)
-  completarSolicitud: async (id, datos) => {
-    try {
-      const response = await api.post(`/desarrollador/solicitud/${id}/completar`, {
-        exito_implementacion: datos.exito_implementacion,
-        comentarios_tecnicos_sol: datos.comentarios_tecnicos_sol,
-        tiempo_real_horas_sol: datos.tiempo_real_horas_sol
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error completando solicitud:', error);
       throw error;
     }
   },
@@ -188,6 +140,104 @@ const desarrolladorService = {
   },
 
   // ========================================
+  // GESTIÓN DE RAMAS Y PULL REQUESTS
+  // ========================================
+
+  // Validar estado de solicitud para crear ramas
+  validarEstadoParaRamas: async (idSolicitud) => {
+    try {
+      const response = await api.get(`/desarrollador/solicitud/${idSolicitud}/validar-estado`);
+      return response.data;
+    } catch (error) {
+      console.error('Error validando estado para ramas:', error);
+      throw error;
+    }
+  },
+
+  // Crear rama para repositorio específico
+  crearRama: async (idSolicitud, repositoryType, baseBranch = 'develop') => {
+    try {
+      const response = await api.post(`/desarrollador/solicitud/${idSolicitud}/crear-rama`, {
+        repository_type: repositoryType,
+        base_branch: baseBranch
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error creando rama ${repositoryType}:`, error);
+      throw error;
+    }
+  },
+
+  // Obtener ramas disponibles de un repositorio
+  obtenerRamasDisponibles: async (repositoryType) => {
+    try {
+      const response = await api.get(`/desarrollador/ramas-disponibles/${repositoryType}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error obteniendo ramas disponibles de ${repositoryType}:`, error);
+      throw error;
+    }
+  },
+
+  // Obtener ramas de una solicitud
+  obtenerRamas: async (idSolicitud) => {
+    try {
+      const response = await api.get(`/desarrollador/solicitud/${idSolicitud}/ramas`);
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo ramas:', error);
+      throw error;
+    }
+  },
+
+  // Crear Pull Request para repositorio específico
+  crearPR: async (idSolicitud, repositoryType, targetBranch = 'develop') => {
+    try {
+      const response = await api.post(`/desarrollador/solicitud/${idSolicitud}/crear-pr`, {
+        repository_type: repositoryType,
+        target_branch: targetBranch
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error creando PR ${repositoryType}:`, error);
+      throw error;
+    }
+  },
+
+  // Obtener estado de PRs de una solicitud
+  obtenerEstadoPRs: async (idSolicitud) => {
+    try {
+      const response = await api.get(`/desarrollador/solicitud/${idSolicitud}/pull-requests/estado`);
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo estado de PRs:', error);
+      throw error;
+    }
+  },
+
+  // Verificar si puede enviar a testing
+  verificarParaTesting: async (idSolicitud) => {
+    try {
+      const response = await api.get(`/desarrollador/solicitud/${idSolicitud}/testing/verificar`);
+      return response.data;
+    } catch (error) {
+      console.error('Error verificando para testing:', error);
+      throw error;
+    }
+  },
+
+  // Enviar solicitud a testing
+  enviarSolicitudATesting: async (idSolicitud) => {
+    try {
+      const response = await api.post(`/desarrollador/solicitud/${idSolicitud}/testing/enviar`);
+      return response.data;
+    } catch (error) {
+      console.error('Error enviando a testing:', error);
+      throw error;
+    }
+  },
+
+  // ========================================
   // UTILIDADES Y HELPERS
   // ========================================
 
@@ -195,12 +245,9 @@ const desarrolladorService = {
   obtenerEstadosDesarrollador: () => {
     return [
       { value: 'APROBADA', label: 'Aprobada', color: '#4caf50' },
-      { value: 'PLANES_PENDIENTES_APROBACION', label: 'Planes en Revisión', color: '#ff9800' },
-      { value: 'LISTO_PARA_IMPLEMENTAR', label: 'Listo para Implementar', color: '#2196f3' },
-      { value: 'EN_DESARROLLO', label: 'En Desarrollo', color: '#9c27b0' },
-      { value: 'EN_TESTING', label: 'En Testing', color: '#ff5722' },
-      { value: 'EN_DESPLIEGUE', label: 'En Despliegue', color: '#795548' },
-      { value: 'COMPLETADA', label: 'Completada', color: '#4caf50' },
+      { value: 'EN_DESARROLLO', label: 'En Desarrollo', color: '#2196f3' },
+      { value: 'EN_TESTING', label: 'En Testing', color: '#9c27b0' },
+      { value: 'COMPLETADA', label: 'Completada', color: '#8bc34a' },
       { value: 'FALLIDA', label: 'Fallida', color: '#f44336' }
     ];
   },
@@ -218,12 +265,9 @@ const desarrolladorService = {
   // Verificar si se puede cambiar de estado
   puedeTransicionarA: (estadoActual, estadoDestino) => {
     const transicionesPermitidas = {
-      'APROBADA': ['PLANES_PENDIENTES_APROBACION'],
-      'PLANES_PENDIENTES_APROBACION': [], // Solo el MASTER puede cambiar desde aquí
-      'LISTO_PARA_IMPLEMENTAR': ['EN_DESARROLLO'],
+      'APROBADA': ['EN_DESARROLLO'],
       'EN_DESARROLLO': ['EN_TESTING'],
-      'EN_TESTING': ['EN_DESPLIEGUE'],
-      'EN_DESPLIEGUE': ['COMPLETADA', 'FALLIDA'],
+      'EN_TESTING': ['COMPLETADA', 'FALLIDA'],
       'COMPLETADA': [],
       'FALLIDA': []
     };
@@ -235,25 +279,15 @@ const desarrolladorService = {
   obtenerAccionesDisponibles: (estado) => {
     const acciones = {
       'APROBADA': [
-        { key: 'crear_planes', label: 'Crear Planes Técnicos', icon: 'EditNote' }
-      ],
-      'PLANES_PENDIENTES_APROBACION': [
-        { key: 'esperar', label: 'Esperando Aprobación del MASTER', icon: 'HourglassEmpty', disabled: true }
-      ],
-      'LISTO_PARA_IMPLEMENTAR': [
-        { key: 'iniciar_desarrollo', label: 'Iniciar Desarrollo', icon: 'PlayArrow', color: 'primary' }
+        { key: 'crear_ramas', label: 'Crear Ramas', icon: 'AccountTree', color: 'primary' }
       ],
       'EN_DESARROLLO': [
-        { key: 'pasar_testing', label: 'Pasar a Testing', icon: 'BugReport', color: 'warning' },
+        { key: 'crear_prs', label: 'Crear Pull Requests', icon: 'CallMerge', color: 'info' },
+        { key: 'enviar_testing', label: 'Enviar a Testing', icon: 'BugReport', color: 'warning' },
         { key: 'agregar_comentario', label: 'Agregar Comentario', icon: 'Comment' }
       ],
       'EN_TESTING': [
-        { key: 'pasar_despliegue', label: 'Pasar a Despliegue', icon: 'Rocket', color: 'info' },
         { key: 'agregar_comentario', label: 'Agregar Comentario', icon: 'Comment' }
-      ],
-      'EN_DESPLIEGUE': [
-        { key: 'completar_exitoso', label: 'Marcar como Completada', icon: 'CheckCircle', color: 'success' },
-        { key: 'completar_fallido', label: 'Marcar como Fallida', icon: 'Error', color: 'error' }
       ],
       'COMPLETADA': [
         { key: 'ver_resumen', label: 'Ver Resumen', icon: 'Summarize' }
