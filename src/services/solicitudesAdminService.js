@@ -99,8 +99,6 @@ export const rechazarSolicitud = async (id, comentarios = '', motivoRechazo = ''
   }
 };
 
-
-
 /**
  * Obtener estadísticas generales (para admin/master)
  */
@@ -227,6 +225,38 @@ export const getPrioridadColor = (prioridad) => {
   return colores[prioridad] || '#9e9e9e';
 };
 
+// Obtener información detallada del PR
+export const obtenerInformacionPR = async (idSolicitud) => {
+  try {
+    const response = await api.get(`/github/solicitud/${idSolicitud}`);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Aprobar PR por el MASTER
+export const aprobarPRMaster = async (idSolicitud) => {
+  try {
+    const response = await api.post(`/admin/solicitudes/${idSolicitud}/aprobar-pr-master`);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Rechazar PR por el MASTER con comentarios
+export const rechazarPRMaster = async (idSolicitud, comentarios) => {
+  try {
+    const response = await api.post(`/admin/solicitudes/${idSolicitud}/rechazar-pr-master`, {
+      comentarios
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
 const solicitudesAdminService = {
   obtenerTodasLasSolicitudes,
   obtenerSolicitudParaAdmin,
@@ -241,7 +271,10 @@ const solicitudesAdminService = {
   puedeAdminActuar,
   getEstadoInfoAdmin,
   getPrioridadEstado,
-  getPrioridadColor
+  getPrioridadColor,
+  obtenerInformacionPR,
+  aprobarPRMaster,
+  rechazarPRMaster
 };
 
 export default solicitudesAdminService; 

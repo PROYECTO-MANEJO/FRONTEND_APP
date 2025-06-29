@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -66,7 +65,6 @@ import { es } from 'date-fns/locale';
 
 const AdminSolicitudes = () => {
   const { getMainContentStyle } = useSidebarLayout();
-  const navigate = useNavigate();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -79,6 +77,29 @@ const AdminSolicitudes = () => {
   const [dialogRechazoPR, setDialogRechazoPR] = useState(false);
   const [loadingPR, setLoadingPR] = useState(false);
   const [prInfo, setPrInfo] = useState(null);
+
+  // Abrir modal de revisión de PR
+  const abrirRevisionPR = async (solicitud) => {
+    try {
+      setSelectedSolicitud(solicitud);
+      setDialogRevisionPR(true);
+      setLoadingPR(true);
+      
+      const response = await solicitudesAdminService.obtenerInformacionPR(solicitud.id_sol);
+      if (response.data.success) {
+        setPrInfo(response.data.data);
+      } else {
+        setError('No se pudo cargar la información del PR');
+        setPrInfo(null);
+      }
+    } catch (err) {
+      setError('Error al cargar información del PR: ' + err.message);
+      setPrInfo(null);
+    } finally {
+      setLoadingPR(false);
+    }
+  };
+
   const [desarrolladores, setDesarrolladores] = useState({
     success: false,
     data: []
@@ -347,21 +368,6 @@ const AdminSolicitudes = () => {
     setDialogAccion(true);
   };
 
-  const abrirRevisionPR = async (solicitud) => {
-    try {
-      setSelectedSolicitud(solicitud);
-      setDialogRevisionPR(true);
-      setLoadingPR(true);
-      
-      const response = await solicitudesAdminService.obtenerInformacionPR(solicitud.id_sol);
-      setPrInfo(response.data);
-    } catch (err) {
-      setError('Error al cargar información del PR: ' + err.message);
-      setPrInfo(null);
-    } finally {
-      setLoadingPR(false);
-    }
-  };
 
   const handleGuardarGestion = async () => {
     if (!selectedSolicitud) {
@@ -794,7 +800,7 @@ const AdminSolicitudes = () => {
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                       <Tooltip title="Ver Detalles">
                         <IconButton
-              size="small"
+                          size="small"
                           onClick={() => verDetalle(solicitud)}
                           sx={{ color: '#666' }}
                         >
@@ -802,26 +808,7 @@ const AdminSolicitudes = () => {
                         </IconButton>
                       </Tooltip>
 
-                      {/* Botón MASTER - Solo para solicitudes que necesitan revisión MASTER */}
-                      {['PENDIENTE', 'EN_REVISION', 'APROBADA'].includes(solicitud.estado_sol) && (
-                        <Tooltip title="Revisión MASTER">
-                          <IconButton
-                            size="small"
-                            onClick={() => navigate(`/admin/solicitudes/master/${solicitud.id_sol}`)}
-                            sx={{ 
-                              color: '#fff',
-                              bgcolor: '#6d1313',
-                              '&:hover': {
-                                bgcolor: '#991b1b'
-                              }
-                            }}
-                          >
-                            <AdminPanelSettings />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      
-                      {/* Botón específico para revisión de PR cuando está EN_TESTING */}
+                      {/* Botón para revisar PR cuando está EN_TESTING */}
                       {solicitud.estado_sol === 'EN_TESTING' && solicitud.github_pr_number && (
                         <Tooltip title="Revisar Pull Request">
                           <IconButton
@@ -840,11 +827,11 @@ const AdminSolicitudes = () => {
                           </IconButton>
                         </Tooltip>
                       )}
-                      
-          {solicitud.estado_sol === 'APROBADA' && (
+
+                      {solicitud.estado_sol === 'APROBADA' && (
                         <Tooltip title="Gestionar">
                           <IconButton
-              size="small"
+                            size="small"
                             onClick={() => abrirGestion(solicitud)}
                             sx={{ color: '#333' }}
                           >
@@ -2238,31 +2225,30 @@ const AdminSolicitudes = () => {
                    <Typography variant="h6" gutterBottom>
                      📊 Estadísticas del Cambio
                    </Typography>
-                   
                    <Grid container spacing={2}>
-                     <Grid item xs={12} sm={3}>
-                       <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#f8fafc', borderRadius: 1 }}>
-                         <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
-                           {prInfo.stats?.commits_count || prInfo.commits?.length || 0}
+                     <Grid item xs={3}>
+                       <Box sx={{ textAlign: 'center', p: 2 }}>
+                         <Typography variant="h4" color="text.primary">
+                           {prInfo.stats?.commits_count || 0}
                          </Typography>
                          <Typography variant="body2" color="text.secondary">
                            Commits
                          </Typography>
                        </Box>
                      </Grid>
-                     <Grid item xs={12} sm={3}>
-                       <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#f8fafc', borderRadius: 1 }}>
-                         <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
-                           {prInfo.stats?.files_changed || prInfo.files?.length || 0}
+                     <Grid item xs={3}>
+                       <Box sx={{ textAlign: 'center', p: 2 }}>
+                         <Typography variant="h4" color="text.primary">
+                           {prInfo.stats?.files_changed || 0}
                          </Typography>
                          <Typography variant="body2" color="text.secondary">
                            Archivos Modificados
                          </Typography>
                        </Box>
                      </Grid>
-                     <Grid item xs={12} sm={3}>
-                       <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#f0fdf4', borderRadius: 1 }}>
-                         <Typography variant="h4" sx={{ color: '#22c55e', fontWeight: 'bold' }}>
+                     <Grid item xs={3}>
+                       <Box sx={{ textAlign: 'center', p: 2, color: '#16a34a' }}>
+                         <Typography variant="h4" sx={{ color: 'inherit' }}>
                            +{prInfo.stats?.additions || 0}
                          </Typography>
                          <Typography variant="body2" color="text.secondary">
@@ -2270,9 +2256,9 @@ const AdminSolicitudes = () => {
                          </Typography>
                        </Box>
                      </Grid>
-                     <Grid item xs={12} sm={3}>
-                       <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#fef2f2', borderRadius: 1 }}>
-                         <Typography variant="h4" sx={{ color: '#ef4444', fontWeight: 'bold' }}>
+                     <Grid item xs={3}>
+                       <Box sx={{ textAlign: 'center', p: 2, color: '#dc2626' }}>
+                         <Typography variant="h4" sx={{ color: 'inherit' }}>
                            -{prInfo.stats?.deletions || 0}
                          </Typography>
                          <Typography variant="body2" color="text.secondary">
@@ -2284,14 +2270,14 @@ const AdminSolicitudes = () => {
                  </CardContent>
                </Card>
 
-                             {/* Lista de Commits */}
-               <Card sx={{ mb: 3 }}>
-                 <CardContent>
-                   <Typography variant="h6" gutterBottom>
-                     📝 Historial de Commits ({prInfo.commits.length})
-                   </Typography>
-                   
-                   {prInfo.commits.length > 0 ? (
+               {/* Lista de Commits */}
+               {prInfo.commits && prInfo.commits.length > 0 && (
+                 <Card sx={{ mb: 3 }}>
+                   <CardContent>
+                     <Typography variant="h6" gutterBottom>
+                       📝 Historial de Commits ({prInfo.stats?.commits_count || 0})
+                     </Typography>
+                     
                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                        {prInfo.commits.map((commit) => (
                          <Box 
@@ -2306,7 +2292,7 @@ const AdminSolicitudes = () => {
                          >
                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                              <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                               {commit.shortMessage || commit.message}
+                               {commit.message}
                              </Typography>
                              <Chip 
                                label={commit.sha} 
@@ -2321,13 +2307,9 @@ const AdminSolicitudes = () => {
                          </Box>
                        ))}
                      </Box>
-                   ) : (
-                     <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                       No hay commits disponibles
-                     </Typography>
-                   )}
-                 </CardContent>
-               </Card>
+                   </CardContent>
+                 </Card>
+               )}
 
                {/* Lista de Archivos Modificados */}
                {prInfo.files && prInfo.files.length > 0 && (

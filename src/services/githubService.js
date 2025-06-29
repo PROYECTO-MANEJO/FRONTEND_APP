@@ -193,7 +193,7 @@ class GitHubService {
   // Crear Pull Request para una solicitud
   async crearPullRequest(solicitudId, branchName, repoType = 'frontend', baseBranch = 'main') {
     try {
-      const response = await api.post(`/github/solicitud/${solicitudId}/crear-pull-request`, {
+      const response = await api.post(`/github/dev/solicitud/${solicitudId}/crear-pull-request`, {
         branchName,
         repoType,
         baseBranch
