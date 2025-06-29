@@ -227,34 +227,25 @@ export const getPrioridadColor = (prioridad) => {
 
 // Obtener información detallada del PR
 export const obtenerInformacionPR = async (idSolicitud) => {
-  try {
-    const response = await api.get(`/github/solicitud/${idSolicitud}`);
-    return response;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get(`/github/solicitud/${idSolicitud}`);
+  return response;
 };
 
 // Aprobar PR por el MASTER
-export const aprobarPRMaster = async (idSolicitud) => {
-  try {
-    const response = await api.post(`/admin/solicitudes/${idSolicitud}/aprobar-pr-master`);
-    return response;
-  } catch (error) {
-    throw error;
-  }
+export const aprobarPRMaster = async (idSolicitud, { comentarios }) => {
+  const response = await api.post(`/github/solicitud/${idSolicitud}/aprobar-pr`, {
+    comentarios
+  });
+  return response;
 };
 
 // Rechazar PR por el MASTER con comentarios
-export const rechazarPRMaster = async (idSolicitud, comentarios) => {
-  try {
-    const response = await api.post(`/admin/solicitudes/${idSolicitud}/rechazar-pr-master`, {
-      comentarios
-    });
-    return response;
-  } catch (error) {
-    throw error;
-  }
+export const rechazarPR = async (idSolicitud, { comentarios }) => {
+  // Primero rechazamos el PR en GitHub
+  const response = await api.post(`/github/solicitud/${idSolicitud}/rechazar-pr`, {
+    comentarios
+  });
+  return response;
 };
 
 const solicitudesAdminService = {
@@ -274,7 +265,7 @@ const solicitudesAdminService = {
   getPrioridadColor,
   obtenerInformacionPR,
   aprobarPRMaster,
-  rechazarPRMaster
+  rechazarPR
 };
 
 export default solicitudesAdminService; 

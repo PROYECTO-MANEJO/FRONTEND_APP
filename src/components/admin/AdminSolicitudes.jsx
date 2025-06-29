@@ -441,93 +441,61 @@ const AdminSolicitudes = () => {
     }
   };
 
+  // Manejar aprobación de PR
   const handleAprobarPR = async () => {
-    if (!selectedSolicitud) return;
-    
     try {
-      setLoading(true);
+      setLoadingPR(true);
       setError(null);
-      
-      // Paso 1: Hacer merge automático del PR en GitHub
-      if (selectedSolicitud.github_pr_number) {
-        try {
-          console.log(`Iniciando merge automático del PR #${selectedSolicitud.github_pr_number}`);
-          
-          await solicitudesAdminService.mergePullRequestAutomatico(
-            selectedSolicitud.github_pr_number
-          );
-          
-          console.log(`✅ PR #${selectedSolicitud.github_pr_number} mergeado exitosamente`);
-        } catch (mergeError) {
-          console.error('Error en merge automático:', mergeError);
-          
-          // Si falla el merge, mostrar error pero permitir continuar
-          setError(`Advertencia: Error en merge automático - ${mergeError.message}. Puedes hacer el merge manualmente.`);
-          
-          // No retornar aquí, continuar con el flujo
-        }
-      }
-      
-      // Paso 2: Actualizar estado de la solicitud a EN_DESPLIEGUE
-      await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
-        estado_sol: 'EN_DESPLIEGUE',
-        comentarios_admin_sol: 'Solicitud aprobada por el MASTER.',
-          comentarios_internos_sol: `MASTER aprobó la solicitud el ${new Date().toLocaleString()}`
+
+      // Aprobar el PR en GitHub y hacer merge automáticamente
+      await solicitudesAdminService.aprobarPRMaster(selectedSolicitud.id_sol, {
+        comentarios: `PR aprobado y mergeado automáticamente por MASTER el ${new Date().toLocaleString()}`
       });
-      
-      setSuccess('Solicitud aprobada exitosamente.');
-      
+
+      // Cerrar el diálogo y mostrar mensaje de éxito
       setDialogRevisionPR(false);
+      setSuccess('PR aprobado y mergeado correctamente');
+
+      // Recargar la lista de solicitudes
       await cargarSolicitudes();
-      await cargarEstadisticas();
-    } catch (err) {
-      console.error('Error en proceso de aprobación:', err);
-      setError('Error al aprobar PR: ' + err.message);
+    } catch (error) {
+      console.error('Error al aprobar PR:', error);
+      setError('Error al aprobar PR: ' + error.message);
     } finally {
-      setLoading(false);
+      setLoadingPR(false);
     }
   };
 
   const handleRechazarPR = async () => {
     if (!selectedSolicitud) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
-        estado_sol: 'EN_DESARROLLO',
-        comentarios_admin_sol: 'PR rechazado por el MASTER. Se requieren cambios antes de continuar.'
-      });
-      
-      setSuccess('Pull Request rechazado. La solicitud ha regresado a desarrollo.');
-      setDialogRevisionPR(false);
-      await cargarSolicitudes();
-      await cargarEstadisticas();
-    } catch (err) {
-      setError('Error al rechazar PR: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
+    setDialogRevisionPR(false);
+    setDialogRechazoPR(true);
   };
 
-  // Nueva función para manejar el rechazo de PR con comentarios diferenciados
+  // Función para manejar el rechazo de PR con comentarios diferenciados
   const handleRechazarPRConComentarios = async () => {
     if (!selectedSolicitud) return;
     
     try {
       setLoading(true);
       setError(null);
+
+      // Primero rechazamos el PR en GitHub
+      if (selectedSolicitud.github_pr_number) {
+        await solicitudesAdminService.rechazarPR(selectedSolicitud.id_sol, {
+          comentarios: comentarioDesarrollador || 'Se requieren cambios antes de continuar.'
+        });
+      }
       
+      // Luego actualizamos el estado de la solicitud
       await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
         estado_sol: 'EN_DESARROLLO',
         comentarios_admin_sol: comentarioUsuario || 'Pull Request rechazado. Se requieren cambios antes de continuar.',
-        comentarios_internos_sol: `MASTER rechazó la solicitud el ${new Date().toLocaleString()}. ${comentarioDesarrollador ? `Comentario para desarrollador: ${comentarioDesarrollador}` : ''}`
+        comentarios_internos_sol: comentarioDesarrollador || 'Se requieren cambios antes de continuar.'
       });
       
       setSuccess('Pull Request rechazado. La solicitud ha regresado a desarrollo.');
       setDialogRechazoPR(false);
-      setDialogDetalles(false);
       
       // Limpiar formularios
       setComentarioUsuario('');
@@ -1591,7 +1559,7 @@ const AdminSolicitudes = () => {
             bgcolor: '#fef2f2',
             borderTop: '1px solid #fecaca'
           }}>
-                            <Button
+            <Button
               onClick={() => setDialogDetalles(false)} 
               variant="outlined"
               sx={{ 
@@ -1601,11 +1569,11 @@ const AdminSolicitudes = () => {
               }}
             >
               Cerrar
-                            </Button>
+            </Button>
             
             {selectedSolicitud?.estado_sol === 'EN_REVISION' && (
               <>
-                            <Button
+                <Button
                   onClick={() => {
                     setDialogDetalles(false);
                     abrirAccion(selectedSolicitud, 'rechazar');
@@ -1619,7 +1587,7 @@ const AdminSolicitudes = () => {
                   }}
                 >
                   Rechazar
-                            </Button>
+                </Button>
                 <Button 
                   onClick={() => {
                     setDialogDetalles(false);
@@ -1635,146 +1603,146 @@ const AdminSolicitudes = () => {
                 >
                   Aprobar
                 </Button>
-                </>
-              )}
+              </>
+            )}
 
-              {/* NUEVA SECCIÓN: Revisión de PR para solicitudes EN_TESTING */}
-              {selectedSolicitud?.estado_sol === 'EN_TESTING' && selectedSolicitud?.github_pr_number && (
-                <></>
-              )}
+            {/* NUEVA SECCIÓN: Revisión de PR para solicitudes EN_TESTING */}
+            {selectedSolicitud?.estado_sol === 'EN_TESTING' && selectedSolicitud?.github_pr_number && (
+              <></>
+            )}
 
-              {/* Botón para simular EN_TESTING si no existe PR */}
-              {selectedSolicitud?.estado_sol === 'EN_TESTING' && !selectedSolicitud?.github_pr_number && (
+            {/* Botón para simular EN_TESTING si no existe PR */}
+            {selectedSolicitud?.estado_sol === 'EN_TESTING' && !selectedSolicitud?.github_pr_number && (
+              <Button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
+                      
+                      comentarios_internos_sol: 'PR ficticio #123 agregado para pruebas de revisión'
+                    });
+                    // Recargar el modal
+                    const response = await solicitudesAdminService.obtenerSolicitudParaAdmin(selectedSolicitud.id_sol);
+                    setSelectedSolicitud(response.data);
+                  } catch (error) {
+                    setError('Error al simular PR: ' + error.message);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                variant="contained"
+                color="warning"
+                disabled={loading}
+                sx={{ 
+                  bgcolor: '#ff9800',
+                  '&:hover': { bgcolor: '#f57c00' }
+                }}
+              >
+                🧪 Simular PR para Pruebas
+              </Button>
+            )}
+
+            {/* NUEVA SECCIÓN: Gestión de Despliegue para solicitudes EN_DESPLIEGUE */}
+            {selectedSolicitud?.estado_sol === 'EN_DESPLIEGUE' && (
+              <>
+                <Box sx={{ 
+                  bgcolor: '#fff3e0', 
+                  p: 2, 
+                  borderRadius: 1, 
+                  mb: 2, 
+                  width: '100%',
+                  mx: -3
+                }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#f57c00' }}>
+                    🚀 Solicitud en Despliegue
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    El PR fue aprobado y está siendo desplegado en producción. 
+                    Confirma el resultado del despliegue para completar el flujo.
+                  </Typography>
+                  {selectedSolicitud.github_pr_url && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<GitHub />}
+                      onClick={() => window.open(selectedSolicitud.github_pr_url, '_blank')}
+                      sx={{ mt: 1 }}
+                    >
+                      Ver PR Desplegado
+                    </Button>
+                  )}
+                </Box>
+                
                 <Button
                   onClick={async () => {
                     try {
                       setLoading(true);
                       await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
-                        
-                        comentarios_internos_sol: 'PR ficticio #123 agregado para pruebas de revisión'
+                        estado_sol: 'FALLIDA',
+                        comentarios_admin_sol: 'Despliegue fallido. Se requiere revisar y corregir antes de continuar.',
+                        comentarios_internos_sol: `MASTER marcó despliegue como fallido el ${new Date().toLocaleString()}`,
+                        exito_implementacion: false,
+                        fecha_real_fin_sol: new Date().toISOString()
                       });
-                      // Recargar el modal
-                      const response = await solicitudesAdminService.obtenerSolicitudParaAdmin(selectedSolicitud.id_sol);
-                      setSelectedSolicitud(response.data);
+                      setDialogDetalles(false);
+                      await cargarSolicitudes();
+                      await cargarEstadisticas();
                     } catch (error) {
-                      setError('Error al simular PR: ' + error.message);
+                      setError('Error al marcar despliegue como fallido: ' + error.message);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  variant="outlined"
+                  startIcon={<Close />}
+                  disabled={loading}
+                  sx={{ 
+                    borderColor: '#ef4444',
+                    color: '#ef4444', 
+                    '&:hover': { 
+                      bgcolor: '#fef2f2',
+                      borderColor: '#dc2626',
+                      color: '#dc2626'
+                    },
+                    minWidth: 180
+                  }}
+                >
+                  Marcar como Fallido
+                </Button>
+                
+                <Button 
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
+                        estado_sol: 'COMPLETADA',
+                        comentarios_admin_sol: 'Despliegue exitoso. La solicitud ha sido implementada correctamente en producción.',
+                        comentarios_internos_sol: `MASTER confirmó despliegue exitoso el ${new Date().toLocaleString()}`,
+                        exito_implementacion: true,
+                        fecha_real_fin_sol: new Date().toISOString()
+                      });
+                      setDialogDetalles(false);
+                      await cargarSolicitudes();
+                      await cargarEstadisticas();
+                    } catch (error) {
+                      setError('Error al completar despliegue: ' + error.message);
                     } finally {
                       setLoading(false);
                     }
                   }}
                   variant="contained"
-                  color="warning"
+                  startIcon={<Done />}
                   disabled={loading}
                   sx={{ 
-                    bgcolor: '#ff9800',
-                    '&:hover': { bgcolor: '#f57c00' }
+                    bgcolor: '#4caf50', 
+                    '&:hover': { bgcolor: '#388e3c' },
+                    minWidth: 180
                   }}
                 >
-                  🧪 Simular PR para Pruebas
+                  Confirmar Despliegue Exitoso
                 </Button>
-              )}
-
-              {/* NUEVA SECCIÓN: Gestión de Despliegue para solicitudes EN_DESPLIEGUE */}
-              {selectedSolicitud?.estado_sol === 'EN_DESPLIEGUE' && (
-                <>
-                  <Box sx={{ 
-                    bgcolor: '#fff3e0', 
-                    p: 2, 
-                    borderRadius: 1, 
-                    mb: 2, 
-                    width: '100%',
-                    mx: -3
-                  }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#f57c00' }}>
-                      🚀 Solicitud en Despliegue
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      El PR fue aprobado y está siendo desplegado en producción. 
-                      Confirma el resultado del despliegue para completar el flujo.
-                    </Typography>
-                    {selectedSolicitud.github_pr_url && (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<GitHub />}
-                        onClick={() => window.open(selectedSolicitud.github_pr_url, '_blank')}
-                        sx={{ mt: 1 }}
-                      >
-                        Ver PR Desplegado
-                      </Button>
-                    )}
-                  </Box>
-                  
-                  <Button
-                    onClick={async () => {
-                      try {
-                        setLoading(true);
-                        await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
-                          estado_sol: 'FALLIDA',
-                          comentarios_admin_sol: 'Despliegue fallido. Se requiere revisar y corregir antes de continuar.',
-                          comentarios_internos_sol: `MASTER marcó despliegue como fallido el ${new Date().toLocaleString()}`,
-                          exito_implementacion: false,
-                          fecha_real_fin_sol: new Date().toISOString()
-                        });
-                        setDialogDetalles(false);
-                        await cargarSolicitudes();
-                        await cargarEstadisticas();
-                      } catch (error) {
-                        setError('Error al marcar despliegue como fallido: ' + error.message);
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    variant="outlined"
-                    startIcon={<Close />}
-                    disabled={loading}
-                    sx={{ 
-                      borderColor: '#ef4444',
-                      color: '#ef4444', 
-                      '&:hover': { 
-                        bgcolor: '#fef2f2',
-                        borderColor: '#dc2626',
-                        color: '#dc2626'
-                      },
-                      minWidth: 180
-                    }}
-                  >
-                    Marcar como Fallido
-                  </Button>
-                  
-                  <Button 
-                    onClick={async () => {
-                      try {
-                        setLoading(true);
-                        await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
-                          estado_sol: 'COMPLETADA',
-                          comentarios_admin_sol: 'Despliegue exitoso. La solicitud ha sido implementada correctamente en producción.',
-                          comentarios_internos_sol: `MASTER confirmó despliegue exitoso el ${new Date().toLocaleString()}`,
-                          exito_implementacion: true,
-                          fecha_real_fin_sol: new Date().toISOString()
-                        });
-                        setDialogDetalles(false);
-                        await cargarSolicitudes();
-                        await cargarEstadisticas();
-                      } catch (error) {
-                        setError('Error al completar despliegue: ' + error.message);
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    variant="contained"
-                    startIcon={<Done />}
-                    disabled={loading}
-                    sx={{ 
-                      bgcolor: '#4caf50', 
-                      '&:hover': { bgcolor: '#388e3c' },
-                      minWidth: 180
-                    }}
-                  >
-                    Confirmar Despliegue Exitoso
-                  </Button>
-                </>
-              )}
+              </>
+            )}
 
 
         </DialogActions>

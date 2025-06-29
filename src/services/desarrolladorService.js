@@ -173,6 +173,20 @@ const desarrolladorService = {
     }
   },
 
+  // Actualizar estado de la solicitud con comentarios
+  actualizarEstadoSolicitud: async (id, nuevoEstado, datos = {}) => {
+    try {
+      const response = await api.post(`/desarrollador/solicitud/${id}/estado`, {
+        estado: nuevoEstado,
+        ...datos
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error actualizando estado de la solicitud:', error);
+      throw error;
+    }
+  },
+
   // ========================================
   // UTILIDADES Y HELPERS
   // ========================================

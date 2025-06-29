@@ -71,10 +71,10 @@ const DetalleSolicitudDesarrollador = () => {
   
   const [solicitud, setSolicitud] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [comentarioDialog, setComentarioDialog] = useState(false);
   const [nuevoComentario, setNuevoComentario] = useState('');
   const [procesando, setProcesando] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
 
 
@@ -87,14 +87,12 @@ const DetalleSolicitudDesarrollador = () => {
   const cargarSolicitud = async () => {
     try {
       setLoading(true);
-      setError(null);
       
       const response = await desarrolladorService.obtenerSolicitudEspecifica(id);
       setSolicitud(response.data);
       
     } catch (error) {
       console.error('Error cargando solicitud:', error);
-      setError('Error al cargar la solicitud');
     } finally {
       setLoading(false);
     }
@@ -111,7 +109,6 @@ const DetalleSolicitudDesarrollador = () => {
       await cargarSolicitud();
     } catch (error) {
       console.error('Error agregando comentario:', error);
-      setError('Error al agregar comentario');
     } finally {
       setProcesando(false);
     }
@@ -476,7 +473,6 @@ const DetalleSolicitudDesarrollador = () => {
                           await cargarSolicitud();
                         } catch (error) {
                           console.error('Error enviando a testing:', error);
-                          setError('Error al enviar a testing: ' + error.message);
                         } finally {
                           setProcesando(false);
                         }
@@ -752,23 +748,71 @@ const DetalleSolicitudDesarrollador = () => {
         </Box>
       </Box>
 
-      {/* Snackbar para errores */}
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-        message={error}
-        action={
-          <IconButton
-            size="small"
-            aria-label="close"
-            color="inherit"
-            onClick={() => setError(null)}
+      {/* Acciones */}
+      <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        {/* Botón de Enviar a Revisión cuando está en desarrollo y tiene PR */}
+        {solicitud.estado_sol === 'EN_DESARROLLO' && solicitud.github_pr_number && (
+          <Button
+            onClick={async () => {
+              try {
+                setProcesando(true);
+                await desarrolladorService.actualizarEstadoSolicitud(solicitud.id_sol, 'EN_TESTING', {
+                  comentarios_internos_sol: `Desarrollador envió la solicitud a revisión el ${new Date().toLocaleString()}`
+                });
+                await cargarSolicitud();
+                setSnackbar({
+                  open: true,
+                  message: 'Solicitud enviada a revisión exitosamente',
+                  severity: 'success'
+                });
+              } catch (error) {
+                console.error('Error al enviar a revisión:', error);
+                setSnackbar({
+                  open: true,
+                  message: 'Error al enviar a revisión: ' + error.message,
+                  severity: 'error'
+                });
+              } finally {
+                setProcesando(false);
+              }
+            }}
+            variant="contained"
+            startIcon={<Send />}
+            disabled={procesando}
+            sx={{ 
+              bgcolor: '#0891b2',
+              '&:hover': { bgcolor: '#0e7490' },
+              minWidth: 150
+            }}
           >
-            <Close fontSize="small" />
-          </IconButton>
-        }
-      />
+            Enviar a Revisión
+          </Button>
+        )}
+
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/developer/solicitudes')}
+          sx={{ 
+            color: '#6d1313', 
+            borderColor: '#b91c1c',
+            '&:hover': { borderColor: '#991b1b', color: '#991b1b' }
+          }}
+        >
+          Volver
+        </Button>
+      </Box>
+
+      {/* Snackbar para mensajes */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
