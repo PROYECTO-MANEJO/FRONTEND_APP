@@ -40,11 +40,47 @@ class GitHubService {
   // Obtener información de GitHub para una solicitud
   async obtenerInfoGitHub(solicitudId) {
     try {
-      const response = await api.get(`/github/dev/solicitud/${solicitudId}`);
-      return response.data;
+        console.log('🚀 Iniciando obtenerInfoGitHub para solicitud:', solicitudId);
+        
+        // Log antes de hacer la petición
+        console.log('📡 Realizando petición a:', `/github/dev/solicitud/${solicitudId}`);
+        
+        const response = await api.get(`/github/dev/solicitud/${solicitudId}`);
+        
+        // Log de la respuesta completa
+        console.log('📥 Respuesta completa:', {
+            status: response.status,
+            headers: response.headers,
+            data: response.data
+        });
+
+        // Log específico de los datos de GitHub
+        if (response.data.success) {
+            console.log('✅ Datos de GitHub obtenidos:', {
+                branch: response.data.data?.github_branch_name,
+                prNumber: response.data.data?.github_pr_number,
+                prUrl: response.data.data?.github_pr_url,
+                lastSync: response.data.data?.github_last_sync
+            });
+        } else {
+            console.log('⚠️ Respuesta sin éxito:', response.data);
+        }
+
+        return response.data;
     } catch (error) {
-      console.error('Error obteniendo información de GitHub:', error);
-      throw error;
+        // Log detallado del error
+        console.error('❌ Error en obtenerInfoGitHub:', {
+            mensaje: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            responseData: error.response?.data,
+            config: {
+                url: error.config?.url,
+                method: error.config?.method,
+                headers: error.config?.headers
+            }
+        });
+        throw error;
     }
   }
 
@@ -258,8 +294,6 @@ class GitHubService {
       throw error;
     }
   }
-
-
 
   // Obtener tipos GitFlow disponibles
   async obtenerTiposGitFlow() {

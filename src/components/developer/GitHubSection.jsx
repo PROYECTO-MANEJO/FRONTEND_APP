@@ -68,7 +68,12 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
   const [showCrearPR, setShowCrearPR] = useState(false);
 
   useEffect(() => {
-    cargarDatosIniciales();
+    console.log('🎯 GitHubSection useEffect - ID Solicitud:', solicitud?.id_sol);
+    if (solicitud?.id_sol) {
+      cargarDatosIniciales();
+    } else {
+      console.log('⚠️ No hay ID de solicitud disponible');
+    }
   }, [solicitud?.id_sol]);
 
   const cargarDatosIniciales = async () => {
@@ -192,22 +197,29 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
 
   const cargarInfoGitHub = async () => {
     try {
+      console.log('🔄 Iniciando carga de info GitHub para solicitud:', solicitud?.id_sol);
+      
       const response = await githubService.obtenerInfoGitHub(solicitud.id_sol);
+      console.log('📦 Respuesta recibida de githubService:', response);
+      
       if (response.success) {
+        console.log('✨ Actualizando estado con datos:', response.data);
         setInfoGitHub(response.data);
         
         // Actualizar formulario de PR con datos existentes
         if (response.data.github_branch_name) {
+          console.log('🌿 Branch encontrado:', response.data.github_branch_name);
           setFormCrearPR(prev => ({
             ...prev,
             branchName: response.data.github_branch_name
           }));
         }
+      } else {
+        console.log('⚠️ Respuesta sin éxito:', response);
       }
     } catch (error) {
-      console.warn('Error cargando info GitHub:', error);
-      // No cargar info de GitHub si no está configurado, pero no romper el componente
-      setInfoGitHub(null);
+      console.error('❌ Error cargando info GitHub:', error);
+      // No lanzar el error, manejarlo silenciosamente
     }
   };
 
@@ -400,9 +412,16 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
         {/* Estado actual compacto */}
         {infoGitHub && (
           <Box sx={{ mb: 2 }}>
+            {console.log('🔍 Datos completos de GitHub:', infoGitHub)}
+            {console.log('🌿 Branch name:', infoGitHub.github_branch_name)}
             {infoGitHub.github_branch_name && (
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Branch:</Typography>
+                {console.log('🌿 Renderizando branch:', {
+                  nombre: infoGitHub.github_branch_name,
+                  repositorio: infoGitHub.github_repository,
+                  repoUrl: infoGitHub.github_repo_url
+                })}
                 <Chip 
                   label={infoGitHub.github_branch_name} 
                   color="primary" 
@@ -413,9 +432,16 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
               </Box>
             )}
             
+            {console.log('🔄 PR number:', infoGitHub.github_pr_number)}
             {infoGitHub.github_pr_number && (
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Pull Request:</Typography>
+                {console.log('🔄 Renderizando PR:', {
+                  número: infoGitHub.github_pr_number,
+                  url: infoGitHub.github_pr_url,
+                  estado: infoGitHub.github_pr_state,
+                  fusionadoEn: infoGitHub.github_merged_at
+                })}
                 <Button
                   variant="outlined"
                   size="small"

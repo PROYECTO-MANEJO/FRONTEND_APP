@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -33,6 +34,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  FormHelperText
 } from '@mui/material';
 import {
   Visibility,
@@ -46,9 +48,11 @@ import {
   RequestPage,
   Settings,
   Clear,
-  GitHub,
+  AdminPanelSettings,
   Done,
-  CallMerge
+  CallMerge,
+  GitHub,
+  Warning
 } from '@mui/icons-material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -56,13 +60,13 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import solicitudesAdminService from '../../services/solicitudesAdminService';
 import solicitudesService from '../../services/solicitudesService';
-import githubService from '../../services/githubService';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import { es } from 'date-fns/locale';
 
 const AdminSolicitudes = () => {
   const { getMainContentStyle } = useSidebarLayout();
+  const navigate = useNavigate();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -73,9 +77,14 @@ const AdminSolicitudes = () => {
   const [dialogAccion, setDialogAccion] = useState(false);
   const [dialogRevisionPR, setDialogRevisionPR] = useState(false);
   const [dialogRechazoPR, setDialogRechazoPR] = useState(false);
-  const [prInfo, setPrInfo] = useState(null);
   const [loadingPR, setLoadingPR] = useState(false);
-  const [desarrolladores, setDesarrolladores] = useState([]);
+  const [prInfo, setPrInfo] = useState(null);
+  const [desarrolladores, setDesarrolladores] = useState({
+    success: false,
+    data: []
+  });
+  const [loadingDesarrolladores, setLoadingDesarrolladores] = useState(false);
+  const [errorDesarrolladores, setErrorDesarrolladores] = useState(null);
   const [estadisticas, setEstadisticas] = useState(null);
   
   // Estados para el formulario de rechazo de PR
@@ -128,20 +137,89 @@ const AdminSolicitudes = () => {
   const prioridades = solicitudesService.obtenerPrioridades();
 
   useEffect(() => {
-    cargarSolicitudes();
-    cargarEstadisticas();
+    const cargarDatos = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await solicitudesAdminService.obtenerTodasLasSolicitudes(filtros);
+        setSolicitudes(response.data.solicitudes || []);
+        setPagination(response.data.pagination || {});
+      } catch (err) {
+        console.error('Error al cargar solicitudes:', err);
+        setError('Error al cargar solicitudes: ' + err.message);
+        setSolicitudes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const cargarStats = async () => {
+      try {
+        const response = await solicitudesAdminService.obtenerEstadisticasAdmin();
+        setEstadisticas(response.data);
+      } catch (err) {
+        console.error('Error al cargar estadísticas:', err);
+      }
+    };
+
+    cargarDatos();
+    cargarStats();
   }, [filtros]);
 
+  // Efecto para cargar desarrolladores al montar el componente
   useEffect(() => {
-    cargarDesarrolladores();
-  }, []);
+    const inicializarDesarrolladores = async () => {
+      try {
+        console.log('🚀 Iniciando carga inicial de desarrolladores...');
+        await cargarDesarrolladores();
+      } catch (error) {
+        console.error('❌ Error en carga inicial de desarrolladores:', error);
+      }
+    };
+    
+    inicializarDesarrolladores();
+  }, []); // Solo se ejecuta al montar el componente
+
+  // Effect para debuggear cambios en desarrolladores
+  useEffect(() => {
+    console.log('🔄 useEffect - Desarrolladores cambiaron:', {
+      cantidad: desarrolladores.data.length,
+      loading: loadingDesarrolladores,
+      error: errorDesarrolladores,
+      desarrolladores: desarrolladores.data.map(d => ({ id: d.id_usu, nombre: d.nombre_completo }))
+    });
+  }, [desarrolladores, loadingDesarrolladores, errorDesarrolladores]);
 
   const cargarDesarrolladores = async () => {
     try {
+      setLoadingDesarrolladores(true);
+      setErrorDesarrolladores(null);
+      console.log('🔄 Iniciando carga de desarrolladores...');
+      
       const response = await solicitudesAdminService.obtenerDesarrolladores();
-      setDesarrolladores(response.data || []);
-    } catch (err) {
-      console.error('Error al cargar desarrolladores:', err);
+      console.log('📥 DATOS EXACTOS RECIBIDOS EN EL COMPONENTE:', response);
+      
+      // Validar la estructura de la respuesta
+      if (!response || typeof response !== 'object') {
+        throw new Error('Respuesta inválida del servicio');
+      }
+
+      // Asegurarnos de que tenemos la estructura correcta
+      const desarrolladoresData = {
+        success: response.success || false,
+        data: Array.isArray(response.data) ? response.data : []
+      };
+
+      console.log('🔄 Actualizando estado con desarrolladores:', desarrolladoresData);
+      setDesarrolladores(desarrolladoresData);
+      console.log('🔄 Desarrolladores actualizados en el estadoaaaaaaaa:', desarrolladores);
+      setErrorDesarrolladores(null);
+    } catch (error) {
+      console.error('❌ Error al cargar desarrolladores:', error);
+      setErrorDesarrolladores(error.message || 'Error al cargar desarrolladores');
+      setDesarrolladores({ success: false, data: [] });
+    } finally {
+      setLoadingDesarrolladores(false);
     }
   };
 
@@ -204,34 +282,59 @@ const AdminSolicitudes = () => {
       // Recargar la tabla para reflejar el cambio de estado automático a EN_REVISION
       await cargarSolicitudes();
       await cargarEstadisticas();
-    } catch (err) {
+    } catch (err) {abrirGestion
       setError('Error al cargar detalles: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const abrirGestion = (solicitud) => {
-    setSelectedSolicitud(solicitud);
-    setGestionForm({
-      impacto_negocio_sol: solicitud.impacto_negocio_sol || '',
-      impacto_tecnico_sol: solicitud.impacto_tecnico_sol || '',
-      riesgo_cambio_sol: solicitud.riesgo_cambio_sol || '',
-      categoria_cambio_sol: solicitud.categoria_cambio_sol || '',
-      comentarios_admin_sol: solicitud.comentarios_admin_sol || '',
-      fecha_planificada_inicio_sol: solicitud.fecha_planificada_inicio_sol ? new Date(solicitud.fecha_planificada_inicio_sol) : null,
-      fecha_planificada_fin_sol: solicitud.fecha_planificada_fin_sol ? new Date(solicitud.fecha_planificada_fin_sol) : null,
-      hora_planificada_inicio_sol: solicitud.hora_planificada_inicio_sol || '',
-      hora_planificada_fin_sol: solicitud.hora_planificada_fin_sol || '',
-      tiempo_estimado_horas_sol: solicitud.tiempo_estimado_horas_sol || '',
-      id_desarrollador_asignado: solicitud.id_desarrollador_asignado || '',
-      // Cargar planes técnicos existentes
-      plan_implementacion_sol: solicitud.plan_implementacion_sol || '',
-      plan_rollout_sol: solicitud.plan_rollout_sol || '',
-      plan_backout_sol: solicitud.plan_backout_sol || '',
-      plan_testing_sol: solicitud.plan_testing_sol || ''
-    });
-    setDialogGestion(true);
+  const abrirGestion = async (solicitud) => {
+    try {
+      setSelectedSolicitud(solicitud);
+      console.log('🔄 Desarrolladores al abrir gestión:', desarrolladores);
+
+      // Siempre recargar desarrolladores para asegurar datos frescos
+      console.log('🔄 Cargando desarrolladores al abrir gestión...');
+      await cargarDesarrolladores();
+      
+      // Validar que el desarrollador asignado existe en la lista actual
+      let desarrolladorAsignado = solicitud.id_desarrollador_asignado || '';
+      
+      // Si hay un desarrollador asignado, verificar que existe en la lista actual
+      if (desarrolladorAsignado && desarrolladores && desarrolladores.data && desarrolladores.data.length > 0) {
+        const existeDesarrollador = desarrolladores.data.some(dev => dev.id_usu === desarrolladorAsignado);
+        if (!existeDesarrollador) {
+          console.warn(`⚠️ Desarrollador asignado ${desarrolladorAsignado} no existe en la lista actual. Se limpiará la asignación.`);
+          desarrolladorAsignado = ''; // Limpiar si no existe
+        }
+      }
+      
+      setGestionForm({
+        impacto_negocio_sol: solicitud.impacto_negocio_sol || '',
+        impacto_tecnico_sol: solicitud.impacto_tecnico_sol || '',
+        riesgo_cambio_sol: solicitud.riesgo_cambio_sol || '',
+        categoria_cambio_sol: solicitud.categoria_cambio_sol || '',
+        comentarios_admin_sol: solicitud.comentarios_admin_sol || '',
+        fecha_planificada_inicio_sol: solicitud.fecha_planificada_inicio_sol ? new Date(solicitud.fecha_planificada_inicio_sol) : null,
+        fecha_planificada_fin_sol: solicitud.fecha_planificada_fin_sol ? new Date(solicitud.fecha_planificada_fin_sol) : null,
+        hora_planificada_inicio_sol: solicitud.hora_planificada_inicio_sol || '',
+        hora_planificada_fin_sol: solicitud.hora_planificada_fin_sol || '',
+        tiempo_estimado_horas_sol: solicitud.tiempo_estimado_horas_sol || '',
+        id_desarrollador_asignado: desarrolladorAsignado,
+        plan_implementacion_sol: solicitud.plan_implementacion_sol || '',
+        plan_rollout_sol: solicitud.plan_rollout_sol || '',
+        plan_backout_sol: solicitud.plan_backout_sol || '',
+        plan_testing_sol: solicitud.plan_testing_sol || ''
+      });
+      
+      console.log('� Formulario configurado, abriendo diálogo...'); 
+      setDialogGestion(true);
+      
+    } catch (err) {
+      console.error('Error al abrir gestión:', err);
+      setError('Error al cargar desarrolladores: ' + err.message);
+    }
   };
 
   const abrirAccion = (solicitud, accion) => {
@@ -245,57 +348,16 @@ const AdminSolicitudes = () => {
   };
 
   const abrirRevisionPR = async (solicitud) => {
-    setSelectedSolicitud(solicitud);
-    setDialogRevisionPR(true);
-    setLoadingPR(true);
-    setPrInfo(null);
-    
     try {
-      // Obtener información real del PR desde la API
-      const response = await githubService.obtenerInformacionCompletaPR(
-        solicitud.github_pr_number,
-        solicitud.github_repo_url
-      );
+      setSelectedSolicitud(solicitud);
+      setDialogRevisionPR(true);
+      setLoadingPR(true);
       
-      if (response.success) {
-        // Formatear los datos para el frontend
-        const formattedPrInfo = {
-          ...response.data,
-          // Formatear commits con fechas legibles
-          commits: githubService.formatearCommitsPR(response.data.commits || []),
-          // Formatear archivos si están disponibles
-          files: githubService.formatearArchivosPR(response.data.files || [])
-        };
-        
-        setPrInfo(formattedPrInfo);
-      } else {
-        throw new Error(response.message || 'Error obteniendo información del PR');
-      }
-      
-    } catch (error) {
-      console.error('Error al cargar información del PR:', error);
-      setError('Error al cargar información del Pull Request: ' + error.message);
-      
-      // Mostrar información básica si falla la API
-      const fallbackInfo = {
-        number: solicitud.github_pr_number,
-        title: `PR #${solicitud.github_pr_number} - ${solicitud.titulo_sol}`,
-        state: 'unknown',
-        author: solicitud.desarrollador_nombre || 'Desarrollador',
-        created_at: new Date().toISOString(),
-        url: solicitud.github_pr_url,
-        stats: {
-          commits_count: 0,
-          files_changed: 0,
-          additions: 0,
-          deletions: 0
-        },
-        commits: [],
-        files: [],
-        error: true
-      };
-      
-      setPrInfo(fallbackInfo);
+      const response = await solicitudesAdminService.obtenerInformacionPR(solicitud.id_sol);
+      setPrInfo(response.data);
+    } catch (err) {
+      setError('Error al cargar información del PR: ' + err.message);
+      setPrInfo(null);
     } finally {
       setLoadingPR(false);
     }
@@ -385,10 +447,8 @@ const AdminSolicitudes = () => {
         try {
           console.log(`Iniciando merge automático del PR #${selectedSolicitud.github_pr_number}`);
           
-          await githubService.mergePullRequestAutomatico(
-            selectedSolicitud.github_pr_number,
-            'frontend', // Por defecto, puede ser configurado después
-            'merge'
+          await solicitudesAdminService.mergePullRequestAutomatico(
+            selectedSolicitud.github_pr_number
           );
           
           console.log(`✅ PR #${selectedSolicitud.github_pr_number} mergeado exitosamente`);
@@ -405,16 +465,11 @@ const AdminSolicitudes = () => {
       // Paso 2: Actualizar estado de la solicitud a EN_DESPLIEGUE
       await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
         estado_sol: 'EN_DESPLIEGUE',
-        comentarios_admin_sol: selectedSolicitud.github_pr_number 
-          ? `PR #${selectedSolicitud.github_pr_number} aprobado y mergeado automáticamente por el MASTER. La solicitud pasa a despliegue en producción.`
-          : 'PR aprobado por el MASTER. La solicitud pasa a despliegue en producción.',
-        comentarios_internos_sol: `MASTER aprobó PR ${selectedSolicitud.github_pr_number ? '#' + selectedSolicitud.github_pr_number : ''} el ${new Date().toLocaleString()}`
+        comentarios_admin_sol: 'Solicitud aprobada por el MASTER.',
+          comentarios_internos_sol: `MASTER aprobó la solicitud el ${new Date().toLocaleString()}`
       });
       
-      setSuccess(selectedSolicitud.github_pr_number 
-        ? `Pull Request #${selectedSolicitud.github_pr_number} aprobado y mergeado automáticamente. La solicitud ha pasado a despliegue.`
-        : 'Pull Request aprobado. La solicitud ha pasado a despliegue.'
-      );
+      setSuccess('Solicitud aprobada exitosamente.');
       
       setDialogRevisionPR(false);
       await cargarSolicitudes();
@@ -461,9 +516,7 @@ const AdminSolicitudes = () => {
       await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
         estado_sol: 'EN_DESARROLLO',
         comentarios_admin_sol: comentarioUsuario || 'Pull Request rechazado. Se requieren cambios antes de continuar.',
-        comentarios_internos_sol: comentarioDesarrollador 
-          ? `MASTER rechazó PR #${selectedSolicitud.github_pr_number} el ${new Date().toLocaleString()}. Comentario para desarrollador: ${comentarioDesarrollador}`
-          : `MASTER rechazó PR #${selectedSolicitud.github_pr_number} el ${new Date().toLocaleString()}`
+        comentarios_internos_sol: `MASTER rechazó la solicitud el ${new Date().toLocaleString()}. ${comentarioDesarrollador ? `Comentario para desarrollador: ${comentarioDesarrollador}` : ''}`
       });
       
       setSuccess('Pull Request rechazado. La solicitud ha regresado a desarrollo.');
@@ -748,6 +801,25 @@ const AdminSolicitudes = () => {
                           <Visibility />
                         </IconButton>
                       </Tooltip>
+
+                      {/* Botón MASTER - Solo para solicitudes que necesitan revisión MASTER */}
+                      {['PENDIENTE', 'EN_REVISION', 'APROBADA'].includes(solicitud.estado_sol) && (
+                        <Tooltip title="Revisión MASTER">
+                          <IconButton
+                            size="small"
+                            onClick={() => navigate(`/admin/solicitudes/master/${solicitud.id_sol}`)}
+                            sx={{ 
+                              color: '#fff',
+                              bgcolor: '#6d1313',
+                              '&:hover': {
+                                bgcolor: '#991b1b'
+                              }
+                            }}
+                          >
+                            <AdminPanelSettings />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                       
                       {/* Botón específico para revisión de PR cuando está EN_TESTING */}
                       {solicitud.estado_sol === 'EN_TESTING' && solicitud.github_pr_number && (
@@ -1591,9 +1663,7 @@ const AdminSolicitudes = () => {
                     try {
                       setLoading(true);
                       await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
-                        github_pr_number: 123,
-                        github_pr_url: 'https://github.com/PROYECTO-MANEJO/FRONTEND_APP/pull/123',
-                        github_repo_url: 'https://github.com/PROYECTO-MANEJO/FRONTEND_APP',
+                        
                         comentarios_internos_sol: 'PR ficticio #123 agregado para pruebas de revisión'
                       });
                       // Recargar el modal
@@ -1770,10 +1840,10 @@ const AdminSolicitudes = () => {
                     {solicitudesAdminService.obtenerOpcionesImpactosRiesgos().map((opcion) => (
                       <MenuItem key={opcion.value} value={opcion.value}>
                         {opcion.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
                 {/* Riesgo del Cambio */}
                 <FormControl fullWidth>
@@ -1881,6 +1951,39 @@ const AdminSolicitudes = () => {
               </Box>
 
               <Typography variant="h6" gutterBottom sx={{ color: '#6d1313', fontWeight: 600, mt: 4 }}>
+                Asignación de Desarrollador
+              </Typography>
+
+              <Box sx={{ mb: 3 }}>
+                <FormControl fullWidth error={errorDesarrolladores !== null}>
+                  <InputLabel>Desarrollador Asignado</InputLabel>
+                  <Select
+                    value={gestionForm.id_desarrollador_asignado}
+                    label="Desarrollador Asignado"
+                    onChange={(e) => setGestionForm({...gestionForm, id_desarrollador_asignado: e.target.value})}
+                    disabled={loadingDesarrolladores}
+                  >
+                    {desarrolladores.data.map((dev) => (
+                      <MenuItem key={dev.id_usu} value={dev.id_usu}>
+                        {dev.nombre_completo}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errorDesarrolladores && (
+                    <FormHelperText error>{errorDesarrolladores}</FormHelperText>
+                  )}
+                  {loadingDesarrolladores && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                      <CircularProgress size={16} />
+                      <Typography variant="caption" color="text.secondary">
+                        Cargando desarrolladores...
+                      </Typography>
+                    </Box>
+                  )}
+                </FormControl>
+              </Box>
+
+              <Typography variant="h6" gutterBottom sx={{ color: '#6d1313', fontWeight: 600, mt: 4 }}>
                 Planes Técnicos
               </Typography>
               
@@ -1935,27 +2038,10 @@ const AdminSolicitudes = () => {
               </Box>
 
               <Typography variant="h6" gutterBottom sx={{ color: '#6d1313', fontWeight: 600, mt: 4 }}>
-                Asignación y Comentarios
+                Comentarios
               </Typography>
               
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {/* Desarrollador Asignado */}
-                <FormControl fullWidth>
-                  <InputLabel>Desarrollador Asignado</InputLabel>
-                  <Select
-                    value={gestionForm.id_desarrollador_asignado}
-                    label="Desarrollador Asignado"
-                    onChange={(e) => setGestionForm({...gestionForm, id_desarrollador_asignado: e.target.value})}
-                  >
-                    <MenuItem value="">Sin asignar</MenuItem>
-                    {desarrolladores.map((dev) => (
-                      <MenuItem key={dev.id_usu} value={dev.id_usu}>
-                        {dev.nombre_completo} ({dev.email})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
                 {/* Comentarios */}
               <TextField
                 fullWidth
@@ -2087,7 +2173,7 @@ const AdminSolicitudes = () => {
               {prInfo.error && (
                 <Alert severity="warning" sx={{ mb: 3 }}>
                   <Typography variant="body2">
-                    ⚠️ No se pudo obtener información completa del Pull Request desde GitHub. 
+                     
                     Se muestra información básica disponible.
                   </Typography>
                 </Alert>

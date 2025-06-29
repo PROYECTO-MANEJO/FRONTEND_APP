@@ -100,14 +100,6 @@ const DetalleSolicitudDesarrollador = () => {
     }
   };
 
-  const handleVerGitHub = () => {
-    if (solicitud.github_repo_url) {
-      window.open(solicitud.github_repo_url, '_blank');
-    } else {
-      alert('No hay repositorio asociado a esta solicitud aún.');
-    }
-  };
-
   const handleAgregarComentario = async () => {
     if (!nuevoComentario.trim()) return;
 
@@ -751,83 +743,10 @@ const DetalleSolicitudDesarrollador = () => {
           {/* Sección de GitHub */}
           <Card>
             <CardContent>
-              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <GitHub />
-                Gestión de GitHub
-              </Typography>
-              
-              <Stack spacing={2}>
-                {/* Botones principales */}
-                <Stack direction="row" spacing={2}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<GitHub />}
-                    onClick={handleVerGitHub}
-                    disabled={procesando || !solicitud.github_repo_url}
-            fullWidth
-                  >
-                    Ver en GitHub
-          </Button>
-          <Button 
-                    variant="outlined"
-                    startIcon={<Key />}
-                    onClick={() => {/* Validar Token */}}
-                    disabled={procesando}
-                    fullWidth
-                  >
-                    Validar Token
-          </Button>
-                </Stack>
-
-                {/* Botones de acción */}
-                <Button
-                  variant="outlined"
-                  startIcon={<Edit />}
-                  onClick={() => {/* Crear Branch */}}
-                  disabled={procesando}
-                  fullWidth
-                >
-                  Crear Branch
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="success"
-                  startIcon={<GitHub />}
-                  onClick={() => {/* Crear PR */}}
-                  disabled={procesando}
-                  fullWidth
-                  sx={{ borderColor: '#2da44e', color: '#2da44e', '&:hover': { borderColor: '#2c974b', bgcolor: 'rgba(45, 164, 78, 0.08)' } }}
-                >
-                  Crear PR
-                </Button>
-
-                {/* Información de Branch y PR */}
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Branch:
-                  </Typography>
-                  <Chip 
-                    label="feature/c3374_solicitud_1"
-                    size="small"
-                    sx={{ mt: 0.5, bgcolor: '#fff1f2', color: '#cf222e', borderColor: '#ff818a' }}
-                  />
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Pull Request:
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<GitHub />}
-                    onClick={handleVerGitHub}
-                    sx={{ ml: 1 }}
-                  >
-                    #40
-                  </Button>
-                </Box>
-              </Stack>
+              <GitHubSection 
+                solicitud={solicitud} 
+                onSolicitudUpdate={cargarSolicitud}
+              />
             </CardContent>
           </Card>
         </Box>
