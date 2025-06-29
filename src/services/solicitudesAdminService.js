@@ -248,6 +248,45 @@ export const rechazarPR = async (idSolicitud, { comentarios }) => {
   return response;
 };
 
+// Obtener información de múltiples PRs de una solicitud
+export const obtenerMultiplesPRs = async (idSolicitud) => {
+  try {
+    const response = await api.get(`/github/solicitud/${idSolicitud}/ramas`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener múltiples PRs:', error);
+    throw error;
+  }
+};
+
+// Aprobar PR específico por repositorio
+export const aprobarPRPorRepositorio = async (idSolicitud, repositoryType, comentarios = '') => {
+  try {
+    const response = await api.post(`/github/solicitud/${idSolicitud}/aprobar-pr-repo`, {
+      repository_type: repositoryType,
+      comentarios
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error al aprobar PR ${repositoryType}:`, error);
+    throw error;
+  }
+};
+
+// Rechazar PR específico por repositorio
+export const rechazarPRPorRepositorio = async (idSolicitud, repositoryType, comentarios = '') => {
+  try {
+    const response = await api.post(`/github/solicitud/${idSolicitud}/rechazar-pr-repo`, {
+      repository_type: repositoryType,
+      comentarios
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error al rechazar PR ${repositoryType}:`, error);
+    throw error;
+  }
+};
+
 const solicitudesAdminService = {
   obtenerTodasLasSolicitudes,
   obtenerSolicitudParaAdmin,
@@ -265,7 +304,10 @@ const solicitudesAdminService = {
   getPrioridadColor,
   obtenerInformacionPR,
   aprobarPRMaster,
-  rechazarPR
+  rechazarPR,
+  obtenerMultiplesPRs,
+  aprobarPRPorRepositorio,
+  rechazarPRPorRepositorio
 };
 
 export default solicitudesAdminService; 
