@@ -278,6 +278,23 @@ const desarrolladorService = {
         `Faltan completar: ${faltantes.map(f => f.replace('_sol', '').replace('plan_', '')).join(', ')}` : 
         'Todos los planes están completos'
     };
+  },
+
+  // Métodos para gestión de ramas de GitHub
+  obtenerRamasSolicitud: async (solicitudId) => {
+    return await api.get(`/github/solicitud/${solicitudId}/ramas`);
+  },
+
+  crearRamaSolicitud: async (solicitudId, tipo) => {
+    return await api.post(`/github/dev/solicitud/${solicitudId}/crear-rama`, {
+      repository_type: tipo
+    });
+  },
+
+  crearPRSolicitud: async (solicitudId, tipo) => {
+    return await api.post(`/github/dev/solicitud/${solicitudId}/crear-pr`, {
+      repository_type: tipo
+    });
   }
 };
 

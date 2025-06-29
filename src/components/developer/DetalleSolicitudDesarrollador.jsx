@@ -62,7 +62,7 @@ import {
   Key
 } from '@mui/icons-material';
 import desarrolladorService from '../../services/desarrolladorService';
-import GitHubSection from './GitHubSection';
+import RamasGitHub from '../shared/RamasGitHub';
 import Snackbar from '@mui/material/Snackbar';
 
 const DetalleSolicitudDesarrollador = () => {
@@ -737,13 +737,11 @@ const DetalleSolicitudDesarrollador = () => {
           </Card>
 
           {/* Sección de GitHub */}
-          <Card>
-            <CardContent>
-              <GitHubSection 
-                solicitud={solicitud} 
-                onSolicitudUpdate={cargarSolicitud}
-              />
-            </CardContent>
+          <Card sx={{ mt: 3 }}>
+            <RamasGitHub 
+              solicitudId={id} 
+              onUpdate={cargarSolicitud}
+            />
           </Card>
         </Box>
       </Box>
