@@ -51,6 +51,15 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
   const [validatingToken, setValidatingToken] = useState(false);
   const [githubConfigError, setGithubConfigError] = useState(false);
   
+  // Estados para controlar la disponibilidad de los botones
+  const [githubStatus, setGithubStatus] = useState({
+    hasBranch: false,
+    hasPR: false,
+    prMerged: false,
+    currentBranch: null,
+    currentPR: null
+  });
+
   // Estados para formularios
   const [formCrearBranch, setFormCrearBranch] = useState({
     branchType: 'feature',
@@ -67,6 +76,27 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
   const [showCrearBranch, setShowCrearBranch] = useState(false);
   const [showCrearPR, setShowCrearPR] = useState(false);
 
+  // Función para verificar si se puede crear un branch
+  const canCreateBranch = () => {
+    return !githubStatus.hasBranch && !githubStatus.hasPR;
+  };
+
+  // Función para verificar si se puede crear un PR
+  const canCreatePR = () => {
+    return githubStatus.hasBranch && !githubStatus.hasPR;
+  };
+
+  // Función para actualizar el estado de GitHub
+  const updateGitHubStatus = (info) => {
+    setGithubStatus({
+      hasBranch: !!info?.github_branch_name,
+      hasPR: !!info?.github_pr_number,
+      prMerged: !!info?.github_merged_at,
+      currentBranch: info?.github_branch_name || null,
+      currentPR: info?.github_pr_number || null
+    });
+  };
+
   useEffect(() => {
     console.log('🎯 GitHubSection useEffect - ID Solicitud:', solicitud?.id_sol);
     if (solicitud?.id_sol) {
@@ -75,6 +105,12 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
       console.log('⚠️ No hay ID de solicitud disponible');
     }
   }, [solicitud?.id_sol]);
+
+  useEffect(() => {
+    if (solicitud) {
+      updateGitHubStatus(solicitud);
+    }
+  }, [solicitud]);
 
   const cargarDatosIniciales = async () => {
     try {
@@ -235,7 +271,6 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
   const handleCrearBranch = async () => {
     try {
       setLoading(true);
-      
       const response = await githubService.crearBranchGitFlow(
         solicitud.id_sol,
         formCrearBranch.branchType,
@@ -244,14 +279,20 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
       );
 
       if (response.success) {
-        alert(`Branch ${response.data.branch.alreadyExists ? 'ya existía' : 'creado exitosamente'}: ${response.data.branch.branchName}`);
-        await cargarInfoGitHub();
+        // Actualizar el estado local
+        updateGitHubStatus({
+          ...solicitud,
+          github_branch_name: response.data.branchName
+        });
+        
+        // Cerrar el formulario y actualizar la solicitud
         setShowCrearBranch(false);
-        onSolicitudUpdate?.(response.data.solicitud);
+        if (onSolicitudUpdate) {
+          await onSolicitudUpdate();
+        }
       }
     } catch (error) {
       console.error('Error creando branch:', error);
-      alert('Error creando branch: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -260,8 +301,7 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
   const handleCrearPR = async () => {
     try {
       setLoading(true);
-      
-      const response = await githubService.crearPullRequestDesarrollador(
+      const response = await githubService.crearPullRequest(
         solicitud.id_sol,
         formCrearPR.branchName,
         formCrearPR.repoType,
@@ -269,20 +309,25 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
       );
 
       if (response.success) {
-        alert(`Pull Request creado exitosamente: #${response.data.pullRequest.number}\n\nLa solicitud cambió automáticamente a estado EN_TESTING para revisión del MASTER.`);
-        await cargarInfoGitHub();
+        // Actualizar el estado local
+        updateGitHubStatus({
+          ...solicitud,
+          github_pr_number: response.data.pullRequest.number,
+          github_pr_url: response.data.pullRequest.url
+        });
+        
+        // Cerrar el formulario y actualizar la solicitud
         setShowCrearPR(false);
-        onSolicitudUpdate?.(response.data.solicitud);
+        if (onSolicitudUpdate) {
+          await onSolicitudUpdate();
+        }
       }
     } catch (error) {
       console.error('Error creando PR:', error);
-      alert('Error creando Pull Request: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const validarTokenPersonal = async () => {
     if (!user?.github_token) {
@@ -312,8 +357,6 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
     }
   };
 
-
-
   if (loading && !infoGitHub) {
     return (
       <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -329,280 +372,204 @@ const GitHubSection = ({ solicitud, onSolicitudUpdate }) => {
   }
 
   return (
-    <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <GitHub />
-            Gestión de GitHub
+    <Card 
+      sx={{ 
+        height: '100%', 
+        p: 2,
+        bgcolor: 'background.paper',
+        boxShadow: 1,
+        '& .MuiPaper-root': {
+          boxShadow: 'none'
+        }
+      }}
+    >
+      <Stack spacing={2}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <GitHub sx={{ mr: 1 }} />
+          <Typography variant="h6">
+            Integración con GitHub
+          </Typography>
+        </Box>
+
+        {/* Estado actual */}
+        <Box>
+          <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+            Estado actual de la integración
           </Typography>
           
-          {solicitud.github_repo_url && (
-            <Button
-              variant="outlined"
-              startIcon={<Launch />}
-              onClick={() => window.open(solicitud.github_repo_url, '_blank')}
-              size="small"
-            >
-              Ver en GitHub
-            </Button>
-          )}
-        </Box>
-        
-        <Stack spacing={1} sx={{ mb: 2 }}>
-          <Button
-            variant="outlined"
-            color="secondary"
-            size="small"
-            fullWidth
-            startIcon={<Security />}
-            onClick={validarTokenPersonal}
-            disabled={validatingToken || !user?.github_token}
-            title={!user?.github_token ? 'Configura tu token GitHub en el perfil' : 'Validar token GitHub personal'}
-          >
-            {validatingToken ? 'Validando...' : 'Validar Token'}
-          </Button>
-          
-          <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            fullWidth
-            startIcon={<Create />}
-            onClick={() => setShowCrearBranch(!showCrearBranch)}
-            disabled={loading}
-          >
-            Crear Branch
-          </Button>
-          
-          <Button
-            variant="outlined"
-            color="success"
-            size="small"
-            fullWidth
-            startIcon={<CallMerge />}
-            onClick={() => setShowCrearPR(!showCrearPR)}
-            disabled={loading}
-          >
-            Crear PR
-          </Button>
-        </Stack>
+          <Stack spacing={1.5} sx={{ mt: 2 }}>
+            <Box display="flex" alignItems="center">
+              <Create sx={{ mr: 1, fontSize: 20, color: githubStatus.hasBranch ? 'success.main' : 'text.disabled' }} />
+              <Typography variant="body2" sx={{ minWidth: 80 }}>Branch:</Typography>
+              {githubStatus.hasBranch ? (
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    bgcolor: 'success.main',
+                    color: 'white',
+                    py: 0.5,
+                    px: 1,
+                    borderRadius: 1,
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {githubStatus.currentBranch}
+                </Typography>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No creado
+                </Typography>
+              )}
+            </Box>
 
-        {/* Información compacta */}
-        {githubConfigError && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            <Typography variant="body2">
-              GitHub no configurado - Funcionalidad limitada
-            </Typography>
-          </Alert>
-        )}
-
-        {tokenValidation && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">Token GitHub:</Typography>
-            <Chip 
-              label={tokenValidation.valid ? `${tokenValidation.user?.login || 'Válido'}` : 'Inválido'} 
-              color={tokenValidation.valid ? 'success' : 'error'}
-              size="small"
-              sx={{ mt: 0.5 }}
-            />
-          </Box>
-        )}
-
-        {/* Estado actual compacto */}
-        {infoGitHub && (
-          <Box sx={{ mb: 2 }}>
-            {console.log('🔍 Datos completos de GitHub:', infoGitHub)}
-            {console.log('🌿 Branch name:', infoGitHub.github_branch_name)}
-            {infoGitHub.github_branch_name && (
-              <Box sx={{ mb: 1 }}>
-                <Typography variant="body2" color="text.secondary">Branch:</Typography>
-                {console.log('🌿 Renderizando branch:', {
-                  nombre: infoGitHub.github_branch_name,
-                  repositorio: infoGitHub.github_repository,
-                  repoUrl: infoGitHub.github_repo_url
-                })}
+            <Box display="flex" alignItems="center">
+              <CallMerge sx={{ mr: 1, fontSize: 20, color: githubStatus.hasPR ? 'success.main' : 'text.disabled' }} />
+              <Typography variant="body2" sx={{ minWidth: 80 }}>Pull Request:</Typography>
+              {githubStatus.hasPR ? (
                 <Chip 
-                  label={infoGitHub.github_branch_name} 
-                  color="primary" 
                   size="small"
-                  variant="outlined"
-                  sx={{ mt: 0.5 }}
+                  label={`#${githubStatus.currentPR}`}
+                  color="success"
+                />
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No creado
+                </Typography>
+              )}
+            </Box>
+
+            {githubStatus.prMerged && (
+              <Box display="flex" alignItems="center">
+                <CheckCircle sx={{ mr: 1, fontSize: 20, color: 'success.main' }} />
+                <Typography variant="body2" sx={{ minWidth: 80 }}>Estado:</Typography>
+                <Chip 
+                  size="small"
+                  label="Integrado"
+                  color="success"
                 />
               </Box>
             )}
-            
-            {console.log('🔄 PR number:', infoGitHub.github_pr_number)}
-            {infoGitHub.github_pr_number && (
-              <Box sx={{ mb: 1 }}>
-                <Typography variant="body2" color="text.secondary">Pull Request:</Typography>
-                {console.log('🔄 Renderizando PR:', {
-                  número: infoGitHub.github_pr_number,
-                  url: infoGitHub.github_pr_url,
-                  estado: infoGitHub.github_pr_state,
-                  fusionadoEn: infoGitHub.github_merged_at
-                })}
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<Launch />}
-                  href={infoGitHub.github_pr_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ mt: 0.5 }}
-                >
-                  #{infoGitHub.github_pr_number}
-                </Button>
-              </Box>
+          </Stack>
+        </Box>
+
+        <Divider />
+
+        {/* Acciones de GitHub */}
+        <Box>
+          <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+            Acciones disponibles
+          </Typography>
+
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<Create />}
+              onClick={() => setShowCrearBranch(!showCrearBranch)}
+              disabled={!canCreateBranch()}
+              color={showCrearBranch ? "primary" : "inherit"}
+            >
+              Crear Branch
+            </Button>
+
+            {showCrearBranch && (
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Stack spacing={2}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Tipo de Branch</InputLabel>
+                    <Select
+                      value={formCrearBranch.branchType}
+                      onChange={(e) => setFormCrearBranch({ ...formCrearBranch, branchType: e.target.value })}
+                      label="Tipo de Branch"
+                    >
+                      {tiposGitFlow.map((tipo) => (
+                        <MenuItem key={tipo.type} value={tipo.type}>
+                          {tipo.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Repositorio</InputLabel>
+                    <Select
+                      value={formCrearBranch.repoType}
+                      onChange={(e) => setFormCrearBranch({ ...formCrearBranch, repoType: e.target.value })}
+                      label="Repositorio"
+                    >
+                      <MenuItem value="frontend">Frontend</MenuItem>
+                      <MenuItem value="backend">Backend</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <Button
+                    variant="contained"
+                    onClick={handleCrearBranch}
+                    disabled={loading}
+                  >
+                    {loading ? 'Creando...' : 'Crear Branch'}
+                  </Button>
+                </Stack>
+              </Paper>
             )}
-          </Box>
-        )}
 
-        {/* Formularios compactos */}
-        {showCrearBranch && (
-          <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Crear Branch</Typography>
-            <Stack spacing={1}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Tipo</InputLabel>
-                <Select
-                  value={formCrearBranch.branchType}
-                  label="Tipo"
-                  onChange={(e) => handleTipoBranchChange(e.target.value)}
-                >
-                  {tiposGitFlow.map(tipo => (
-                    <MenuItem key={tipo.type} value={tipo.type}>
-                      {tipo.type}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              <FormControl fullWidth size="small">
-                <InputLabel>Base</InputLabel>
-                <Select
-                  value={formCrearBranch.baseBranch}
-                  label="Base"
-                  onChange={(e) => setFormCrearBranch(prev => ({ ...prev, baseBranch: e.target.value }))}
-                >
-                  {branchesDisponibles[formCrearBranch.repoType]?.map(branch => (
-                    <MenuItem key={branch.name} value={branch.name}>
-                      {branch.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              <FormControl fullWidth size="small">
-                <InputLabel>Repo</InputLabel>
-                <Select
-                  value={formCrearBranch.repoType}
-                  label="Repo"
-                  onChange={(e) => setFormCrearBranch(prev => ({ ...prev, repoType: e.target.value }))}
-                >
-                  <MenuItem value="frontend">Frontend</MenuItem>
-                  <MenuItem value="backend">Backend</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <Stack direction="row" spacing={1}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setShowCrearBranch(false)}
-                  disabled={loading}
-                  fullWidth
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={handleCrearBranch}
-                  disabled={loading}
-                  fullWidth
-                >
-                  {loading ? 'Creando...' : 'Crear'}
-                </Button>
-              </Stack>
-            </Stack>
-          </Box>
-        )}
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<CallMerge />}
+              onClick={() => setShowCrearPR(!showCrearPR)}
+              disabled={!canCreatePR()}
+              color={showCrearPR ? "primary" : "inherit"}
+            >
+              Crear Pull Request
+            </Button>
 
-        {showCrearPR && (
-          <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Crear Pull Request</Typography>
-            <Stack spacing={1}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Nombre del Branch"
-                value={formCrearPR.branchName}
-                onChange={(e) => setFormCrearPR(prev => ({ ...prev, branchName: e.target.value }))}
-                placeholder="feature/12345_mi_branch"
-              />
-              
-              <FormControl fullWidth size="small">
-                <InputLabel>Base</InputLabel>
-                <Select
-                  value={formCrearPR.baseBranch}
-                  label="Base"
-                  onChange={(e) => setFormCrearPR(prev => ({ ...prev, baseBranch: e.target.value }))}
-                >
-                  {branchesDisponibles[formCrearPR.repoType]?.map(branch => (
-                    <MenuItem key={branch.name} value={branch.name}>
-                      {branch.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              <FormControl fullWidth size="small">
-                <InputLabel>Repo</InputLabel>
-                <Select
-                  value={formCrearPR.repoType}
-                  label="Repo"
-                  onChange={(e) => setFormCrearPR(prev => ({ ...prev, repoType: e.target.value }))}
-                >
-                  <MenuItem value="frontend">Frontend</MenuItem>
-                  <MenuItem value="backend">Backend</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <Stack direction="row" spacing={1}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setShowCrearPR(false)}
-                  disabled={loading}
-                  fullWidth
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="contained"
-                  size="small"
-                  color="success"
-                  onClick={handleCrearPR}
-                  disabled={loading || !formCrearPR.branchName}
-                  fullWidth
-                >
-                  {loading ? 'Creando...' : 'Crear'}
-                </Button>
-              </Stack>
-            </Stack>
-          </Box>
-        )}
+            {showCrearPR && (
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Stack spacing={2}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Repositorio</InputLabel>
+                    <Select
+                      value={formCrearPR.repoType}
+                      onChange={(e) => setFormCrearPR({ ...formCrearPR, repoType: e.target.value })}
+                      label="Repositorio"
+                    >
+                      <MenuItem value="frontend">Frontend</MenuItem>
+                      <MenuItem value="backend">Backend</MenuItem>
+                    </Select>
+                  </FormControl>
 
-        {/* Información de estado automático */}
-        {solicitud.estado_sol === 'EN_TESTING' && infoGitHub?.github_pr_number && (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            <Typography variant="body2">
-              El PR fue creado y la solicitud pasó automáticamente a revisión del MASTER.
-            </Typography>
-          </Alert>
-        )}
-      </CardContent>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Branch Base</InputLabel>
+                    <Select
+                      value={formCrearPR.baseBranch}
+                      onChange={(e) => setFormCrearPR({ ...formCrearPR, baseBranch: e.target.value })}
+                      label="Branch Base"
+                    >
+                      {branchesDisponibles[formCrearPR.repoType].map((branch) => (
+                        <MenuItem key={branch.name} value={branch.name}>
+                          {branch.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <Button
+                    variant="contained"
+                    onClick={handleCrearPR}
+                    disabled={loading}
+                  >
+                    {loading ? 'Creando...' : 'Crear Pull Request'}
+                  </Button>
+                </Stack>
+              </Paper>
+            )}
+          </Stack>
+        </Box>
+      </Stack>
     </Card>
   );
 };
