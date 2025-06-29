@@ -58,12 +58,14 @@ const Register = () => {
     apellido2: '',
     cedula: ''
   };
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (values, { setSubmitting }) => {
     setIsSubmitting(true);
     try {
       await register(values);
-      navigate('/dashboard');
+      setSuccessMessage("✅ Se te envió un correo de verificación. Revisa tu bandeja para activar la cuenta.");
+      navigate('/login');
     } catch (error) {
       console.error('Error en registro:', error);
     } finally {
@@ -152,7 +154,7 @@ const Register = () => {
           >
             Crea tu cuenta y forma parte del Sistema de Gestión de Eventos Académicos
           </Typography>
-          
+
           <Box sx={{ mt: 4 }}>
             <Typography variant="body2" sx={{ mb: 2, textAlign: 'center', opacity: 0.8 }}>
               Conecta con redes sociales
