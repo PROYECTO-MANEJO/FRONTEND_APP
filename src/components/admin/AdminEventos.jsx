@@ -44,7 +44,8 @@ import {
   Save,
   Cancel,
   Info,
-  AttachMoney
+  AttachMoney,
+  CheckCircle
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -93,7 +94,8 @@ const AdminEventos = () => {
     tipo_audiencia_eve: '',
     es_gratuito: true,
     precio: '',
-    carreras_seleccionadas: []
+    carreras_seleccionadas: [],
+    porcentaje_asistencia_aprobacion: 80
   });
 
   // Constantes
@@ -266,7 +268,8 @@ const AdminEventos = () => {
         tipo_audiencia_eve: eventoData.tipo_audiencia_eve || '',
         es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
         precio: eventoData.precio || '',
-        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : []
+        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : [],
+        porcentaje_asistencia_aprobacion: eventoData.porcentaje_asistencia_aprobacion || 80
       });
     } else {
       // Modo creación - limpiar formulario
@@ -286,7 +289,8 @@ const AdminEventos = () => {
         tipo_audiencia_eve: '',
         es_gratuito: true,
         precio: '',
-        carreras_seleccionadas: []
+        carreras_seleccionadas: [],
+        porcentaje_asistencia_aprobacion: 80
       });
     }
     
@@ -338,6 +342,18 @@ const AdminEventos = () => {
       }
     }
 
+    // Validar campos de aprobación
+    if (!evento.porcentaje_asistencia_aprobacion || evento.porcentaje_asistencia_aprobacion === '') {
+      nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia mínimo es obligatorio';
+    } else {
+      const porcentajeAsistencia = parseFloat(evento.porcentaje_asistencia_aprobacion);
+      if (isNaN(porcentajeAsistencia)) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia debe ser un número entre 0 y 100';
+      } else if (porcentajeAsistencia < 0 || porcentajeAsistencia > 100) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia debe ser un número entre 0 y 100';
+      }
+    }
+
     if (Object.keys(nuevosErrores).length > 0) {
       setErrors(nuevosErrores);
       return;
@@ -361,8 +377,12 @@ const AdminEventos = () => {
         capacidad_max_eve: parseInt(evento.capacidad_max_eve),
         tipo_audiencia_eve: evento.tipo_audiencia_eve,
         es_gratuito: evento.es_gratuito,
-        precio: evento.es_gratuito ? null : parseFloat(evento.precio)
+        precio: evento.es_gratuito ? null : parseFloat(evento.precio),
+        porcentaje_asistencia_aprobacion: parseInt(evento.porcentaje_asistencia_aprobacion, 10)
       };
+
+      // Debug: Ver qué datos estamos enviando
+      console.log('Datos del evento a enviar:', datosEvento);
 
       let eventoId;
       
@@ -430,9 +450,12 @@ const AdminEventos = () => {
 
     } catch (error) {
       console.error('Error al procesar evento:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el evento`,
+        message: error.response?.data?.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el evento: ${error.message}`,
         severity: 'error'
       });
     } finally {
@@ -1246,6 +1269,48 @@ const AdminEventos = () => {
                         ? "Este evento será gratuito. Los estudiantes podrán inscribirse sin necesidad de proporcionar información de pago."
                         : "Este evento es pagado. Los estudiantes deberán proporcionar el método de pago y el comprobante al inscribirse."
                       }
+                    </Alert>
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              {/* Criterios de Aprobación */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', color: '#6d1313' }}>
+                  <CheckCircle sx={{ mr: 1 }} />
+                  📋 Criterios de Aprobación (Obligatorios)
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Porcentaje mínimo de asistencia (%)"
+                      value={evento.porcentaje_asistencia_aprobacion}
+                      onChange={(e) => setEvento(prev => ({ ...prev, porcentaje_asistencia_aprobacion: e.target.value }))}
+                      error={!!errors.porcentaje_asistencia_aprobacion}
+                      helperText={errors.porcentaje_asistencia_aprobacion || 'Porcentaje mínimo requerido para aprobar (0-100)'}
+                      inputProps={{ 
+                        min: 0, 
+                        max: 100,
+                        step: 1
+                      }}
+                      required
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#6d1313',
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Alert severity="warning" sx={{ bgcolor: '#fff3cd', borderColor: '#6d1313' }}>
+                      <strong>Importante:</strong> Los participantes deberán cumplir con al menos el {evento.porcentaje_asistencia_aprobacion}% de asistencia para aprobar el evento y recibir su certificado.
                     </Alert>
                   </Grid>
                 </Grid>
