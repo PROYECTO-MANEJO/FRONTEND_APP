@@ -47,7 +47,6 @@ import UserSidebar from './UserSidebar';
 import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
-import { carreraService } from '../../services/carreraService';
 import { documentService } from '../../services/documentService';
 
 const validationSchema = Yup.object().shape({
@@ -58,12 +57,7 @@ const validationSchema = Yup.object().shape({
   fec_nac_usu: Yup.date().required('La fecha de nacimiento es obligatoria'),
   num_tel_usu: Yup.string()
     .matches(/^[0-9+\-\s()]+$/, 'Número de teléfono inválido')
-    .min(10, 'Mínimo 10 dígitos'),
-  id_car_per: Yup.string().when('isEstudiante', {
-    is: true,
-    then: () => Yup.string().required('Debes seleccionar una carrera'),
-    otherwise: () => Yup.string()
-  })
+    .min(10, 'Mínimo 10 dígitos')
 });
 
 const UserProfile = () => {
@@ -74,7 +68,6 @@ const UserProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [userData, setUserData] = useState(null);
-  const [carreras, setCarreras] = useState([]);
   
   // Estados para documentos
   const [tabValue, setTabValue] = useState(0);
@@ -98,11 +91,6 @@ const UserProfile = () => {
         
         const userResponse = await userService.getProfile();
         setUserData(userResponse);
-
-        if (userResponse?.rol === 'ESTUDIANTE') {
-          const carrerasResponse = await carreraService.getAll();
-          setCarreras(carrerasResponse);
-        }
 
         await loadDocumentStatus();
       } catch (error) {
@@ -244,10 +232,6 @@ const UserProfile = () => {
         num_tel_usu: values.num_tel_usu || null,
       };
 
-      if (isEstudiante && values.id_car_per) {
-        updateData.id_car_per = values.id_car_per;
-      }
-
       const updatedUser = await userService.updateProfile(updateData);
       
       setUserData(updatedUser);
@@ -272,11 +256,6 @@ const UserProfile = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toISOString().split('T')[0];
-  };
-
-  const getCarreraNombre = (carreraId) => {
-    const carrera = carreras.find(c => c.id_car === carreraId);
-    return carrera ? carrera.nom_car : 'Carrera no encontrada';
   };
 
   const handleCancel = () => {
@@ -350,9 +329,7 @@ const UserProfile = () => {
     ape_usu1: userData?.ape_usu1 || '',
     ape_usu2: userData?.ape_usu2 || '',
     fec_nac_usu: formatDate(userData?.fec_nac_usu) || '',
-    num_tel_usu: userData?.num_tel_usu || '',
-    id_car_per: userData?.id_car_per || '',
-    isEstudiante: isEstudiante
+    num_tel_usu: userData?.num_tel_usu || ''
   };
 
   return (
@@ -524,7 +501,7 @@ const UserProfile = () => {
                          <School sx={{ mr: 1.5, color: 'text.secondary', fontSize: '1.1rem' }} />
                          <Box>
                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                             {userData?.carrera?.nom_car || getCarreraNombre(userData?.id_car_per)}
+                             {userData?.carrera?.nom_car || 'Carrera asignada'}
                            </Typography>
                            {userData?.carrera?.nom_fac_per && (
                              <Typography variant="caption" color="text.secondary">
@@ -647,34 +624,6 @@ const UserProfile = () => {
                                  size="small"
                                />
                              </Grid>
-
-                             {/* Carrera solo para estudiantes */}
-                             {isEstudiante && (
-                               <Grid item xs={12} sm={6}>
-                                 <FormControl fullWidth size="small">
-                                   <InputLabel>Carrera</InputLabel>
-                                   <Select
-                                     name="id_car_per"
-                                     value={values.id_car_per}
-                                     label="Carrera"
-                                     onChange={handleChange}
-                                     disabled={!isEditing}
-                                     error={touched.id_car_per && !!errors.id_car_per}
-                                   >
-                                     {carreras.map((carrera) => (
-                                       <MenuItem key={carrera.id_car} value={carrera.id_car}>
-                                         {carrera.nom_car}
-                                       </MenuItem>
-                                     ))}
-                                   </Select>
-                                   {touched.id_car_per && errors.id_car_per && (
-                                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
-                                       {errors.id_car_per}
-                                     </Typography>
-                                   )}
-                                 </FormControl>
-                               </Grid>
-                             )}
                            </Grid>
                          </Box>
 
