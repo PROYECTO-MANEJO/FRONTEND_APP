@@ -63,7 +63,9 @@ const validationSchema = Yup.object().shape({
     is: true,
     then: () => Yup.string().required('Debes seleccionar una carrera'),
     otherwise: () => Yup.string()
-  })
+  }),
+  github_token: Yup.string()
+    .matches(/^ghp_[a-zA-Z0-9]{36}$/, 'Formato de token GitHub inválido (debe comenzar con ghp_ y tener 40 caracteres)')
 });
 
 const UserProfile = () => {
@@ -352,6 +354,7 @@ const UserProfile = () => {
     fec_nac_usu: formatDate(userData?.fec_nac_usu) || '',
     num_tel_usu: userData?.num_tel_usu || '',
     id_car_per: userData?.id_car_per || '',
+    github_token: userData?.github_token || '',
     isEstudiante: isEstudiante
   };
 
@@ -647,6 +650,30 @@ const UserProfile = () => {
                                  size="small"
                                />
                              </Grid>
+
+                             {/* GitHub Token para desarrolladores */}
+                             {(userData?.rol === 'DESARROLLADOR' || userData?.rol === 'MASTER') && (
+                               <Grid item xs={12}>
+                                 <TextField
+                                   fullWidth
+                                   name="github_token"
+                                   label="GitHub Personal Access Token"
+                                   type="password"
+                                   value={values.github_token}
+                                   onChange={handleChange}
+                                   onBlur={handleBlur}
+                                   disabled={!isEditing}
+                                   error={touched.github_token && !!errors.github_token}
+                                   helperText={
+                                     touched.github_token && errors.github_token
+                                       ? errors.github_token
+                                       : "Token personal para crear branches y PRs en GitHub. Si no se proporciona, se usará el token del sistema."
+                                   }
+                                   size="small"
+                                   placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                 />
+                               </Grid>
+                             )}
 
                              {/* Carrera solo para estudiantes */}
                              {isEstudiante && (
