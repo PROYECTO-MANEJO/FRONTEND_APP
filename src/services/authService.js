@@ -32,7 +32,8 @@ class AuthService {
         nombre2: userData.nombre2 || '',
         apellido: userData.apellido,
         apellido2: userData.apellido2 || '',
-        ced_usu: userData.cedula
+        ced_usu: userData.cedula,
+        carrera_id: userData.carrera_id || null
       });
 
       if (response.data.success) {
