@@ -134,6 +134,7 @@ const ModalInscripcion = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [cartaMotivacion, setCartaMotivacion] = useState('');
   
   const { user } = useAuth();
 
@@ -207,6 +208,9 @@ const ModalInscripcion = ({
         formData.append('comprobante_pago', comprobantePago);
       }
 
+      // Al enviar la inscripción
+      formData.append('carta_motivacion', cartaMotivacion); // si tu backend espera snake_case
+
       if (tipo === 'evento') {
         await inscripcionService.inscribirseEventoConArchivo(formData);
       } else {
@@ -239,6 +243,7 @@ const ModalInscripcion = ({
     setComprobantePago(null);
     setError(null);
     setSuccess(false);
+    setCartaMotivacion('');
     // Limpiar input de archivo
     const input = document.getElementById('comprobante_input');
     if (input) input.value = '';
@@ -448,6 +453,21 @@ const ModalInscripcion = ({
               </Box>
             )}
 
+            {/* Requerimiento de carta de motivación */}
+            {item.requiere_carta_motivacion === true && (
+              <TextField
+                fullWidth
+                label="Carta de motivación *"
+                value={cartaMotivacion}
+                onChange={e => setCartaMotivacion(e.target.value)}
+                multiline
+                minRows={6}
+                maxRows={12}
+                required
+                sx={{ mt: 2 }}
+              />
+            )}
+
             {/* Botones de acción */}
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 3 }}>
               <Button
@@ -477,4 +497,4 @@ const ModalInscripcion = ({
   );
 };
 
-export default ModalInscripcion; 
+export default ModalInscripcion;
