@@ -15,8 +15,7 @@ const AUTH_ACTIONS = {
   LOGOUT: 'LOGOUT',
   SET_LOADING: 'SET_LOADING',
   SET_ERROR: 'SET_ERROR',
-  CLEAR_ERROR: 'CLEAR_ERROR',
-  UPDATE_USER: 'UPDATE_USER'
+  CLEAR_ERROR: 'CLEAR_ERROR'
 };
 
 // Reducer
@@ -54,11 +53,6 @@ const authReducer = (state, action) => {
         ...state,
         error: null
       };
-    case AUTH_ACTIONS.UPDATE_USER:
-      return {
-        ...state,
-        user: action.payload
-      };
     default:
       return state;
   }
@@ -66,9 +60,6 @@ const authReducer = (state, action) => {
 
 // Crear contexto
 const AuthContext = createContext();
-
-// Exportar el contexto
-export { AuthContext };
 
 // Hook personalizado para usar el contexto
 export const useAuth = () => {
@@ -158,22 +149,7 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar si es administrador
   const isAdmin = () => {
-    return state.user?.rol === 'ADMINISTRADOR' || state.user?.rol === 'MASTER';
-  };
-
-  // Verificar si es MASTER
-  const isMaster = () => {
-    return state.user?.rol === 'MASTER';
-  };
-
-  // Actualizar datos del usuario
-  const updateUser = (userData) => {
-    dispatch({
-      type: AUTH_ACTIONS.UPDATE_USER,
-      payload: userData
-    });
-    // También actualizar en localStorage
-    localStorage.setItem('user', JSON.stringify(userData));
+    return state.user?.rol === 'ADMINISTRADOR';
   };
 
   const value = {
@@ -182,9 +158,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     clearError,
-    isAdmin,
-    isMaster,
-    updateUser
+    isAdmin
   };
 
   return (
@@ -192,4 +166,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}; 

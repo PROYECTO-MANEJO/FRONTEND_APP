@@ -1,14 +1,12 @@
+
 import axios from 'axios';
 
-// Configuración base de la API
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-// Crear instancia de axios
+// Crear instancia de axios con configuración base
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
 // Interceptor para agregar el token a las peticiones
@@ -16,7 +14,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers['x-token'] = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -25,14 +23,12 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor para manejar respuestas y errores
+// Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expirado o inválido
+      // Si el token expiró, limpiar localStorage y recargar
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
@@ -41,4 +37,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api; 
+export default api;

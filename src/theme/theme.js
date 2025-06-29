@@ -3,9 +3,9 @@ import { createTheme } from '@mui/material/styles';
 // Colores oficiales de la Universidad Técnica de Ambato
 const utaColors = {
   primary: {
-    main: '#6d1313', // Rojo UTA
-    light: '#8b2828', // ✅ CAMBIAR este valor (antes era #ef4444)
-    dark: '#5a1010',  // ✅ CAMBIAR este valor (antes era #6d1313)
+    main: '#dc2626', // Rojo UTA
+    light: '#ef4444',
+    dark: '#b91c1c',
     contrastText: '#ffffff',
   },
   secondary: {
@@ -15,7 +15,7 @@ const utaColors = {
     contrastText: '#1f2937',
   },
   error: {
-    main: '#6d1313',
+    main: '#dc2626',
     light: '#fca5a5',
     dark: '#991b1b',
   },
@@ -247,4 +247,4 @@ const theme = createTheme({
   },
 });
 
-export default theme;
+export default theme; 
