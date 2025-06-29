@@ -237,6 +237,17 @@ const desarrolladorService = {
     }
   },
 
+  // Enviar solicitud a testing simple (solo cambio de estado)
+  enviarSolicitudATestingSimple: async (idSolicitud) => {
+    try {
+      const response = await api.post(`/desarrollador/solicitud/${idSolicitud}/testing/enviar-simple`);
+      return response.data;
+    } catch (error) {
+      console.error('Error enviando a testing simple:', error);
+      throw error;
+    }
+  },
+
   // ========================================
   // UTILIDADES Y HELPERS
   // ========================================

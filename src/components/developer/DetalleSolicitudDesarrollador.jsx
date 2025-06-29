@@ -405,9 +405,9 @@ const DetalleSolicitudDesarrollador = () => {
                     {procesando ? 'Guardando...' : 'Guardar Comentario'}
                   </Button>
                 </DialogActions>
-              </Dialog>
+                            </Dialog>
 
-              {/* Estado: EN_DESARROLLO con comentarios internos */}
+              {/* Estado: EN_DESARROLLO con comentarios internos (rechazado por MASTER) */}
               {solicitud.estado_sol === 'EN_DESARROLLO' && solicitud.comentarios_internos_sol && (
                 <Paper sx={{ p: 2, mb: 3, bgcolor: '#fff8e1', border: '1px solid #ffcc02' }}>
                   {/* Encabezado del mensaje */}
@@ -419,7 +419,7 @@ const DetalleSolicitudDesarrollador = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
                           MASTER - Comentarios Técnicos
-                    </Typography>
+                        </Typography>
                         <Chip 
                           label="Solo para Desarrollador" 
                           size="small" 
@@ -431,10 +431,10 @@ const DetalleSolicitudDesarrollador = () => {
                           }} 
                         />
                       </Box>
-                    <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary">
                         {formatearFecha(solicitud.fec_ultima_actualizacion)}
-                    </Typography>
-                  </Box>
+                      </Typography>
+                    </Box>
                   </Box>
 
                   {/* Mensaje principal */}
@@ -450,7 +450,7 @@ const DetalleSolicitudDesarrollador = () => {
                     <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Warning fontSize="small" />
                       El MASTER ha rechazado el Pull Request anterior
-                  </Typography>
+                    </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Por favor revisa los comentarios técnicos y realiza las correcciones necesarias:
                     </Typography>
@@ -458,35 +458,6 @@ const DetalleSolicitudDesarrollador = () => {
                       {solicitud.comentarios_internos_sol}
                     </Typography>
                   </Alert>
-
-                  {/* Acciones */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<Send />}
-                      onClick={async () => {
-                        try {
-                          setProcesando(true);
-                          await desarrolladorService.pasarATesting(solicitud.id_sol, 
-                            'Cambios solicitados por el MASTER implementados. PR listo para nueva revisión.'
-                          );
-                          await cargarSolicitud();
-                        } catch (error) {
-                          console.error('Error enviando a testing:', error);
-                        } finally {
-                          setProcesando(false);
-                        }
-                      }}
-                      disabled={procesando}
-                      sx={{ 
-                        bgcolor: '#2196f3', 
-                        '&:hover': { bgcolor: '#1976d2' }
-                      }}
-                    >
-                      Enviar a Nueva Revisión
-                    </Button>
-                  </Box>
                 </Paper>
               )}
 

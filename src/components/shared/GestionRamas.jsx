@@ -151,7 +151,7 @@ const GestionRamas = ({ solicitud, onUpdate }) => {
     try {
       setProcesando(prev => ({ ...prev, enviar_testing: true }));
       
-      await desarrolladorService.enviarSolicitudATesting(solicitud.id_sol);
+      await desarrolladorService.enviarSolicitudATestingSimple(solicitud.id_sol);
       mostrarSnackbar('Solicitud enviada a testing exitosamente');
       await cargarDatos();
       
@@ -417,12 +417,8 @@ const GestionRamas = ({ solicitud, onUpdate }) => {
       )}
 
       {/* Botón Enviar a Testing */}
-      {permisos.puede_enviar_testing && ramas.length > 0 && ramas.every(r => r.pr_number) && (
+      {permisos.puede_enviar_testing && (
         <Box>
-          <Alert severity="success" sx={{ mb: 2 }}>
-            ✅ Todos los Pull Requests han sido creados. Puedes enviar la solicitud a testing.
-          </Alert>
-          
           <Button
             variant="contained"
             size="large"
