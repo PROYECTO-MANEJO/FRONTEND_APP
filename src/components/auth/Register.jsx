@@ -29,11 +29,16 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { carreraService } from '../../services/carreraService';
 import utaImage from '../../assets/images/uta1.jpg';
+
 import { validarCedulaEcuatoriana } from '../../utils/cedulaValidator';
 
 const validationSchema = yup.object().shape({
   email: yup.string().email('El correo electrónico no es válido').required('El correo electrónico es obligatorio'),
-  password: yup.string().min(6, 'La contraseña debe tener al menos 6 caracteres').required('La contraseña es obligatoria'),
+  password: yup.string()
+    .min(6, 'La contraseña debe tener al menos 6 caracteres')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/, 
+      'La contraseña debe contener al menos: 6 caracteres, una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&)')
+    .required('La contraseña es obligatoria'),
   confirmPassword: yup.string()
     .oneOf([yup.ref('password'), null], 'Las contraseñas no coinciden')
     .required('La confirmación de contraseña es obligatoria'),
@@ -53,8 +58,7 @@ const validationSchema = yup.object().shape({
       return true;
     }),
 
-    .matches(/^\d{10}$/, 'La cédula debe tener 10 dígitos')
-    .required('La cédula es obligatoria'),
+
   carrera: yup.string().when('email', {
     is: (email) => email && email.endsWith('@uta.edu.ec'),
     then: () => yup.string().required('La carrera es obligatoria para estudiantes UTA'),
@@ -72,6 +76,7 @@ const Register = () => {
 
   const { register, error, clearError } = useAuth();
   const navigate = useNavigate();
+
 
   // Función para cargar carreras
   const loadCarreras = async () => {
@@ -99,7 +104,6 @@ const Register = () => {
     console.log('🔍 isUtaEmail check:', { email, result });
     return result;
   };
-
   const initialValues = {
     email: '',
     password: '',
@@ -110,6 +114,7 @@ const Register = () => {
     apellido2: '',
     cedula: '',
     carrera: ''
+
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
@@ -551,6 +556,7 @@ const Register = () => {
                       <InputLabel id="carrera-label">Carrera *</InputLabel>
                       <Select
                         labelId="carrera-label"
+
                         id="carrera"
                         name="carrera"
                         value={values.carrera}
@@ -562,6 +568,7 @@ const Register = () => {
                         onBlur={handleBlur}
                         disabled={loadingCarreras}
                       >
+
                         {loadingCarreras ? (
                           <MenuItem disabled>
                             <CircularProgress size={20} sx={{ mr: 1 }} />
@@ -578,6 +585,7 @@ const Register = () => {
                       {touched.carrera && errors.carrera && (
                         <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
                           {errors.carrera}
+
                         </Typography>
                       )}
                     </FormControl>
@@ -598,7 +606,7 @@ const Register = () => {
                     onBlur={handleBlur}
                     required
                     autoComplete="new-password"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="6+ caracteres, mayúscula, número y símbolo"
                     error={touched.password && !!errors.password}
                     helperText={touched.password && errors.password}
                     sx={{
@@ -634,6 +642,51 @@ const Register = () => {
                       ),
                     }}
                   />
+
+                  {/* Ayuda visual para requisitos de contraseña */}
+                  <Box sx={{ mb: 2, p: 2, bgcolor: '#f8f9fa', borderRadius: 1, border: '1px solid #e9ecef' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#495057', mb: 1, display: 'block' }}>
+                      La contraseña debe contener:
+                    </Typography>
+                    <Grid container spacing={1}>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" sx={{ 
+                          color: values.password && values.password.length >= 6 ? '#28a745' : '#6c757d',
+                          display: 'flex', 
+                          alignItems: 'center' 
+                        }}>
+                          {values.password && values.password.length >= 6 ? '✓' : '○'} Al menos 6 caracteres
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" sx={{ 
+                          color: values.password && /[A-Z]/.test(values.password) ? '#28a745' : '#6c757d',
+                          display: 'flex', 
+                          alignItems: 'center' 
+                        }}>
+                          {values.password && /[A-Z]/.test(values.password) ? '✓' : '○'} Una mayúscula
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" sx={{ 
+                          color: values.password && /\d/.test(values.password) ? '#28a745' : '#6c757d',
+                          display: 'flex', 
+                          alignItems: 'center' 
+                        }}>
+                          {values.password && /\d/.test(values.password) ? '✓' : '○'} Un número
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" sx={{ 
+                          color: values.password && /[@$!%*?&]/.test(values.password) ? '#28a745' : '#6c757d',
+                          display: 'flex', 
+                          alignItems: 'center' 
+                        }}>
+                          {values.password && /[@$!%*?&]/.test(values.password) ? '✓' : '○'} Carácter especial (@$!%*?&)
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
 
                   {/* Confirm Password */}
                   <TextField

@@ -32,6 +32,7 @@ class AuthService {
         nombre2: userData.nombre2 || '',
         apellido: userData.apellido,
         apellido2: userData.apellido2 || '',
+
         ced_usu: userData.ced_usu
       };
 
@@ -41,6 +42,7 @@ class AuthService {
       }
 
       const response = await api.post('/auth/createUser', requestData);
+
 
       if (response.data.success) {
         // Guardar token y datos del usuario en localStorage
