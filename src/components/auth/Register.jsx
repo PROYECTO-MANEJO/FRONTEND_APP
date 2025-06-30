@@ -14,10 +14,10 @@ import {
   Grid,
   Paper,
   Divider,
+  MenuItem,
   FormControl,
   InputLabel,
   Select,
-  MenuItem,
 } from '@mui/material';
 import {
   Visibility,
@@ -27,8 +27,12 @@ import {
   School,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
-import utaImage from '../../assets/images/uta1.jpg';
 import { carreraService } from '../../services/carreraService';
+import utaImage from '../../assets/images/uta1.jpg';
+
+import { carreraService } from '../../services/carreraService';
+
+import { validarCedulaEcuatoriana } from '../../utils/cedulaValidator';
 
 const validationSchema = yup.object().shape({
   email: yup.string().email('El correo electrónico no es válido').required('El correo electrónico es obligatorio'),
@@ -44,14 +48,27 @@ const validationSchema = yup.object().shape({
   nombre2: yup.string().trim(),
   apellido: yup.string().trim().required('El primer apellido es obligatorio'),
   apellido2: yup.string().trim(),
-  cedula: yup.string()
+  cedula: yup.string().required('La cédula es obligatoria')
+    .length(10, 'La cédula debe tener exactamente 10 dígitos')
+    .matches(/^\d{10}$/, 'La cédula solo debe contener números')
+    .test('cedula-ecuatoriana', 'Debe ser una cédula ecuatoriana válida', function(value) {
+      if (!value) return false;
+      const resultado = validarCedulaEcuatoriana(value);
+      if (!resultado.isValid) {
+        return this.createError({ message: resultado.error });
+      }
+      return true;
+    }),
+
     .matches(/^\d{10}$/, 'La cédula debe tener 10 dígitos')
     .required('La cédula es obligatoria'),
-  carrera_id: yup.string().when('email', {
+
+  carrera: yup.string().when('email', {
     is: (email) => email && email.endsWith('@uta.edu.ec'),
-    then: (schema) => schema.required('La carrera es obligatoria para estudiantes UTA'),
-    otherwise: (schema) => schema.nullable(),
-  }),
+    then: () => yup.string().required('La carrera es obligatoria para estudiantes UTA'),
+    otherwise: () => yup.string()
+  })
+
 });
 
 const Register = () => {
@@ -64,22 +81,33 @@ const Register = () => {
   const { register, error, clearError } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadCarreras = async () => {
-      try {
-        setLoadingCarreras(true);
-        const response = await carreraService.getAll();
-        setCarreras(response);
-      } catch (error) {
-        console.error('Error cargando carreras:', error);
-      } finally {
-        setLoadingCarreras(false);
-      }
-    };
 
+  // Función para cargar carreras
+  const loadCarreras = async () => {
+    setLoadingCarreras(true);
+    try {
+      console.log('📡 Cargando carreras...');
+      const carrerasData = await carreraService.getAll();
+      console.log('✅ Carreras cargadas:', carrerasData);
+      setCarreras(carrerasData);
+    } catch (error) {
+      console.error('❌ Error al cargar carreras:', error);
+    } finally {
+      setLoadingCarreras(false);
+    }
+  };
+
+  // Cargar carreras al montar el componente
+  useEffect(() => {
     loadCarreras();
   }, []);
 
+  // Función para verificar si es email UTA
+  const isUtaEmail = (email) => {
+    const result = email && email.endsWith('@uta.edu.ec');
+    console.log('🔍 isUtaEmail check:', { email, result });
+    return result;
+  };
   const initialValues = {
     email: '',
     password: '',
@@ -89,17 +117,30 @@ const Register = () => {
     apellido: '',
     apellido2: '',
     cedula: '',
-    carrera_id: ''
-  };
+    carrera: ''
 
-  const isUtaEmail = (email) => {
-    return email && email.endsWith('@uta.edu.ec');
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     setIsSubmitting(true);
     try {
-      await register(values);
+      // Preparar datos para envío
+      const registerData = {
+        email: values.email,
+        password: values.password,
+        nombre: values.nombre,
+        nombre2: values.nombre2,
+        apellido: values.apellido,
+        apellido2: values.apellido2,
+        ced_usu: values.cedula
+      };
+
+      // Solo incluir carrera si es email UTA
+      if (isUtaEmail(values.email) && values.carrera) {
+        registerData.carrera = values.carrera;
+      }
+
+      await register(registerData);
       navigate('/dashboard');
     } catch (error) {
       console.error('Error en registro:', error);
@@ -270,7 +311,7 @@ const Register = () => {
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
           >
-            {({ values, errors, touched, handleChange, handleBlur }) => (
+            {({ values, errors, touched, handleChange, handleBlur, setFieldValue }) => (
               <Form>
                 <Box>
                   {/* Cédula */}
@@ -460,6 +501,10 @@ const Register = () => {
                     value={values.email}
                     onChange={(e) => {
                       handleChange(e);
+                      // Si cambia de email UTA a no-UTA, limpiar carrera
+                      if (!isUtaEmail(e.target.value) && values.carrera) {
+                        setFieldValue('carrera', '');
+                      }
                       if (error) clearError();
                     }}
                     onBlur={handleBlur}
@@ -492,6 +537,7 @@ const Register = () => {
                   {isUtaEmail(values.email) && (
                     <FormControl 
                       fullWidth 
+                      error={touched.carrera && !!errors.carrera}
                       sx={{ 
                         mb: 2,
                         '& .MuiOutlinedInput-root': {
@@ -510,14 +556,14 @@ const Register = () => {
                           color: '#dc3545',
                         },
                       }}
-                      error={touched.carrera_id && !!errors.carrera_id}
                     >
                       <InputLabel id="carrera-label">Carrera *</InputLabel>
                       <Select
                         labelId="carrera-label"
-                        id="carrera_id"
-                        name="carrera_id"
-                        value={values.carrera_id}
+
+                        id="carrera"
+                        name="carrera"
+                        value={values.carrera}
                         label="Carrera *"
                         onChange={(e) => {
                           handleChange(e);
@@ -526,23 +572,24 @@ const Register = () => {
                         onBlur={handleBlur}
                         disabled={loadingCarreras}
                       >
-                        <MenuItem value="">
-                          <em>Selecciona tu carrera</em>
-                        </MenuItem>
-                        {carreras.map((carrera) => (
-                          <MenuItem key={carrera.id_car} value={carrera.id_car}>
-                            {carrera.nom_car}
+
+                        {loadingCarreras ? (
+                          <MenuItem disabled>
+                            <CircularProgress size={20} sx={{ mr: 1 }} />
+                            Cargando carreras...
                           </MenuItem>
-                        ))}
+                        ) : (
+                          carreras.map((carrera) => (
+                            <MenuItem key={carrera.id_car} value={carrera.id_car}>
+                              {carrera.nom_car}
+                            </MenuItem>
+                          ))
+                        )}
                       </Select>
-                      {touched.carrera_id && errors.carrera_id && (
-                        <Typography variant="caption" sx={{ color: '#d32f2f', mt: 0.5, ml: 1.5 }}>
-                          {errors.carrera_id}
-                        </Typography>
-                      )}
-                      {loadingCarreras && (
-                        <Typography variant="caption" sx={{ color: '#7f8c8d', mt: 0.5, ml: 1.5 }}>
-                          Cargando carreras...
+                      {touched.carrera && errors.carrera && (
+                        <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                          {errors.carrera}
+
                         </Typography>
                       )}
                     </FormControl>
