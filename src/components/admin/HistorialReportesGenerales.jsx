@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Button, CircularProgress, Stack, Alert
+  TableHead, TableRow, Button, CircularProgress, Stack, Alert, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
@@ -30,6 +31,11 @@ const HistorialReportesGenerales = () => {
   const [loading, setLoading] = useState(true);
   const [generandoReporte, setGenerandoReporte] = useState(false);
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
+  const [viewerDialog, setViewerDialog] = useState({
+    open: false,
+    pdfUrl: '',
+    reporte: null
+  });
   const navigate = useNavigate();
 
   const tipo = searchParams.get('tipo');
@@ -67,18 +73,38 @@ const HistorialReportesGenerales = () => {
     }
   };
 
+  const handleVerPDF = async (id, nombreArchivo) => {
+    try {
+      const res = await api.get(`/reportes/download/${id}`, {
+        responseType: 'blob',
+        headers: {
+          'x-token': localStorage.getItem('token'),
+        }
+      });
+      const blob = res.data;
+      const url = window.URL.createObjectURL(blob);
+
+      setViewerDialog({
+        open: true,
+        pdfUrl: url,
+        reporte: nombreArchivo
+      });
+    } catch {
+      alert('No se pudo cargar la vista previa del PDF');
+    }
+  };
+
   const handleGenerarReporte = async () => {
     setGenerandoReporte(true);
     setMensaje({ tipo: '', texto: '' });
-    
+
     try {
       await api.post(ENDPOINTS[tipo]);
-      setMensaje({ 
-        tipo: 'success', 
-        texto: 'Reporte generado exitosamente. Actualizando lista...' 
+      setMensaje({
+        tipo: 'success',
+        texto: 'Reporte generado exitosamente. Actualizando lista...'
       });
-      
-      // Recargar la lista de reportes después de generar uno nuevo
+
       setTimeout(() => {
         if (tipo) {
           api.get(`/reportes?tipo=${tipo}`)
@@ -87,18 +113,18 @@ const HistorialReportesGenerales = () => {
               setMensaje({ tipo: '', texto: '' });
             })
             .catch(() => {
-              setMensaje({ 
-                tipo: 'error', 
-                texto: 'Error al actualizar la lista de reportes' 
+              setMensaje({
+                tipo: 'error',
+                texto: 'Error al actualizar la lista de reportes'
               });
             });
         }
       }, 1000);
-      
+
     } catch {
-      setMensaje({ 
-        tipo: 'error', 
-        texto: 'Error al generar el reporte' 
+      setMensaje({
+        tipo: 'error',
+        texto: 'Error al generar el reporte'
       });
     } finally {
       setGenerandoReporte(false);
@@ -116,7 +142,6 @@ const HistorialReportesGenerales = () => {
     );
   }
 
-  // Encuentra el último reporte (el más reciente)
   const ultimoReporte = reportes.length > 0
     ? reportes.reduce((a, b) => new Date(a.fecha_generado) > new Date(b.fecha_generado) ? a : b)
     : null;
@@ -185,14 +210,24 @@ const HistorialReportesGenerales = () => {
                     <TableCell>{new Date(rep.fecha_generado).toLocaleString()}</TableCell>
                     <TableCell>{rep.nombre_archivo}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<DownloadIcon />}
-                        onClick={() => handleDescargarPDF(rep.id_rep, rep.nombre_archivo)}
-                      >
-                        Descargar PDF
-                      </Button>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => handleVerPDF(rep.id_rep, rep.nombre_archivo)}
+                        >
+                          Ver PDF
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<DownloadIcon />}
+                          onClick={() => handleDescargarPDF(rep.id_rep, rep.nombre_archivo)}
+                        >
+                          Descargar
+                        </Button>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -201,6 +236,36 @@ const HistorialReportesGenerales = () => {
           </TableContainer>
         </Paper>
       </Box>
+
+      {/* Modal visor PDF */}
+      <Dialog
+        open={viewerDialog.open}
+        onClose={() => setViewerDialog({ open: false, pdfUrl: '', reporte: null })}
+        maxWidth="xl"
+        fullWidth
+      >
+        <DialogTitle>
+          Vista previa de {viewerDialog.reporte}
+        </DialogTitle>
+        <DialogContent sx={{ height: '80vh' }}>
+          {viewerDialog.pdfUrl ? (
+            <iframe
+              src={viewerDialog.pdfUrl}
+              title="Vista previa PDF"
+              width="100%"
+              height="100%"
+              style={{ border: 'none' }}
+            ></iframe>
+          ) : (
+            <CircularProgress />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewerDialog({ open: false, pdfUrl: '', reporte: null })}>
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
