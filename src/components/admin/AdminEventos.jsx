@@ -105,6 +105,10 @@ const AdminEventos = () => {
   const [cartaSeleccionada, setCartaSeleccionada] = useState('');
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
+  // Estados para el modal de detalles
+  const [selectedEvento, setSelectedEvento] = useState(null);
+  const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
+
   // Funciones para el modal de carta de motivación
   const handleVerCartaMotivacion = (carta, usuario) => {
     console.log('📄 Abriendo carta de motivación:', { carta, usuario });
@@ -117,6 +121,30 @@ const AdminEventos = () => {
     setModalCartaOpen(false);
     setCartaSeleccionada('');
     setUsuarioSeleccionado(null);
+  };
+
+  // Función para cerrar el modal de detalles
+  const handleCerrarModalDetalle = () => {
+    setSelectedEvento(null);
+    setModalDetalleOpen(false);
+  };
+
+  // Función que se ejecuta después de una inscripción exitosa
+  const handleInscripcionExitosa = () => {
+    console.log('✅ Inscripción exitosa, cerrando modal en 2 segundos...');
+    
+    // Mostrar mensaje de éxito primero
+    setSnackbar({
+      open: true,
+      message: '¡Inscripción realizada exitosamente!',
+      severity: 'success'
+    });
+    
+    // Cerrar el modal después de un pequeño delay para que el usuario vea el mensaje
+    setTimeout(() => {
+      setSelectedEvento(null);
+      setModalDetalleOpen(false);
+    }, 2000); // 2 segundos de delay
   };
 
   // Constantes
@@ -1375,6 +1403,16 @@ const AdminEventos = () => {
             {snackbar.message}
           </Alert>
         </Snackbar>
+
+        {/* Modal de detalles del evento */}
+        {selectedEvento && modalDetalleOpen && (
+          <ModalDetalleEvento  // O como se llame tu componente
+            open={modalDetalleOpen}
+            evento={selectedEvento}
+            onClose={handleCerrarModalDetalle}
+            onInscripcionExitosa={handleInscripcionExitosa}  // ← ESTA LÍNEA ES IMPORTANTE
+          />
+        )}
       </Box>
     </Box>
   );
