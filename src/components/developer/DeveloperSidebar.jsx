@@ -160,7 +160,7 @@ const DeveloperSidebar = () => {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 onClick={() => {
-                  if (item.submenu) {
+                  if (item.submenu && item.submenu.length > 0) {
                     if (item.text === 'Solicitudes Asignadas') {
                       setSolicitudesOpen(!solicitudesOpen);
                     } else if (item.text === 'Mis Solicitudes Personales') {

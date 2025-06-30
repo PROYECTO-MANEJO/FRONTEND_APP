@@ -23,7 +23,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Divider
+  Divider,
+  Snackbar
 } from '@mui/material';
 import {
   Add,
@@ -38,7 +39,8 @@ import {
   Assignment,
   Close,
   Help,
-  Description
+  Description,
+  PriorityHigh
 } from '@mui/icons-material';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
@@ -50,7 +52,10 @@ const AdminMisSolicitudes = () => {
   
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [dialogDetalles, setDialogDetalles] = useState(false);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+  const [loadingDetalles, setLoadingDetalles] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'error' });
   const [estadisticas, setEstadisticas] = useState({
     total: 0,
     borradores: 0,
@@ -60,9 +65,26 @@ const AdminMisSolicitudes = () => {
     completadas: 0,
     canceladas: 0
   });
-  const [dialogDetalles, setDialogDetalles] = useState(false);
-  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
-  const [loadingDetalles, setLoadingDetalles] = useState(false);
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const showError = (message) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity: 'error'
+    });
+  };
+
+  const showSuccess = (message) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity: 'success'
+    });
+  };
 
   useEffect(() => {
     cargarSolicitudes();
@@ -71,16 +93,13 @@ const AdminMisSolicitudes = () => {
   const cargarSolicitudes = async () => {
     try {
       setLoading(true);
-      setError(null); // Clear any previous errors
       
       const response = await solicitudesService.obtenerMisSolicitudes();
-      console.log('Response from API:', response); // Debug log
+      console.log('Response from API:', response);
       
-      // Extract solicitudes from the correct path in the response
       const solicitudesData = Array.isArray(response.data?.solicitudes) ? response.data.solicitudes : [];
       setSolicitudes(solicitudesData);
       
-      // Calcular estadísticas only if we have data
       const stats = solicitudesData.reduce((acc, sol) => {
         acc.total++;
         switch (sol.estado_sol) {
@@ -106,6 +125,8 @@ const AdminMisSolicitudes = () => {
           case 'CANCELADA':
             acc.canceladas++;
             break;
+          default:
+            break;
         }
         return acc;
       }, {
@@ -119,10 +140,10 @@ const AdminMisSolicitudes = () => {
       });
       
       setEstadisticas(stats);
-    } catch (error) {
-      console.error('Error loading solicitudes:', error); // Debug log
-      setError('Error al cargar solicitudes: ' + error.message);
-      setSolicitudes([]); // Ensure solicitudes is always an array
+    } catch (err) {
+      console.error('Error loading solicitudes:', err);
+      showError('Error al cargar solicitudes: ' + err.message);
+      setSolicitudes([]);
       setEstadisticas({
         total: 0,
         borradores: 0,
@@ -139,43 +160,36 @@ const AdminMisSolicitudes = () => {
 
   const handleEnviarSolicitud = async (id) => {
     try {
-      setError(null);
       console.log('Enviando solicitud con ID:', id);
       
       const result = await solicitudesService.enviarSolicitud(id);
       console.log('Solicitud enviada exitosamente:', result);
       
-      // Mostrar mensaje de éxito
       if (result.success) {
-        // Aquí podrías mostrar un toast o mensaje de éxito
-        console.log('✅ Solicitud enviada:', result.message);
+        showSuccess('Solicitud enviada exitosamente');
+        await cargarSolicitudes();
       }
-      
-      await cargarSolicitudes(); // Recargar lista
-    } catch (error) {
-      console.error('Error enviando solicitud:', error);
-      setError('Error al enviar solicitud: ' + error.message);
+    } catch (err) {
+      console.error('Error enviando solicitud:', err);
+      showError('Error al enviar solicitud: ' + err.message);
     }
   };
 
   const handleEliminarBorrador = async (id) => {
     if (window.confirm('¿Estás seguro de que quieres cancelar este borrador? Esta acción no se puede deshacer.')) {
       try {
-        setError(null);
         console.log('Cancelando solicitud con ID:', id);
         
         const result = await solicitudesService.cancelarSolicitud(id);
         console.log('Solicitud cancelada exitosamente:', result);
         
-        // Mostrar mensaje de éxito
         if (result.success) {
-          console.log('✅ Solicitud cancelada:', result.message);
+          showSuccess('Solicitud cancelada exitosamente');
+          await cargarSolicitudes();
         }
-        
-        await cargarSolicitudes(); // Recargar lista
-      } catch (error) {
-        console.error('Error cancelando solicitud:', error);
-        setError('Error al cancelar borrador: ' + error.message);
+      } catch (err) {
+        console.error('Error cancelando solicitud:', err);
+        showError('Error al cancelar borrador: ' + err.message);
       }
     }
   };
@@ -220,19 +234,12 @@ const AdminMisSolicitudes = () => {
   const handleVerDetalles = async (id) => {
     try {
       setLoadingDetalles(true);
-      setError(null);
-      
       const response = await solicitudesService.obtenerMiSolicitud(id);
-      
-      if (response.success) {
-        setSolicitudSeleccionada(response.data);
-        setDialogDetalles(true);
-      } else {
-        setError('Error al cargar detalles de la solicitud');
-      }
-    } catch (error) {
-      console.error('Error cargando detalles:', error);
-      setError('Error al cargar detalles: ' + error.message);
+      setSolicitudSeleccionada(response.data);
+      setDialogDetalles(true);
+    } catch (err) {
+      console.error('Error cargando detalles:', err);
+      showError('Error al cargar los detalles de la solicitud');
     } finally {
       setLoadingDetalles(false);
     }
@@ -255,10 +262,40 @@ const AdminMisSolicitudes = () => {
         hour: '2-digit',
         minute: '2-digit'
       });
-    } catch (error) {
+    } catch {
       return 'Fecha inválida';
     }
   };
+
+  // Función para traducir el tipo de cambio
+  const traducirTipoCambio = (tipo) => {
+    const tipos = {
+      'NUEVA_FUNCIONALIDAD': 'Nueva Funcionalidad',
+      'MEJORA_EXISTENTE': 'Mejora de Funcionalidad Existente',
+      'CORRECCION_ERROR': 'Corrección de Error',
+      'CAMBIO_INTERFAZ': 'Cambio de Interfaz de Usuario',
+      'OPTIMIZACION': 'Optimización de Rendimiento',
+      'ACTUALIZACION_DATOS': 'Actualización de Datos',
+      'CAMBIO_SEGURIDAD': 'Cambio de Seguridad',
+      'INTEGRACION_EXTERNA': 'Integración Externa',
+      'OTRO': 'Otro'
+    };
+    return tipos[tipo] || tipo;
+  };
+
+  // Función para traducir la prioridad
+  const traducirPrioridad = (prioridad) => {
+    const prioridades = {
+      'BAJA': 'Baja',
+      'MEDIA': 'Media',
+      'ALTA': 'Alta',
+      'CRITICA': 'Crítica',
+      'URGENTE': 'Urgente'
+    };
+    return prioridades[prioridad] || prioridad;
+  };
+
+
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
@@ -281,13 +318,6 @@ const AdminMisSolicitudes = () => {
             Gestiona tus solicitudes de cambio para mejorar la aplicación
           </Typography>
         </Box>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
 
         {/* Estadísticas Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -553,26 +583,32 @@ const AdminMisSolicitudes = () => {
           )}
         </Paper>
 
-        {/* Dialog de Detalles */}
+        {/* Modal de Detalles */}
         <Dialog
           open={dialogDetalles}
           onClose={handleCerrarDetalles}
-          maxWidth="md"
+          maxWidth="lg"
           fullWidth
-          PaperProps={{
-            sx: { minHeight: '500px' }
-          }}
         >
           <DialogTitle sx={{ 
-            bgcolor: '#6d1313', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            bgcolor: '#6d1313',
             color: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
+            py: 2
           }}>
-            <Typography variant="h6">
-              Detalles de la Solicitud #{solicitudSeleccionada?.id_sol}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Assignment sx={{ fontSize: 28 }} />
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: 'white' }}>
+                  Solicitud #{solicitudSeleccionada?.id_sol || 'N/A'}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'white', fontStyle: 'italic', opacity: 0.9 }}>
+                  Detalles de mi solicitud de cambio
+                </Typography>
+              </Box>
+            </Box>
             <IconButton
               onClick={handleCerrarDetalles}
               sx={{ color: 'white' }}
@@ -580,115 +616,317 @@ const AdminMisSolicitudes = () => {
               <Close />
             </IconButton>
           </DialogTitle>
-          
-          <DialogContent sx={{ p: 3 }}>
+
+          <DialogContent dividers sx={{ p: 0 }}>
             {loadingDetalles ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                 <CircularProgress />
-                <Typography variant="body2" sx={{ mt: 2 }}>
-                  Cargando detalles...
-                </Typography>
               </Box>
-            ) : solicitudSeleccionada ? (
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    {solicitudSeleccionada.titulo_sol}
-                  </Typography>
-                  <Chip
-                    icon={getEstadoInfo(solicitudSeleccionada.estado_sol).icon}
-                    label={getEstadoInfo(solicitudSeleccionada.estado_sol).label}
-                    sx={{
-                      bgcolor: getEstadoInfo(solicitudSeleccionada.estado_sol).color,
-                      color: 'white',
-                      fontWeight: 'bold',
-                      mb: 2
-                    }}
-                  />
-                </Grid>
+            ) : solicitudSeleccionada && (
+              <Box>
+                {/* Header con información clave */}
+                <Box sx={{ 
+                  bgcolor: '#fef2f2', 
+                  p: 3, 
+                  borderBottom: '1px solid #fecaca'
+                }}>
+                  <Grid container spacing={3} alignItems="center">
+                    <Grid item xs={12} md={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 600, color: '#6d1313' }}>
+                          {solicitudSeleccionada.titulo_sol}
+                        </Typography>
+                        <Chip
+                          label={getEstadoInfo(solicitudSeleccionada.estado_sol).label}
+                          sx={{
+                            bgcolor: getEstadoInfo(solicitudSeleccionada.estado_sol).color,
+                            color: 'white',
+                            fontWeight: 'bold'
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>ID:</strong> #{solicitudSeleccionada.id_sol}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Fecha de creación:</strong> {new Date(solicitudSeleccionada.fec_creacion_sol).toLocaleDateString('es-ES')}
+                      </Typography>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Assignment sx={{ fontSize: 16, color: '#b91c1c' }} />
+                          <Typography variant="body2">
+                            <strong>Tipo:</strong> {traducirTipoCambio(solicitudSeleccionada.tipo_cambio_sol)}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Schedule sx={{ fontSize: 16, color: '#b91c1c' }} />
+                          <Typography variant="body2">
+                            <strong>Prioridad:</strong> {traducirPrioridad(solicitudSeleccionada.prioridad_sol)}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Help sx={{ fontSize: 16, color: '#b91c1c' }} />
+                          <Typography variant="body2">
+                            <strong>Urgencia:</strong> {solicitudSeleccionada.urgencia_sol || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
 
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Tipo de Cambio
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {solicitudSeleccionada.tipo_cambio_sol}
-                  </Typography>
-                </Grid>
+                {/* Contenido principal - DISEÑO ESTÁTICO 50-50 */}
+                <Box sx={{ p: 2 }}>
+                  <Box sx={{ 
+                    display: 'flex',
+                    height: '600px',
+                    gap: 2
+                  }}>
+                    {/* Columna izquierda - EXACTAMENTE 50% */}
+                    <Box sx={{ 
+                      width: '50%',
+                      height: '600px'
+                    }}>
+                      <Paper elevation={1} sx={{ 
+                        p: 2.5, 
+                        height: '600px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden'
+                      }}>
+                        <Typography variant="h6" sx={{ 
+                          mb: 2, 
+                          color: '#6d1313', 
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          height: '40px'
+                        }}>
+                          <Description sx={{ color: '#b91c1c' }} />
+                          Mi Solicitud
+                        </Typography>
+                        <Divider sx={{ mb: 2 }} />
+                        
+                        <Box sx={{ 
+                          height: '530px',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          {/* Descripción - Reducida */}
+                          <Box sx={{ height: '220px', mb: 3 }}>
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#6d1313', 
+                              fontWeight: 600, 
+                              mb: 1,
+                              height: '25px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              Descripción del Cambio
+                            </Typography>
+                            <Paper variant="outlined" sx={{ 
+                              p: 2, 
+                              bgcolor: '#fef2f2',
+                              height: '185px',
+                              overflow: 'auto',
+                              borderRadius: 2
+                            }}>
+                              <Typography variant="body2" sx={{ 
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                lineHeight: 1.5
+                              }}>
+                                {solicitudSeleccionada.descripcion_sol || 'Sin descripción'}
+                              </Typography>
+                            </Paper>
+                          </Box>
 
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Prioridad
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {solicitudSeleccionada.prioridad_sol}
-                  </Typography>
-                </Grid>
+                          {/* Justificación - Reducida */}
+                          <Box sx={{ height: '220px' }}>
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#6d1313', 
+                              fontWeight: 600, 
+                              mb: 1,
+                              height: '25px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              Justificación del Negocio
+                            </Typography>
+                            <Paper variant="outlined" sx={{ 
+                              p: 2, 
+                              bgcolor: '#fef2f2',
+                              height: '185px',
+                              overflow: 'auto',
+                              borderRadius: 2
+                            }}>
+                              <Typography variant="body2" sx={{ 
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                lineHeight: 1.5
+                              }}>
+                                {solicitudSeleccionada.justificacion_sol || 'Sin justificación'}
+                              </Typography>
+                            </Paper>
+                          </Box>
+                        </Box>
+                      </Paper>
+                    </Box>
 
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Descripción
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {solicitudSeleccionada.descripcion_sol}
-                  </Typography>
-                </Grid>
+                    {/* Columna derecha - EXACTAMENTE 50% */}
+                    <Box sx={{ 
+                      width: '50%',
+                      height: '600px'
+                    }}>
+                      <Paper elevation={1} sx={{ 
+                        p: 2.5, 
+                        height: '600px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden'
+                      }}>
+                        <Typography variant="h6" sx={{ 
+                          mb: 2, 
+                          color: '#6d1313', 
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          height: '40px'
+                        }}>
+                          <Schedule sx={{ color: '#b91c1c' }} />
+                          Estado y Seguimiento
+                        </Typography>
+                        <Divider sx={{ mb: 2 }} />
+                        
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                          {/* Estado y Fechas - En una sola sección compacta */}
+                          <Box sx={{ height: '160px' }}>
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#6d1313', 
+                              fontWeight: 600, 
+                              mb: 2,
+                              height: '20px'
+                            }}>
+                              Estado y Fechas
+                            </Typography>
+                            <Box sx={{ 
+                              height: '130px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 1.5
+                            }}>
+                              {/* Estado actual */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, height: '32px' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: '60px' }}>
+                                  <strong>Estado:</strong>
+                                </Typography>
+                                <Chip
+                                  icon={getEstadoInfo(solicitudSeleccionada.estado_sol).icon}
+                                  label={getEstadoInfo(solicitudSeleccionada.estado_sol).label}
+                                  sx={{
+                                    bgcolor: getEstadoInfo(solicitudSeleccionada.estado_sol).color,
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: '12px',
+                                    height: '28px'
+                                  }}
+                                />
+                              </Box>
+                              
+                              {/* Fecha de aprobación */}
+                              {solicitudSeleccionada.fec_respuesta_sol && (
+                                <Typography variant="body2" sx={{ height: '20px', display: 'flex', alignItems: 'center' }}>
+                                  <strong>Aprobada:</strong> {new Date(solicitudSeleccionada.fec_respuesta_sol).toLocaleDateString('es-ES')} {new Date(solicitudSeleccionada.fec_respuesta_sol).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                </Typography>
+                              )}
+                              
+                              {/* Fecha deseada */}
+                              {solicitudSeleccionada.fecha_limite_deseada_sol && (
+                                <Typography variant="body2" sx={{ height: '20px', display: 'flex', alignItems: 'center' }}>
+                                  <strong>Fecha deseada:</strong> {new Date(solicitudSeleccionada.fecha_limite_deseada_sol).toLocaleDateString('es-ES')}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
 
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Justificación
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {solicitudSeleccionada.justificacion_sol}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Fecha de Creación
-                  </Typography>
-                  <Typography variant="body1">
-                    {formatearFecha(solicitudSeleccionada.fecha_creacion_sol)}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Última Actualización
-                  </Typography>
-                  <Typography variant="body1">
-                    {formatearFecha(solicitudSeleccionada.fecha_actualizacion_sol)}
-                  </Typography>
-                </Grid>
-              </Grid>
-            ) : (
-              <Typography>No se pudieron cargar los detalles</Typography>
+                          {/* Comentarios del administrador si existen - Espacio reducido */}
+                          {solicitudSeleccionada.comentarios_admin_sol && (
+                            <Box sx={{ height: '300px' }}>
+                              <Typography variant="subtitle2" sx={{ 
+                                color: '#6d1313', 
+                                fontWeight: 600, 
+                                mb: 2,
+                                height: '20px'
+                              }}>
+                                Comentarios del Administrador
+                              </Typography>
+                              <Paper variant="outlined" sx={{ 
+                                p: 2, 
+                                bgcolor: '#f0fdf4',
+                                height: '270px',
+                                overflow: 'auto',
+                                borderRadius: 2
+                              }}>
+                                <Typography variant="body2" sx={{ 
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
+                                  lineHeight: 1.5
+                                }}>
+                                  {solicitudSeleccionada.comentarios_admin_sol}
+                                </Typography>
+                              </Paper>
+                            </Box>
+                          )}
+                        </Box>
+                      </Paper>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
             )}
           </DialogContent>
 
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={handleCerrarDetalles} variant="outlined">
+          <DialogActions sx={{ 
+            p: 3, 
+            gap: 2, 
+            bgcolor: '#fef2f2',
+            borderTop: '1px solid #fecaca'
+          }}>
+            <Button 
+              onClick={handleCerrarDetalles} 
+              variant="outlined"
+              sx={{ 
+                color: '#6d1313', 
+                borderColor: '#b91c1c',
+                '&:hover': { borderColor: '#991b1b', color: '#991b1b' }
+              }}
+            >
               Cerrar
             </Button>
-            {solicitudSeleccionada && puedeEditar(solicitudSeleccionada.estado_sol) && (
-              <Button
-                variant="contained"
-                startIcon={<Edit />}
-                onClick={() => {
-                  handleCerrarDetalles();
-                  handleEditarSolicitud(solicitudSeleccionada.id_sol);
-                }}
-                sx={{
-                  bgcolor: '#6d1313',
-                  '&:hover': { bgcolor: '#5a0f0f' }
-                }}
-              >
-                Editar
-              </Button>
-            )}
           </DialogActions>
         </Dialog>
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
