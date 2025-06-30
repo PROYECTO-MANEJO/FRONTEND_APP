@@ -98,3 +98,13 @@ export const generarCertificadoCurso = async (idCurso, idInscripcion) => {
     throw error;
   }
 }; 
+
+export const obtenerParticipacionesCompletas = async () => {
+  try {
+    const response = await api.get(`${CERTIFICATES_BASE_URL}/mis-certificados/participaciones-completas`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener participaciones completas:', error);
+    throw error;
+  }
+};
