@@ -63,7 +63,7 @@ import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
 
-const DetalleEventoCurso = ({ item, onClose }) => {
+const DetalleEventoCurso = ({ item, onClose, onVerCartaMotivacion }) => {
   const { getMainContentStyle } = useSidebarLayout();
   const [loading, setLoading] = useState(true);
   const [detalles, setDetalles] = useState(null);
@@ -821,6 +821,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                       <TableCell>Carrera</TableCell>
                       <TableCell>Fecha Inscripción</TableCell>
                       <TableCell>Estado</TableCell>
+                      <TableCell>Carta de motivación</TableCell> {/* NUEVA COLUMNA */}
                       {!itemData.es_gratuito && <TableCell>Pago</TableCell>}
                       <TableCell>Acciones</TableCell>
                     </TableRow>
@@ -882,6 +883,22 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                       {inscripcion.fecha_aprobacion && (
                         <Typography variant="caption" display="block" color="text.secondary">
                           {formatearFecha(inscripcion.fecha_aprobacion)}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {inscripcion.carta_motivacion && inscripcion.carta_motivacion.trim() !== '' ? (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                          onClick={() => onVerCartaMotivacion(inscripcion.carta_motivacion)}
+                        >
+                          Ver carta
+                        </Button>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          Sin carta
                         </Typography>
                       )}
                     </TableCell>
@@ -1064,4 +1081,4 @@ const DetalleEventoCurso = ({ item, onClose }) => {
   );
 };
 
-export default DetalleEventoCurso; 
+export default DetalleEventoCurso;

@@ -7,19 +7,19 @@ import {
   Card,
   CardContent,
   Button,
-  Chip,
-  IconButton,
-  CircularProgress,
-  Snackbar,
-  Alert,
   TextField,
   InputAdornment,
   Tabs,
   Tab,
   Badge,
-  Tooltip,
-  Avatar,
-  Divider
+  Chip,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton
 } from '@mui/material';
 import {
   Search,
@@ -32,7 +32,8 @@ import {
   Person,
   Visibility,
   FilterList,
-  Refresh
+  Refresh,
+  Close
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -46,7 +47,7 @@ const AdminGestionInscripciones = () => {
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTab, setSelectedTab] = useState(0); // 0: Todos, 1: Eventos, 2: Cursos
+  const [selectedTab, setSelectedTab] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
   // Estado para el detalle
@@ -62,13 +63,16 @@ const AdminGestionInscripciones = () => {
     inscripcionesAprobadas: 0
   });
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
+  // Estado para la carta de motivación
+  const [openCartaModal, setOpenCartaModal] = useState(false);
+  const [cartaMotivacion, setCartaMotivacion] = useState('');
 
-  useEffect(() => {
-    filtrarItems();
-  }, [items, searchTerm, selectedTab]);
+  // Función para manejar la carta de motivación
+  const handleVerCartaMotivacion = (carta) => {
+    console.log('📝 Mostrando carta:', carta); // Para debug
+    setCartaMotivacion(carta);
+    setOpenCartaModal(true);
+  };
 
   const cargarDatos = async () => {
     try {
@@ -76,61 +80,40 @@ const AdminGestionInscripciones = () => {
       const response = await api.get('/administracion/cursos-eventos');
       
       if (response.data.success) {
+        console.log('📊 Datos recibidos:', response.data.data.items); // Para debug
         const itemsData = response.data.data.items || [];
         setItems(itemsData);
-        
-        // Calcular estadísticas
-        const totalPendientes = itemsData.reduce((sum, item) => sum + (item.estadisticas?.pendientes || 0), 0);
-        const totalAprobadas = itemsData.reduce((sum, item) => sum + (item.estadisticas?.aprobadas || 0), 0);
-        
-        setStats({
-          total: response.data.data.total || 0,
-          eventos: response.data.data.eventos || 0,
-          cursos: response.data.data.cursos || 0,
-          inscripcionesPendientes: totalPendientes,
-          inscripcionesAprobadas: totalAprobadas
-        });
-      } else {
-        throw new Error(response.data.message || 'Error en la respuesta del servidor');
+        setFilteredItems(itemsData);
+        setStats(response.data.data.estadisticas || stats);
       }
     } catch (error) {
-      console.error('Error al cargar datos:', error);
-      
-      // Mostrar mensaje de error más específico
-      let errorMessage = 'Error al cargar los datos';
-      if (error.response) {
-        // Error de respuesta del servidor
-        errorMessage = error.response.data?.message || `Error ${error.response.status}: ${error.response.statusText}`;
-      } else if (error.request) {
-        // Error de red/conexión
-        errorMessage = 'Error de conexión con el servidor. Verifica que el backend esté ejecutándose.';
-      } else {
-        // Otro tipo de error
-        errorMessage = error.message || 'Error desconocido';
-      }
-      
+      console.error('❌ Error al cargar datos:', error);
       setSnackbar({
         open: true,
-        message: errorMessage,
+        message: 'Error al cargar los datos',
         severity: 'error'
-      });
-      
-      // Inicializar con datos vacíos en caso de error
-      setItems([]);
-      setStats({
-        total: 0,
-        eventos: 0,
-        cursos: 0,
-        inscripcionesPendientes: 0,
-        inscripcionesAprobadas: 0
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const filtrarItems = () => {
+  useEffect(() => {
+    cargarDatos();
+  }, []);
+
+  useEffect(() => {
     let filtered = items;
+
+    // Filtrar por búsqueda
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        (item.tipo === 'EVENTO' ? item.nom_eve : item.nom_cur)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        item.organizador_nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
 
     // Filtrar por tipo
     if (selectedTab === 1) {
@@ -139,24 +122,11 @@ const AdminGestionInscripciones = () => {
       filtered = filtered.filter(item => item.tipo === 'CURSO');
     }
 
-    // Filtrar por búsqueda
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(item => {
-        const nombre = item.tipo === 'EVENTO' ? item.nom_eve : item.nom_cur;
-        const organizador = item.organizador_nombre;
-        const categoria = item.categoria_nombre;
-        
-        return nombre.toLowerCase().includes(term) ||
-               organizador.toLowerCase().includes(term) ||
-               categoria.toLowerCase().includes(term);
-      });
-    }
-
     setFilteredItems(filtered);
-  };
+  }, [items, searchTerm, selectedTab]);
 
-  const handleVerDetalle = (item) => {
+  const handleItemClick = (item) => {
+    console.log('🔍 Seleccionado item:', item);
     setSelectedItem(item);
     setShowDetail(true);
   };
@@ -169,7 +139,6 @@ const AdminGestionInscripciones = () => {
   };
 
   const formatearFecha = (fecha) => {
-    if (!fecha) return 'No especificada';
     return new Date(fecha).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
@@ -177,33 +146,12 @@ const AdminGestionInscripciones = () => {
     });
   };
 
-  const getEstadoColor = (item) => {
-    const fechaActual = new Date();
-    const fechaInicio = new Date(item.tipo === 'EVENTO' ? item.fec_ini_eve : item.fec_ini_cur);
-    
-    if (fechaInicio <= fechaActual) {
-      return 'success'; // En curso
-    } else {
-      return 'primary'; // Próximamente
-    }
-  };
-
-  const getEstadoTexto = (item) => {
-    const fechaActual = new Date();
-    const fechaInicio = new Date(item.tipo === 'EVENTO' ? item.fec_ini_eve : item.fec_ini_cur);
-    
-    if (fechaInicio <= fechaActual) {
-      return 'En Curso';
-    } else {
-      return 'Próximamente';
-    }
-  };
-
   if (showDetail && selectedItem) {
     return (
       <DetalleEventoCurso
         item={selectedItem}
         onClose={handleCloseDetail}
+        onVerCartaMotivacion={handleVerCartaMotivacion}
       />
     );
   }
@@ -214,115 +162,88 @@ const AdminGestionInscripciones = () => {
       
       <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#333', mb: 1 }}>
-            Gestión de Inscripciones
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Administra las inscripciones de cursos y eventos activos (que aún no han terminado)
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#333' }}>
+              Gestión de Inscripciones
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Administra las inscripciones de eventos y cursos
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={cargarDatos}
+            disabled={loading}
+          >
+            Actualizar
+          </Button>
         </Box>
 
         {/* Estadísticas */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={{ bgcolor: '#1976d2', color: 'white' }}>
+            <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                      {stats.total}
-                    </Typography>
-                    <Typography variant="body2">
-                      Total Items
-                    </Typography>
-                  </Box>
-                  <People sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Items
+                </Typography>
+                <Typography variant="h4">{stats.total}</Typography>
               </CardContent>
             </Card>
           </Grid>
-
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={{ bgcolor: '#388e3c', color: 'white' }}>
+            <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                      {stats.eventos}
-                    </Typography>
-                    <Typography variant="body2">
-                      Eventos
-                    </Typography>
-                  </Box>
-                  <Event sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
+                <Typography color="text.secondary" gutterBottom>
+                  Eventos
+                </Typography>
+                <Typography variant="h4">{stats.eventos}</Typography>
               </CardContent>
             </Card>
           </Grid>
-
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={{ bgcolor: '#f57c00', color: 'white' }}>
+            <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                      {stats.cursos}
-                    </Typography>
-                    <Typography variant="body2">
-                      Cursos
-                    </Typography>
-                  </Box>
-                  <School sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
+                <Typography color="text.secondary" gutterBottom>
+                  Cursos
+                </Typography>
+                <Typography variant="h4">{stats.cursos}</Typography>
               </CardContent>
             </Card>
           </Grid>
-
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={{ bgcolor: '#d32f2f', color: 'white' }}>
+            <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                      {stats.inscripcionesPendientes}
-                    </Typography>
-                    <Typography variant="body2">
-                      Pendientes
-                    </Typography>
-                  </Box>
-                  <Badge badgeContent={stats.inscripcionesPendientes} color="error">
-                    <People sx={{ fontSize: 40, opacity: 0.8 }} />
-                  </Badge>
-                </Box>
+                <Typography color="text.secondary" gutterBottom>
+                  Pendientes
+                </Typography>
+                <Typography variant="h4" color="warning.main">
+                  {stats.inscripcionesPendientes}
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
-
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={{ bgcolor: '#7b1fa2', color: 'white' }}>
+            <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                      {stats.inscripcionesAprobadas}
-                    </Typography>
-                    <Typography variant="body2">
-                      Aprobadas
-                    </Typography>
-                  </Box>
-                  <People sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
+                <Typography color="text.secondary" gutterBottom>
+                  Aprobadas
+                </Typography>
+                <Typography variant="h4" color="success.main">
+                  {stats.inscripcionesAprobadas}
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
 
-        {/* Controles */}
+        {/* Filtros */}
         <Paper sx={{ p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <TextField
-              placeholder="Buscar por nombre, organizador o categoría..."
+              placeholder="Buscar por nombre, organizador..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -334,14 +255,6 @@ const AdminGestionInscripciones = () => {
               }}
               sx={{ flexGrow: 1 }}
             />
-            <Button
-              variant="outlined"
-              startIcon={<Refresh />}
-              onClick={cargarDatos}
-              disabled={loading}
-            >
-              Actualizar
-            </Button>
           </Box>
 
           <Tabs
@@ -350,210 +263,141 @@ const AdminGestionInscripciones = () => {
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
             <Tab label="Todos" />
-            <Tab 
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Event />
-                  Eventos
-                </Box>
-              } 
-            />
-            <Tab 
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <School />
-                  Cursos
-                </Box>
-              } 
-            />
+            <Tab label="Eventos" />
+            <Tab label="Cursos" />
           </Tabs>
         </Paper>
 
-        {/* Lista de Items */}
+        {/* Lista de items */}
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
             <CircularProgress />
           </Box>
         ) : (
           <Grid container spacing={3}>
-            {filteredItems.map((item) => {
-              const nombre = item.tipo === 'EVENTO' ? item.nom_eve : item.nom_cur;
-              const descripcion = item.tipo === 'EVENTO' ? item.des_eve : item.des_cur;
-              const fechaInicio = item.tipo === 'EVENTO' ? item.fec_ini_eve : item.fec_ini_cur;
-              const fechaFin = item.tipo === 'EVENTO' ? item.fec_fin_eve : item.fec_fin_cur;
-              const ubicacion = item.tipo === 'EVENTO' ? item.ubi_eve : item.ubi_cur;
-
-              return (
-                <Grid item xs={12} md={6} lg={4} key={`${item.tipo}-${item.tipo === 'EVENTO' ? item.id_eve : item.id_cur}`}>
-                  <Card 
-                    sx={{ 
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: 4
-                      }
-                    }}
-                  >
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      {/* Header */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                        <Chip
-                          icon={item.tipo === 'EVENTO' ? <Event /> : <School />}
-                          label={item.tipo}
-                          color={item.tipo === 'EVENTO' ? 'primary' : 'secondary'}
-                          size="small"
-                        />
-                        <Chip
-                          label={getEstadoTexto(item)}
-                          color={getEstadoColor(item)}
-                          size="small"
-                        />
-                      </Box>
-
-                      {/* Título */}
-                      <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, lineHeight: 1.2 }}>
-                        {nombre}
-                      </Typography>
-
-                      {/* Descripción */}
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary" 
-                        sx={{ 
-                          mb: 2,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {descripcion}
-                      </Typography>
-
-                      {/* Información básica */}
-                      <Box sx={{ mb: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <CalendarToday sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                          <Typography variant="body2">
-                            {formatearFecha(fechaInicio)}
-                            {fechaFin && ` - ${formatearFecha(fechaFin)}`}
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <LocationOn sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                          <Typography variant="body2" noWrap>
-                            {ubicacion}
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Person sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                          <Typography variant="body2" noWrap>
-                            {item.organizador_nombre}
-                          </Typography>
-                        </Box>
-
-                        {/* Precio */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                          <Typography variant="body2">
-                            {item.es_gratuito ? 'Gratuito' : `$${item.precio}`}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Divider sx={{ my: 2 }} />
-
-                      {/* Estadísticas de inscripciones */}
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                          Inscripciones:
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                          <Chip
-                            label={`Total: ${item.estadisticas?.total || 0}`}
-                            size="small"
-                            variant="outlined"
-                          />
-                          <Chip
-                            label={`Aprobadas: ${item.estadisticas?.aprobadas || 0}`}
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                          />
-                          {(item.estadisticas?.pendientes || 0) > 0 && (
-                            <Chip
-                              label={`Pendientes: ${item.estadisticas.pendientes}`}
-                              size="small"
-                              color="warning"
-                              variant="outlined"
-                            />
-                          )}
-                          <Chip
-                            label={`Disponibles: ${item.estadisticas?.disponibles || 0}`}
-                            size="small"
-                            color="info"
-                            variant="outlined"
-                          />
-                        </Box>
-                      </Box>
-                    </CardContent>
-
-                    {/* Acciones */}
-                    <Box sx={{ p: 2, pt: 0 }}>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        startIcon={<Visibility />}
-                        onClick={() => handleVerDetalle(item)}
-                        sx={{
-                          bgcolor: '#6d1313',
-                          '&:hover': { bgcolor: '#5a0f0f' }
-                        }}
-                      >
-                        Ver Detalles
-                      </Button>
+            {filteredItems.map((item) => (
+              <Grid item xs={12} md={6} lg={4} key={`${item.tipo}-${item.id_eve || item.id_cur}`}>
+                <Card 
+                  sx={{ 
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 3
+                    }
+                  }}
+                  onClick={() => handleItemClick(item)}
+                >
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Chip
+                        icon={item.tipo === 'EVENTO' ? <Event /> : <School />}
+                        label={item.tipo}
+                        color={item.tipo === 'EVENTO' ? 'primary' : 'secondary'}
+                        size="small"
+                      />
+                      <Chip
+                        label={item.es_gratuito ? 'Gratuito' : `$${item.precio}`}
+                        color={item.es_gratuito ? 'success' : 'warning'}
+                        size="small"
+                      />
                     </Box>
-                  </Card>
-                </Grid>
-              );
-            })}
+
+                    <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold' }}>
+                      {item.tipo === 'EVENTO' ? item.nom_eve : item.nom_cur}
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {(item.tipo === 'EVENTO' ? item.des_eve : item.des_cur)?.substring(0, 100)}...
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                      <CalendarToday sx={{ fontSize: 16 }} />
+                      <Typography variant="caption">
+                        {formatearFecha(item.tipo === 'EVENTO' ? item.fec_ini_eve : item.fec_ini_cur)}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                      <LocationOn sx={{ fontSize: 16 }} />
+                      <Typography variant="caption">
+                        {item.tipo === 'EVENTO' ? item.ubi_eve : item.ubi_cur}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2 }}>
+                      <Person sx={{ fontSize: 16 }} />
+                      <Typography variant="caption">
+                        {item.organizador_nombre}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Badge badgeContent={item.inscripciones_pendientes} color="warning">
+                        <People sx={{ fontSize: 20 }} />
+                      </Badge>
+                      <Typography variant="caption" color="text.secondary">
+                        {item.total_inscripciones} inscripciones
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
           </Grid>
         )}
 
-        {/* Mensaje cuando no hay resultados */}
-        {!loading && filteredItems.length === 0 && (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
+        {filteredItems.length === 0 && !loading && (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" color="text.secondary">
-              No se encontraron resultados
+              No se encontraron elementos
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {searchTerm ? 'Intenta con otros términos de búsqueda' : 'No hay cursos o eventos activos (que aún no hayan terminado)'}
-            </Typography>
-          </Paper>
+          </Box>
         )}
       </Box>
 
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      {/* Modal para mostrar la carta de motivación */}
+      <Dialog
+        open={openCartaModal}
+        onClose={() => setOpenCartaModal(false)}
+        maxWidth="md"
+        fullWidth
       >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">📝 Carta de Motivación</Typography>
+            <IconButton onClick={() => setOpenCartaModal(false)}>
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Paper sx={{ p: 3, backgroundColor: '#f9f9f9', minHeight: '200px' }}>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                whiteSpace: 'pre-wrap', 
+                lineHeight: 1.6,
+                fontFamily: 'Arial, sans-serif'
+              }}
+            >
+              {cartaMotivacion || 'No hay contenido disponible.'}
+            </Typography>
+          </Paper>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setOpenCartaModal(false)} 
+            color="primary" 
+            variant="contained"
+            sx={{ bgcolor: '#6d1313', '&:hover': { bgcolor: '#5a0f0f' } }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
 
-export default AdminGestionInscripciones; 
+export default AdminGestionInscripciones;

@@ -981,23 +981,34 @@ const AdminCursos = () => {
                   )}
 
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Checkbox
-                        checked={curso.requiere_verificacion_docs}
-                        onChange={(e) => setCurso(prev => ({ ...prev, requiere_verificacion_docs: e.target.checked }))}
-                      />
-                      <Typography>Requiere verificación de documentos</Typography>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Checkbox
-                        checked={curso.requiere_carta_motivacion}
-                        onChange={(e) => setCurso(prev => ({ ...prev, requiere_carta_motivacion: e.target.checked }))}
-                      />
-                      <Typography>Se requiere carta de motivación</Typography>
-                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Checkbox
+                            checked={curso.requiere_verificacion_docs}
+                            onChange={(e) => setCurso(prev => ({ ...prev, requiere_verificacion_docs: e.target.checked }))}
+                            sx={{
+                              color: '#6d1313',
+                              '&.Mui-checked': { color: '#6d1313' }
+                            }}
+                          />
+                          <Typography>Requiere verificación de documentos</Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Checkbox
+                            checked={curso.requiere_carta_motivacion}
+                            onChange={e => setCurso({ ...curso, requiere_carta_motivacion: e.target.checked })}
+                            sx={{
+                              color: '#6d1313',
+                              '&.Mui-checked': { color: '#6d1313' }
+                            }}
+                          />
+                          <Typography>Se requiere carta de motivación</Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
                   </Grid>
                 </Grid>
               </Grid>
@@ -1072,6 +1083,7 @@ const AdminCursos = () => {
               </Grid>
 
               {/* Carta de motivación */}
+              {/*
               {curso.requiere_carta_motivacion && (
                 <Grid item xs={12} md={10}>
                   <TextField
@@ -1095,6 +1107,7 @@ const AdminCursos = () => {
                   />
                 </Grid>
               )}
+              */}
             </Grid>
           </DialogContent>
 

@@ -70,7 +70,7 @@ const CrearEventos = () => {
         fec_fin_eve: '',
         hor_ini_eve: '',
         hor_fin_eve: '',
-    dur_eve: 0,
+        dur_eve: 0,
         are_eve: '',
         ubi_eve: '',
         ced_org_eve: '',
@@ -78,8 +78,10 @@ const CrearEventos = () => {
         tipo_audiencia_eve: '',
         es_gratuito: true,
         precio: '',
-    carreras_seleccionadas: []
-  });
+        carreras_seleccionadas: [],
+        requiere_carta_motivacion: true,
+        carta_motivacion: '',
+    });
 
   // Estados para datos del backend
   const [categorias, setCategorias] = useState([]);
@@ -164,7 +166,9 @@ const CrearEventos = () => {
         tipo_audiencia_eve: eventoData.tipo_audiencia_eve || '',
         es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
         precio: eventoData.precio || '',
-        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : []
+        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : [],
+        requiere_carta_motivacion: Boolean(eventoData.requiere_carta_motivacion),
+        carta_motivacion: eventoData.carta_motivacion || '',
       });
 
     } catch (error) {
@@ -383,7 +387,8 @@ const CrearEventos = () => {
         capacidad_max_eve: parseInt(evento.capacidad_max_eve),
         tipo_audiencia_eve: evento.tipo_audiencia_eve,
         es_gratuito: evento.es_gratuito,
-        precio: evento.es_gratuito ? null : parseFloat(evento.precio)
+        precio: evento.es_gratuito ? null : parseFloat(evento.precio),
+        requiere_carta_motivacion: Boolean(evento.requiere_carta_motivacion),
       };
 
       let eventoId;
@@ -942,6 +947,42 @@ const CrearEventos = () => {
               </Card>
             </Grid>
 
+            {/* Requiere Carta de Motivación */}
+            <Grid item xs={12}>
+              <Box sx={{ mt: 3, mb: 1, p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ color: '#6d1313', fontWeight: 'bold', mr: 1 }}>
+                    <span role="img" aria-label="motivación">📝</span> Configuración de Carta de Motivación
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Checkbox
+                    checked={evento.requiere_carta_motivacion}
+                    onChange={e => setEvento({ ...evento, requiere_carta_motivacion: e.target.checked })}
+                    sx={{
+                      color: '#6d1313',
+                      '&.Mui-checked': { color: '#6d1313' }
+                    }}
+                  />
+                  <Typography variant="body1">
+                    Requiere carta de motivación
+                  </Typography>
+                </Box>
+                {evento.requiere_carta_motivacion && (
+                  <TextField
+                    fullWidth
+                    label="Carta de Motivación (opcional)"
+                    multiline
+                    rows={4}
+                    value={evento.carta_motivacion || ''}
+                    onChange={handleChange('carta_motivacion')}
+                    placeholder="Texto de ejemplo para la carta de motivación"
+                    sx={{ mt: 2 }}
+                  />
+                )}
+              </Box>
+            </Grid>
+
             {/* Botones de acción */}
             <Grid item xs={12}>
               <Divider sx={{ mb: 3 }} />
@@ -979,4 +1020,4 @@ const CrearEventos = () => {
   );
 };
 
-export default CrearEventos; 
+export default CrearEventos;

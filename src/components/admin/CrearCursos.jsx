@@ -489,27 +489,6 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
               </Typography>
             </Box>
 
-            {curso.requiere_carta_motivacion && (
-              <TextField
-                fullWidth
-                label="Carta de motivación del curso"
-                value={curso.carta_motivacion}
-                onChange={e => setCurso({ ...curso, carta_motivacion: e.target.value })}
-                multiline
-                minRows={10}
-                maxRows={10}
-                required
-                sx={{
-                  mt: 2,
-                  minHeight: 300,
-                  minWidth: 900,
-                  '& textarea': {
-                    fontSize: '1rem',
-                    resize: 'vertical'
-                  }
-                }}
-              />
-            )}
           </Box>
         );
       case 1:

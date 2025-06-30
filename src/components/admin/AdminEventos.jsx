@@ -27,7 +27,8 @@ import {
   Divider,
   OutlinedInput,
   Checkbox,
-  ListItemText
+  ListItemText,
+  FormControlLabel // <-- AGREGA ESTA LÍNEA
 } from '@mui/material';
 import {
   Add,
@@ -93,7 +94,9 @@ const AdminEventos = () => {
     tipo_audiencia_eve: '',
     es_gratuito: true,
     precio: '',
-    carreras_seleccionadas: []
+    carreras_seleccionadas: [],
+    requiere_verificacion_docs: true,
+    requiere_carta_motivacion: true, // <-- SIEMPRE MARCADO POR DEFECTO
   });
 
   // Constantes
@@ -266,7 +269,11 @@ const AdminEventos = () => {
         tipo_audiencia_eve: eventoData.tipo_audiencia_eve || '',
         es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
         precio: eventoData.precio || '',
-        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : []
+        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : [],
+        requiere_verificacion_docs: eventoData.requiere_verificacion_docs !== undefined ? eventoData.requiere_verificacion_docs : true,
+        requiere_carta_motivacion: eventoData && eventoData.requiere_carta_motivacion !== undefined
+  ? Boolean(eventoData.requiere_carta_motivacion)
+  : true,
       });
     } else {
       // Modo creación - limpiar formulario
@@ -286,7 +293,9 @@ const AdminEventos = () => {
         tipo_audiencia_eve: '',
         es_gratuito: true,
         precio: '',
-        carreras_seleccionadas: []
+        carreras_seleccionadas: [],
+        requiere_carta_motivacion: true, // Siempre marcado por defecto
+        requiere_verificacion_docs: true,
       });
     }
     
@@ -361,7 +370,9 @@ const AdminEventos = () => {
         capacidad_max_eve: parseInt(evento.capacidad_max_eve),
         tipo_audiencia_eve: evento.tipo_audiencia_eve,
         es_gratuito: evento.es_gratuito,
-        precio: evento.es_gratuito ? null : parseFloat(evento.precio)
+        precio: evento.es_gratuito ? null : parseFloat(evento.precio),
+        requiere_verificacion_docs: evento.requiere_verificacion_docs, // <-- AGREGA ESTO
+        requiere_carta_motivacion: evento.requiere_carta_motivacion,   // <-- Y ESTO
       };
 
       let eventoId;
@@ -806,7 +817,7 @@ const AdminEventos = () => {
                           {evento.carreras.slice(0, 2).map((carrera) => (
                             <Chip 
                               key={carrera.id}
-                              label={carrera.nombre}
+                              label={carrera?.nom_car || carrera.id}
                               size="small"
                               variant="outlined"
                               sx={{ fontSize: '0.7rem' }}
@@ -1250,6 +1261,49 @@ const AdminEventos = () => {
                   </Grid>
                 </Grid>
               </Grid>
+
+              {/* Nuevas opciones de verificación */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                  <Info sx={{ mr: 1 }} />
+                  Opciones de Verificación
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Checkbox
+                        checked={evento.requiere_verificacion_docs}
+                        onChange={e => setEvento(prev => ({ ...prev, requiere_verificacion_docs: e.target.checked }))}
+                        sx={{
+                          color: '#6d1313',
+                          '&.Mui-checked': { color: '#6d1313' }
+                        }}
+                      />
+                      <Typography>Requiere verificación de documentos</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={evento.requiere_carta_motivacion}
+                          onChange={e => setEvento(prev => ({
+                            ...prev,
+                            requiere_carta_motivacion: e.target.checked
+                          }))}
+                          sx={{
+                            color: '#6d1313',
+                            '&.Mui-checked': { color: '#6d1313' }
+                          }}
+                        />
+                      }
+                      label="Requiere carta de motivación"
+                    />
+                  </Grid>
+                </Grid>
+              </Grid>
             </Grid>
           </DialogContent>
 
@@ -1297,4 +1351,4 @@ const AdminEventos = () => {
   );
 };
 
-export default AdminEventos; 
+export default AdminEventos;
