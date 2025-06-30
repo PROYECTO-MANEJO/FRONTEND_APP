@@ -15,12 +15,13 @@ class AuthService {
         localStorage.setItem('user', JSON.stringify(response.data.user));
         return response.data;
       }
-      
+
       throw new Error(response.data.message || 'Error en el login');
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error de conexión');
     }
   }
+
 
   // Registro de usuario normal
   async register(userData) {
@@ -32,6 +33,7 @@ class AuthService {
         nombre2: userData.nombre2 || '',
         apellido: userData.apellido,
         apellido2: userData.apellido2 || '',
+
         ced_usu: userData.ced_usu
       };
 
@@ -42,18 +44,19 @@ class AuthService {
 
       const response = await api.post('/auth/createUser', requestData);
 
+
       if (response.data.success) {
-        // Guardar token y datos del usuario en localStorage
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        // NO guardes token porque no se entrega
+        // simplemente retorna la respuesta completa
         return response.data;
       }
-      
+
       throw new Error(response.data.message || 'Error en el registro');
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error de conexión');
     }
   }
+
 
   // Crear usuario administrador
   async createAdmin(adminData) {
@@ -74,7 +77,7 @@ class AuthService {
       if (response.data.success) {
         return response.data;
       }
-      
+
       throw new Error(response.data.message || 'Error al crear administrador');
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error de conexión');
@@ -85,14 +88,14 @@ class AuthService {
   async checkToken() {
     try {
       const response = await api.get('/auth/check-token');
-      
+
       if (response.data.success) {
         // Actualizar datos del usuario
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('token', response.data.token);
         return response.data;
       }
-      
+
       throw new Error('Token inválido');
     } catch {
       this.logout();
@@ -138,7 +141,7 @@ class AuthService {
       if (response.data.success) {
         return response.data;
       }
-      
+
       throw new Error(response.data.message || 'Error al enviar el correo de recuperación');
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error de conexión');
@@ -156,7 +159,7 @@ class AuthService {
       if (response.data.success) {
         return response.data;
       }
-      
+
       throw new Error(response.data.message || 'Error al restablecer la contraseña');
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error de conexión');
@@ -173,7 +176,7 @@ class AuthService {
       if (response.data.success) {
         return response.data;
       }
-      
+
       throw new Error(response.data.message || 'Token de recuperación inválido');
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Token inválido o expirado');

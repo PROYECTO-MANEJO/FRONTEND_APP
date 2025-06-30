@@ -1,25 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Typography,
-  Box,
-  Grid,
-  Paper,
-  Tabs,
-  Tab,
+
+
+  Alert,
   Card,
   CardContent,
+  Typography,
   Button,
+  Grid,
+  Box,
   Chip,
+  Alert,
   CircularProgress,
-  Alert
+  Tabs,
+  Tab,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
+
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
+
   Download as DownloadIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Event as EventIcon,
+  School as SchoolIcon,
+  DateRange as DateRangeIcon,
+  Grade as GradeIcon,
+  Groups as GroupsIcon,
+  Assignment as AssignmentIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { obtenerParticipacionesTerminadas, descargarCertificado } from '../../services/certificadoService';
+import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
+import api from '../../services/api';
 
 const MisCertificados = () => {
   const [participaciones, setParticipaciones] = useState({ eventos: [], cursos: [] });
@@ -27,6 +46,11 @@ const MisCertificados = () => {
   const [error, setError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [downloading, setDownloading] = useState(null);
+  const [viewerDialog, setViewerDialog] = useState({
+    open: false,
+    pdfUrl: '',
+    certificado: null
+  });
 
   useEffect(() => {
     cargarParticipaciones();
@@ -70,6 +94,34 @@ const MisCertificados = () => {
     { label: `Reprobados (${participacionesReprobadas.length})`, data: participacionesReprobadas },
   ];
 
+  const handleVerCertificado = async (tipo, idParticipacion, nombreCertificado) => {
+    try {
+      const response = await api.get(
+        `/certificados/descargar/${tipo}/${idParticipacion}`,
+        {
+          responseType: 'blob',
+          headers: {
+            'x-token': localStorage.getItem('token'),
+          }
+        }
+      );
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+
+      setViewerDialog({
+        open: true,
+        pdfUrl: url,
+        certificado: nombreCertificado
+      });
+
+    } catch (error) {
+      console.error(error);
+      setError('No se pudo cargar la vista previa del certificado');
+    }
+  };
+
+
   const formatearFecha = (fecha) => {
     if (!fecha) return 'N/A';
     return new Date(fecha).toLocaleDateString('es-ES', {
@@ -83,10 +135,12 @@ const MisCertificados = () => {
     const tipo = participacion.evento ? 'evento' : 'curso';
     const esAprobado = participacion.aprobado;
     const tieneCertificado = participacion.tiene_certificado_pdf;
+    const nombreCertificado = tipo === 'evento' ? participacion.evento : participacion.curso;
 
     return (
       <Card
         sx={{
+          mb: 2,
           borderRadius: 2,
           maxWidth: 320,
           mx: 'auto',

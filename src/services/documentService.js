@@ -4,7 +4,7 @@ const BASE_URL = '/users';
 
 export const documentService = {
   // ✅ FUNCIONES PARA USUARIOS
-  
+
   // Obtener estado de documentos del usuario actual
   getDocumentStatus: async () => {
     try {
@@ -20,7 +20,7 @@ export const documentService = {
   uploadDocuments: async (formData) => {
     try {
       console.log('📤 Enviando FormData al servidor...');
-      
+
       const response = await api.post(`${BASE_URL}/upload-documents`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -40,12 +40,12 @@ export const documentService = {
   deleteDocument: async (tipo) => {
     try {
       console.log('🗑️ Eliminando documentos tipo:', tipo);
-      
+
       const response = await api.delete(`${BASE_URL}/delete-documents/${tipo}`);
-      
+
       console.log('✅ Documentos eliminados:', response.data);
       return response.data;
-      
+
     } catch (error) {
       console.error('❌ Error eliminando documentos:', error);
       throw error;
@@ -65,7 +65,7 @@ export const documentService = {
   },
 
   // ✅ FUNCIONES PARA ADMINISTRADORES
-  
+
   // Obtener usuarios con documentos pendientes de verificación
   getPendingDocuments: async () => {
     try {
@@ -88,13 +88,23 @@ export const documentService = {
     }
   },
 
-  // Aprobar documentos de un usuario
-  approveUserDocuments: async (userId) => {
+  // Aprobar documentos individuales (cedula, matricula o all)
+  approveUserDocument: async (userId, documentType) => {
     try {
-      const response = await api.put(`${BASE_URL}/approve-documents/${userId}`);
+      const response = await api.put(`${BASE_URL}/approve-documents/${userId}/${documentType}`);
+      return response.data; 
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al aprobar documento');
+    }
+  },
+
+  // Aprobar todos los documentos de forma global (botón masivo del CRUD)
+  approveAllDocuments: async (userId) => {
+    try {
+      const response = await api.put(`${BASE_URL}/approve-all/${userId}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al aprobar documentos');
+      throw new Error(error.response?.data?.message || 'Error al aprobar documentos globalmente');
     }
   },
 
