@@ -56,6 +56,9 @@ import DeveloperLayout from './components/developer/DeveloperLayout';
 import SolicitudesDesarrollador from './components/developer/SolicitudesDesarrollador';
 import DetalleSolicitudDesarrollador from './components/developer/DetalleSolicitudDesarrollador';
 
+// HomePage component
+import HomePage from './components/HomePage';
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -64,8 +67,8 @@ function App() {
         <SidebarProvider>
           <Router>
           <Routes>
-            {/* Redirect root to login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* Home page - accessible to everyone */}
+            <Route path="/" element={<HomePage />} />
             
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
