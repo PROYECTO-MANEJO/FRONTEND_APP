@@ -44,7 +44,8 @@ import {
   Save,
   Cancel,
   Info,
-  AttachMoney
+  AttachMoney,
+  Close
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -56,6 +57,7 @@ const AdminCursos = () => {
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [refreshKey, setRefreshKey] = useState(0); // Para forzar re-renderización
 
   const [stats, setStats] = useState({
     totalCursos: 0,
@@ -93,6 +95,9 @@ const AdminCursos = () => {
     precio: '',
     requiere_carta_motivacion: true, // <--- NUEVO
     carta_motivacion: '',            // <--- NUEVO
+    porcentaje_asistencia_aprobacion: 80,
+    nota_minima_aprobacion: 7.0
+
   });
 
   const TIPOS_AUDIENCIA = [
@@ -153,7 +158,10 @@ const AdminCursos = () => {
       
       // Calcular estadísticas
       const totalCursos = cursosData.length;
-      const cursosActivos = cursosData.filter(c => c.estado === 'EN_CURSO' || c.estado === 'PROXIMAMENTE' || !c.estado).length;
+      const cursosActivos = cursosData.filter(c => {
+        const estado = obtenerEstadoCurso(c.fec_ini_cur, c.fec_fin_cur, c.estado);
+        return estado === 'EN_CURSO' || estado === 'PROXIMAMENTE';
+      }).length;
       const totalInscripciones = cursosData.reduce((sum, c) => sum + (c.total_inscripciones || 0), 0);
       const capacidadTotal = cursosData.reduce((sum, c) => sum + parseInt(c.capacidad_max_cur || 0), 0);
       
@@ -206,6 +214,9 @@ const AdminCursos = () => {
         precio: cursoData.precio || '',
         requiere_carta_motivacion: cursoData?.requiere_carta_motivacion !== undefined ? cursoData.requiere_carta_motivacion : true,
         carta_motivacion: cursoData?.carta_motivacion || '',
+        porcentaje_asistencia_aprobacion: cursoData.porcentaje_asistencia_aprobacion || 80,
+        nota_minima_aprobacion: cursoData.nota_minima_aprobacion || 7.0
+
       });
     } else {
       // Modo creación - limpiar formulario
@@ -223,8 +234,12 @@ const AdminCursos = () => {
         requiere_verificacion_docs: true,
         es_gratuito: true,
         precio: '',
+
         requiere_carta_motivacion: true,
         carta_motivacion: '',
+
+        porcentaje_asistencia_aprobacion: 80,
+        nota_minima_aprobacion: 7.0
       });
     }
     
@@ -301,6 +316,25 @@ const AdminCursos = () => {
       }
     }
 
+    // Validar criterios de aprobación (OBLIGATORIOS)
+    if (!curso.porcentaje_asistencia_aprobacion || curso.porcentaje_asistencia_aprobacion === '') {
+      nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia mínimo es obligatorio';
+    } else {
+      const porcentajeAsistencia = parseFloat(curso.porcentaje_asistencia_aprobacion);
+      if (isNaN(porcentajeAsistencia) || porcentajeAsistencia < 0 || porcentajeAsistencia > 100) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia debe ser un número entre 0 y 100';
+      }
+    }
+
+    if (!curso.nota_minima_aprobacion || curso.nota_minima_aprobacion === '') {
+      nuevosErrores.nota_minima_aprobacion = 'La nota mínima de aprobación es obligatoria';
+    } else {
+      const notaMinima = parseFloat(curso.nota_minima_aprobacion);
+      if (isNaN(notaMinima) || notaMinima < 0 || notaMinima > 10) {
+        nuevosErrores.nota_minima_aprobacion = 'La nota mínima debe ser un número entre 0 y 10';
+      }
+    }
+
     if (Object.keys(nuevosErrores).length > 0) {
       setErrors(nuevosErrores);
       return;
@@ -325,6 +359,8 @@ const AdminCursos = () => {
         precio: curso.es_gratuito ? null : parseFloat(curso.precio),
         requiere_carta_motivacion: curso.requiere_carta_motivacion,
         carta_motivacion: curso.requiere_carta_motivacion ? curso.carta_motivacion : '',
+        porcentaje_asistencia_aprobacion: parseFloat(curso.porcentaje_asistencia_aprobacion),
+        nota_minima_aprobacion: parseFloat(curso.nota_minima_aprobacion)
       };
 
       let cursoId;
@@ -438,6 +474,67 @@ const AdminCursos = () => {
     }
   };
 
+  const handleCerrarCurso = async (cursoId, nombreCurso) => {
+    console.log('🚀 Iniciando cierre de curso:', { cursoId, nombreCurso });
+    
+    if (window.confirm(`¿Estás seguro de que quieres cerrar el curso "${nombreCurso}"? Esta acción generará certificados automáticamente para los participantes aprobados y no se puede deshacer.`)) {
+      try {
+        console.log('📤 Enviando petición de cierre...');
+        const response = await api.put(`/cursos/${cursoId}/cerrar`);
+        
+        console.log('✅ Respuesta del servidor:', response.data);
+        
+        setSnackbar({
+          open: true,
+          message: response.data.message || 'Curso cerrado correctamente',
+          severity: 'success'
+        });
+        
+        // Mostrar estadísticas si están disponibles
+        if (response.data.estadisticas) {
+          const stats = response.data.estadisticas;
+          console.log('📊 Estadísticas del cierre:', stats);
+          
+          // Opcional: mostrar un dialogo con más detalles
+          setTimeout(() => {
+            setSnackbar({
+              open: true,
+              message: `Certificados generados: ${stats.certificadosGenerados}/${stats.participantesAprobados} participantes aprobados`,
+              severity: 'info'
+            });
+          }, 3000);
+        }
+        
+        console.log('🔄 Recargando datos...');
+        // Pequeña pausa para asegurar que el backend procesó el cambio
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await cargarDatos();
+        
+        // Verificación adicional: buscar el curso específico para confirmar su estado
+        const cursosActualizados = await api.get('/cursos');
+        const cursoActualizado = cursosActualizados.data.cursos.find(c => c.id_cur === cursoId);
+        console.log('🔍 Estado del curso después del cierre:', {
+          cursoId,
+          estadoNuevo: cursoActualizado?.estado,
+          curso: cursoActualizado
+        });
+        
+        setRefreshKey(prev => prev + 1); // Forzar re-renderización
+        console.log('✅ Datos recargados y componente actualizado');
+        
+      } catch (error) {
+        console.error('❌ Error al cerrar curso:', error);
+        console.error('📋 Detalles del error:', error.response?.data);
+        
+        setSnackbar({
+          open: true,
+          message: error.response?.data?.message || 'Error al cerrar el curso',
+          severity: 'error'
+        });
+      }
+    }
+  };
+
   const getEstadoColor = (estado) => {
     switch (estado) {
       case 'EN_CURSO': return 'success';
@@ -453,6 +550,24 @@ const AdminCursos = () => {
   const formatearFecha = (fecha) => {
     if (!fecha) return 'No especificada';
     return new Date(fecha).toLocaleDateString('es-ES');
+  };
+
+  // Función auxiliar para obtener el estado del curso
+  const obtenerEstadoCurso = (fechaInicio, fechaFin, estadoDB = null) => {
+    // Si el curso está cerrado en la base de datos, siempre mostrar FINALIZADO
+    if (estadoDB === 'CERRADO') {
+      console.log('✅ Curso cerrado en BD, retornando FINALIZADO para:', { estadoDB });
+      return 'FINALIZADO';
+    }
+    
+    const hoy = new Date();
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    
+    if (hoy < inicio) return 'PROXIMAMENTE';
+    if (hoy >= inicio && hoy <= fin) return 'EN_CURSO';
+    if (hoy > fin) return 'FINALIZADO';
+    return 'ACTIVO'; // Estado por defecto para cursos sin fechas específicas
   };
 
   const statsCards = [
@@ -545,7 +660,7 @@ const AdminCursos = () => {
         ) : (
           <Grid container spacing={3}>
             {cursos.map((curso) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={curso.id_cur}>
+              <Grid item xs={12} sm={6} md={4} lg={3} key={`${curso.id_cur}-${refreshKey}`}>
                 <Card sx={{ 
                   height: '100%', 
                   display: 'flex', 
@@ -573,8 +688,8 @@ const AdminCursos = () => {
                           {curso.nom_cur}
                         </Typography>
                         <Chip 
-                          label={curso.estado || 'ACTIVO'} 
-                          color={getEstadoColor(curso.estado || 'ACTIVO')}
+                          label={obtenerEstadoCurso(curso.fec_ini_cur, curso.fec_fin_cur, curso.estado)} 
+                          color={getEstadoColor(obtenerEstadoCurso(curso.fec_ini_cur, curso.fec_fin_cur, curso.estado))}
                           size="small"
                         />
                       </Box>
@@ -711,6 +826,17 @@ const AdminCursos = () => {
                       >
                         <Edit />
                       </IconButton>
+                      {/* Botón para cerrar curso - solo visible si está EN_CURSO */}
+                      {obtenerEstadoCurso(curso.fec_ini_cur, curso.fec_fin_cur, curso.estado) === 'EN_CURSO' && (
+                        <IconButton
+                          color="warning"
+                          size="small"
+                          title="Cerrar curso"
+                          onClick={() => handleCerrarCurso(curso.id_cur, curso.nom_cur)}
+                        >
+                          <Close />
+                        </IconButton>
+                      )}
                       <IconButton 
                         color="error" 
                         size="small" 
@@ -1108,6 +1234,74 @@ const AdminCursos = () => {
                 </Grid>
               )}
               */}
+
+              {/* Criterios de Aprobación */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', color: '#6d1313' }}>
+                  <School sx={{ mr: 1 }} />
+                  📋 Criterios de Aprobación (Obligatorios)
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Porcentaje mínimo de asistencia (%)"
+                      value={curso.porcentaje_asistencia_aprobacion}
+                      onChange={(e) => setCurso(prev => ({ ...prev, porcentaje_asistencia_aprobacion: e.target.value }))}
+                      error={!!errors.porcentaje_asistencia_aprobacion}
+                      helperText={errors.porcentaje_asistencia_aprobacion || 'Porcentaje mínimo requerido para aprobar (0-100)'}
+                      inputProps={{ 
+                        min: 0, 
+                        max: 100,
+                        step: 1
+                      }}
+                      required
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#6d1313',
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Nota mínima de aprobación"
+                      value={curso.nota_minima_aprobacion}
+                      onChange={(e) => setCurso(prev => ({ ...prev, nota_minima_aprobacion: e.target.value }))}
+                      error={!!errors.nota_minima_aprobacion}
+                      helperText={errors.nota_minima_aprobacion || 'Nota mínima para aprobar el curso (0-10)'}
+                      inputProps={{ 
+                        min: 0, 
+                        max: 10,
+                        step: 0.1
+                      }}
+                      required
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#6d1313',
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Alert severity="warning" sx={{ bgcolor: '#fff3cd', borderColor: '#6d1313' }}>
+                      <strong>Importante:</strong> Los participantes deberán cumplir con al menos el {curso.porcentaje_asistencia_aprobacion}% de asistencia y obtener una nota mínima de {curso.nota_minima_aprobacion} para aprobar el curso y recibir su certificado.
+                    </Alert>
+                  </Grid>
+                </Grid>
+              </Grid>
+
             </Grid>
           </DialogContent>
 

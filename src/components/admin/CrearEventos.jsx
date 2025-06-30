@@ -31,7 +31,9 @@ import {
   People,
   Category,
   Edit,
-  AttachMoney
+  AttachMoney,
+  Assignment,
+  CheckCircle
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
@@ -81,7 +83,10 @@ const CrearEventos = () => {
         carreras_seleccionadas: [],
         requiere_carta_motivacion: true,
         carta_motivacion: '',
-    });
+    porcentaje_asistencia_aprobacion: 80,
+    estado: 'ACTIVO', // ACTIVO, CERRADO
+  });
+
 
   // Estados para datos del backend
   const [categorias, setCategorias] = useState([]);
@@ -167,8 +172,12 @@ const CrearEventos = () => {
         es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
         precio: eventoData.precio || '',
         carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : [],
+
         requiere_carta_motivacion: Boolean(eventoData.requiere_carta_motivacion),
         carta_motivacion: eventoData.carta_motivacion || '',
+
+        porcentaje_asistencia_aprobacion: eventoData.porcentaje_asistencia_aprobacion || 80,
+        estado: eventoData.estado || 'ACTIVO'
       });
 
     } catch (error) {
@@ -231,6 +240,18 @@ const CrearEventos = () => {
       if (value) {
         // Si se marca como gratuito, limpiar el precio
         setEvento(prev => ({ ...prev, precio: '' }));
+      }
+    }
+
+    // Validación en tiempo real para porcentaje de asistencia
+    if (field === 'porcentaje_asistencia_aprobacion') {
+      const porcentaje = parseFloat(value);
+      if (value && !isNaN(porcentaje)) {
+        if (porcentaje < 0 || porcentaje > 100) {
+          setErrors(prev => ({ ...prev, [field]: 'El porcentaje debe estar entre 0 y 100' }));
+        } else if (porcentaje < 50 && porcentaje > 0) {
+          setErrors(prev => ({ ...prev, [field]: 'Se recomienda un mínimo del 50% para eventos académicos' }));
+        }
       }
     }
 
@@ -354,6 +375,22 @@ const CrearEventos = () => {
       }
     }
 
+    // Validar campos de aprobación
+    if (!evento.porcentaje_asistencia_aprobacion || evento.porcentaje_asistencia_aprobacion === '') {
+      nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia mínimo es obligatorio';
+    } else {
+      const porcentajeAsistencia = parseFloat(evento.porcentaje_asistencia_aprobacion);
+      if (isNaN(porcentajeAsistencia)) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'Debe ser un número válido';
+      } else if (porcentajeAsistencia < 0) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje no puede ser menor a 0';
+      } else if (porcentajeAsistencia > 100) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje no puede ser mayor a 100';
+      } else if (porcentajeAsistencia < 50) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'Se recomienda un mínimo del 50% para eventos académicos';
+      }
+    }
+
     setErrors(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
@@ -388,7 +425,12 @@ const CrearEventos = () => {
         tipo_audiencia_eve: evento.tipo_audiencia_eve,
         es_gratuito: evento.es_gratuito,
         precio: evento.es_gratuito ? null : parseFloat(evento.precio),
+
         requiere_carta_motivacion: Boolean(evento.requiere_carta_motivacion),
+
+        porcentaje_asistencia_aprobacion: parseInt(evento.porcentaje_asistencia_aprobacion, 10),
+        estado: evento.estado || 'ACTIVO'
+
       };
 
       let eventoId;
@@ -476,7 +518,11 @@ const CrearEventos = () => {
             ced_org_eve: '',
             capacidad_max_eve: '',
             tipo_audiencia_eve: '',
-            carreras_seleccionadas: []
+            carreras_seleccionadas: [],
+            es_gratuito: true,
+            precio: '',
+            porcentaje_asistencia_aprobacion: 80,
+            estado: 'ACTIVO'
           });
         }
         setAlert({ show: false, message: '', severity: 'info' });
@@ -512,7 +558,9 @@ const CrearEventos = () => {
       tipo_audiencia_eve: '',
       es_gratuito: true,
       precio: '',
-      carreras_seleccionadas: []
+      carreras_seleccionadas: [],
+      porcentaje_asistencia_aprobacion: 80,
+      estado: 'ACTIVO'
     });
     setErrors({});
     setAlert({ show: false, message: '', severity: 'info' });
@@ -559,7 +607,7 @@ const CrearEventos = () => {
         <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
           <Grid container spacing={4}>
             {/* Información Básica */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -568,7 +616,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         label="Nombre del Evento"
@@ -580,7 +628,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
                     
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <FormControl fullWidth error={!!errors.id_cat_eve}>
                         <InputLabel>Categoría *</InputLabel>
                         <Select
@@ -597,8 +645,10 @@ const CrearEventos = () => {
                         {errors.id_cat_eve && <FormHelperText>{errors.id_cat_eve}</FormHelperText>}
                       </FormControl>
                     </Grid>
+                  </Grid>
 
-                    <Grid item xs={12}>
+                  <Grid container spacing={3}>
+                    <Grid xs={12}>
                       <TextField
                         fullWidth
                         label="Descripción"
@@ -611,8 +661,46 @@ const CrearEventos = () => {
                         required
                       />
                     </Grid>
-
-                    <Grid item xs={12} md={6}>
+                  </Grid>
+                  
+                  {/* Campos de aprobación - EXACTAMENTE COMO EN CURSOS */}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <Box sx={{ mt: 2, mb: 2, p: 2, border: '2px solid #6d1313', borderRadius: 2, bgcolor: '#fafafa' }}>
+                        <Typography variant="h6" sx={{ color: '#6d1313', fontWeight: 'bold', mb: 2 }}>
+                          📋 Criterios de Aprobación (Obligatorios)
+                        </Typography>
+                        
+                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                          <TextField
+                            fullWidth
+                            type="number"
+                            label="Porcentaje mínimo de asistencia (%)"
+                            value={evento.porcentaje_asistencia_aprobacion}
+                            onChange={handleChange('porcentaje_asistencia_aprobacion')}
+                            error={!!errors.porcentaje_asistencia_aprobacion}
+                            helperText={errors.porcentaje_asistencia_aprobacion || "Porcentaje mínimo requerido para aprobar (0-100)"}
+                            inputProps={{ 
+                              min: 0, 
+                              max: 100,
+                              step: 1
+                            }}
+                            required
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                '&.Mui-focused fieldset': {
+                                  borderColor: '#6d1313',
+                                },
+                              },
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                  
+                  <Grid container spacing={3}>
+                    <Grid xs={12} md={6}>
                       <FormControl fullWidth error={!!errors.are_eve}>
                         <InputLabel>Área *</InputLabel>
                         <Select
@@ -630,7 +718,7 @@ const CrearEventos = () => {
                       </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         label="Ubicación"
@@ -650,7 +738,7 @@ const CrearEventos = () => {
             </Grid>
 
             {/* Fechas y Horarios */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -659,7 +747,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="date"
@@ -674,7 +762,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="date"
@@ -689,7 +777,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="time"
@@ -704,7 +792,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="time"
@@ -719,7 +807,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         label="Duración Total (horas)"
@@ -734,7 +822,7 @@ const CrearEventos = () => {
             </Grid>
 
             {/* Organización y Capacidad */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -743,7 +831,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <FormControl fullWidth error={!!errors.ced_org_eve}>
                         <InputLabel>Organizador *</InputLabel>
                         <Select
@@ -761,7 +849,7 @@ const CrearEventos = () => {
                       </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="number"
@@ -780,7 +868,7 @@ const CrearEventos = () => {
             </Grid>
 
             {/* Tipo de Audiencia */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -789,7 +877,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <FormControl fullWidth error={!!errors.tipo_audiencia_eve}>
                         <InputLabel>Tipo de Audiencia *</InputLabel>
                         <Select
@@ -814,7 +902,7 @@ const CrearEventos = () => {
 
                     {/* Mostrar información del tipo seleccionado */}
                     {evento.tipo_audiencia_eve && (
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Alert severity="info" sx={{ mb: 2 }}>
                           {TIPOS_AUDIENCIA.find(t => t.value === evento.tipo_audiencia_eve)?.description}
                         </Alert>
@@ -823,7 +911,7 @@ const CrearEventos = () => {
 
                     {/* Selector de carreras solo para CARRERA_ESPECIFICA */}
                     {evento.tipo_audiencia_eve === 'CARRERA_ESPECIFICA' && (
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <FormControl fullWidth error={!!errors.carreras_seleccionadas}>
                           <InputLabel>Carreras Específicas *</InputLabel>
                           <Select
@@ -868,7 +956,7 @@ const CrearEventos = () => {
 
                     {/* Mostrar mensaje para otros tipos */}
                     {(evento.tipo_audiencia_eve === 'TODAS_CARRERAS' || evento.tipo_audiencia_eve === 'PUBLICO_GENERAL') && (
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Alert severity="success">
                           {evento.tipo_audiencia_eve === 'TODAS_CARRERAS' 
                             ? 'Este evento estará disponible automáticamente para todas las carreras de la universidad'
@@ -883,7 +971,7 @@ const CrearEventos = () => {
             </Grid>
 
             {/* Configuración de Precio */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -892,7 +980,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <FormControl error={!!errors.es_gratuito}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Checkbox
@@ -912,7 +1000,7 @@ const CrearEventos = () => {
                     </Grid>
 
                     {!evento.es_gratuito && (
-                      <Grid item xs={12} md={6}>
+                      <Grid xs={12} md={6}>
                         <TextField
                           fullWidth
                           type="number"
@@ -934,7 +1022,7 @@ const CrearEventos = () => {
                       </Grid>
                     )}
 
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Alert severity={evento.es_gratuito ? "success" : "info"}>
                         {evento.es_gratuito 
                           ? "Este evento será gratuito. Los estudiantes podrán inscribirse sin necesidad de proporcionar información de pago."
@@ -946,6 +1034,7 @@ const CrearEventos = () => {
                 </CardContent>
               </Card>
             </Grid>
+
 
             {/* Requiere Carta de Motivación */}
             <Grid item xs={12}>
@@ -987,30 +1076,70 @@ const CrearEventos = () => {
             <Grid item xs={12}>
               <Divider sx={{ mb: 3 }} />
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+
                 <Button
-                  variant="outlined"
-                  onClick={handleLimpiar}
-                  startIcon={<Cancel />}
+                  variant="contained"
+                  size="large"
+                  onClick={handleSubmit}
                   disabled={loading}
-                >
-                  Limpiar
-                </Button>
-                
-                                    <Button
-                        variant="contained"
-                        onClick={handleSubmit}
-                  startIcon={loading ? <CircularProgress size={20} /> : <Save />}
-                        disabled={loading || loadingEvento}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Save />}
                   sx={{
+                    minWidth: 200,
+                    height: 50,
                     bgcolor: '#6d1313',
-                    '&:hover': { bgcolor: '#8b1a1a' }
+                    '&:hover': { bgcolor: '#5a1010' },
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold'
                   }}
                 >
-                  {loading 
-                    ? (isEditing ? 'Actualizando...' : 'Creando...') 
-                    : (isEditing ? 'Actualizar Evento' : 'Crear Evento')
-                  }
-                    </Button>
+                  {loading ? 'Guardando...' : (isEditing ? 'Actualizar Evento' : 'Crear Evento')}
+                </Button>
+
+                {!isEditing && (
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={handleLimpiar}
+                    disabled={loading}
+                    startIcon={<Cancel />}
+                    sx={{
+                      minWidth: 150,
+                      height: 50,
+                      borderColor: '#6d1313',
+                      color: '#6d1313',
+                      '&:hover': {
+                        borderColor: '#5a1010',
+                        bgcolor: '#f5f5f5'
+                      },
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Limpiar
+                  </Button>
+                )}
+
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => navigate('/admin/eventos')}
+                  disabled={loading}
+                  startIcon={<Cancel />}
+                  sx={{
+                    minWidth: 150,
+                    height: 50,
+                    borderColor: '#666',
+                    color: '#666',
+                    '&:hover': {
+                      borderColor: '#555',
+                      bgcolor: '#f5f5f5'
+                    },
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Cancelar
+                </Button>
               </Box>
             </Grid>
           </Grid>
@@ -1021,3 +1150,4 @@ const CrearEventos = () => {
 };
 
 export default CrearEventos;
+

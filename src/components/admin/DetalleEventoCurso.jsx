@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -49,8 +50,13 @@ import {
   Assignment,
   Grade,
   Save,
+
   Email,
-  Phone
+  Phone,
+
+  Edit,
+  Lock
+
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -58,7 +64,11 @@ import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
 import ModalCartaMotivacion from './ModalCartaMotivacion';
 
+
 const DetalleEventoCurso = ({ item, onClose, onVerCartaMotivacion }) => {
+
+  const navigate = useNavigate();
+
   const { getMainContentStyle } = useSidebarLayout();
   const [loading, setLoading] = useState(true);
   const [detalles, setDetalles] = useState(null);
@@ -83,6 +93,10 @@ const DetalleEventoCurso = ({ item, onClose, onVerCartaMotivacion }) => {
   // Menu para acciones
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedInscripcion, setSelectedInscripcion] = useState(null);
+  
+  // Estado para cerrar curso/evento
+  const [cerrarDialogOpen, setCerrarDialogOpen] = useState(false);
+  const [loadingCerrar, setLoadingCerrar] = useState(false);
 
   // Estados para el modal de carta de motivación
   const [modalCartaOpen, setModalCartaOpen] = useState(false);
@@ -268,6 +282,37 @@ const DetalleEventoCurso = ({ item, onClose, onVerCartaMotivacion }) => {
       setLoadingAction(false);
       setConfirmDialog({ open: false, action: null, inscripcion: null });
       setMotivoRechazo('');
+    }
+  };
+
+  // Función para cerrar curso/evento
+  const handleCerrar = async () => {
+    try {
+      setLoadingCerrar(true);
+      const endpoint = item.tipo === 'EVENTO'
+        ? `/eventos/${item.id_eve}/cerrar`
+        : `/cursos/${item.id_cur}/cerrar`;
+      
+      const response = await api.put(endpoint);
+      
+      if (response.data.success) {
+        setSnackbar({
+          open: true,
+          message: `${item.tipo} cerrado correctamente. Los certificados pueden ser generados.`,
+          severity: 'success'
+        });
+        cargarDetalles(); // Recargar para actualizar el estado
+      }
+    } catch (error) {
+      console.error(`Error al cerrar ${item.tipo}:`, error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || `Error al cerrar el ${item.tipo}`,
+        severity: 'error'
+      });
+    } finally {
+      setLoadingCerrar(false);
+      setCerrarDialogOpen(false);
     }
   };
 
@@ -489,18 +534,65 @@ const DetalleEventoCurso = ({ item, onClose, onVerCartaMotivacion }) => {
       
       <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header con botón de regreso */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton onClick={onClose} sx={{ mr: 2 }}>
-            <ArrowBack />
-          </IconButton>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#333' }}>
-              {item.tipo === 'EVENTO' ? itemData.nom_eve : itemData.nom_cur}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Gestión de inscripciones - {item.tipo}
-            </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton onClick={onClose} sx={{ mr: 2 }}>
+              <ArrowBack />
+            </IconButton>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#333' }}>
+                {item.tipo === 'EVENTO' ? itemData.nom_eve : itemData.nom_cur}
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Gestión de inscripciones - {item.tipo}
+              </Typography>
+            </Box>
           </Box>
+          
+          {/* Botones de gestión y cerrar solo si está activo */}
+          {itemData.estado === 'ACTIVO' && (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              {/* Botón para gestionar notas/asistencia */}
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<School />}
+                onClick={() => {
+                  if (item.tipo === 'EVENTO') {
+                    navigate(`/admin/gestion-asistencia-evento/${item.id_eve}`);
+                  } else {
+                    navigate(`/admin/gestion-notas-curso/${item.id_cur}`);
+                  }
+                }}
+                sx={{ minWidth: 200 }}
+              >
+                {item.tipo === 'EVENTO' ? 'Gestionar Asistencia' : 'Gestionar Notas'}
+              </Button>
+              
+              {/* Botón de cerrar */}
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={loadingCerrar ? <CircularProgress size={20} color="inherit" /> : <Lock />}
+                onClick={() => setCerrarDialogOpen(true)}
+                disabled={loadingCerrar}
+                sx={{ minWidth: 150 }}
+              >
+                {loadingCerrar ? 'Cerrando...' : `Cerrar ${item.tipo}`}
+              </Button>
+            </Box>
+          )}
+          
+          {/* Indicador de estado cerrado */}
+          {itemData.estado === 'CERRADO' && (
+            <Chip
+              icon={<Lock />}
+              label={`${item.tipo} CERRADO`}
+              color="error"
+              variant="outlined"
+              size="large"
+            />
+          )}
         </Box>
 
         {/* Información del evento/curso */}
@@ -901,17 +993,28 @@ const DetalleEventoCurso = ({ item, onClose, onVerCartaMotivacion }) => {
                       <Chip 
                         label={inscripcion.usuario.rol}
                         size="small"
+
                         color={inscripcion.usuario.rol === 'ESTUDIANTE' ? 'primary' : 'default'}
                         sx={{ mt: 0.5 }}
+
+
                       />
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">
                         {new Date(inscripcion.fecha_inscripcion).toLocaleDateString('es-ES')}
                       </Typography>
+
                     </TableCell>
                     <TableCell>
                       {getEstadoChip(inscripcion.estado_pago)}
+
+                      {inscripcion.fecha_aprobacion && (
+                        <Typography variant="caption" color="text.secondary">
+                          Aprobado: {formatearFecha(inscripcion.fecha_aprobacion)}
+                        </Typography>
+                      )}
+
                     </TableCell>
                     {!itemData.es_gratuito && (
                       <TableCell>
@@ -929,6 +1032,7 @@ const DetalleEventoCurso = ({ item, onClose, onVerCartaMotivacion }) => {
                       </IconButton>
                     </TableCell>
                   </TableRow>
+
                     ))}
                   </TableBody>
                 </Table>
@@ -1091,6 +1195,51 @@ const DetalleEventoCurso = ({ item, onClose, onVerCartaMotivacion }) => {
       </Box>
     </Box>
   );
+
+              
+
+    {/* Diálogo de confirmación para cerrar curso/evento */}
+    <Dialog
+      open={cerrarDialogOpen}
+      onClose={() => setCerrarDialogOpen(false)}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Lock sx={{ mr: 1, color: 'error.main' }} />
+          Cerrar {item.tipo}
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Una vez cerrado el {item.tipo.toLowerCase()}, no podrá modificar las calificaciones ni la asistencia de los participantes.
+        </Alert>
+        <Typography variant="body1">
+          ¿Está seguro de que desea cerrar <strong>{itemData.nom_eve || itemData.nom_cur}</strong>?
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Esta acción permitirá generar los certificados para los participantes aprobados.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setCerrarDialogOpen(false)}>
+          Cancelar
+        </Button>
+        <Button
+          onClick={handleCerrar}
+          variant="contained"
+          color="error"
+          disabled={loadingCerrar}
+          startIcon={loadingCerrar ? <CircularProgress size={20} color="inherit" /> : <Lock />}
+        >
+          {loadingCerrar ? 'Cerrando...' : `Cerrar ${item.tipo}`}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  </Box>
+  </Box>
+);
 };
 
 export default DetalleEventoCurso;

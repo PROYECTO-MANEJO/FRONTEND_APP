@@ -45,7 +45,8 @@ import {
   Save,
   Cancel,
   Info,
-  AttachMoney
+  AttachMoney,
+  CheckCircle
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -96,8 +97,12 @@ const AdminEventos = () => {
     es_gratuito: true,
     precio: '',
     carreras_seleccionadas: [],
+
     requiere_verificacion_docs: true,
     requiere_carta_motivacion: true, // <-- SIEMPRE MARCADO POR DEFECTO
+
+    porcentaje_asistencia_aprobacion: 80
+
   });
 
   // Estados para el modal de carta de motivación
@@ -318,10 +323,14 @@ const AdminEventos = () => {
         es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
         precio: eventoData.precio || '',
         carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : [],
+
         requiere_verificacion_docs: eventoData.requiere_verificacion_docs !== undefined ? eventoData.requiere_verificacion_docs : true,
         requiere_carta_motivacion: eventoData && eventoData.requiere_carta_motivacion !== undefined
   ? Boolean(eventoData.requiere_carta_motivacion)
   : true,
+
+        porcentaje_asistencia_aprobacion: eventoData.porcentaje_asistencia_aprobacion || 80
+
       });
     } else {
       // Modo creación - limpiar formulario
@@ -342,8 +351,12 @@ const AdminEventos = () => {
         es_gratuito: true,
         precio: '',
         carreras_seleccionadas: [],
+
         requiere_carta_motivacion: true, // Siempre marcado por defecto
         requiere_verificacion_docs: true,
+
+        porcentaje_asistencia_aprobacion: 80
+
       });
     }
     
@@ -395,6 +408,18 @@ const AdminEventos = () => {
       }
     }
 
+    // Validar campos de aprobación
+    if (!evento.porcentaje_asistencia_aprobacion || evento.porcentaje_asistencia_aprobacion === '') {
+      nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia mínimo es obligatorio';
+    } else {
+      const porcentajeAsistencia = parseFloat(evento.porcentaje_asistencia_aprobacion);
+      if (isNaN(porcentajeAsistencia)) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia debe ser un número entre 0 y 100';
+      } else if (porcentajeAsistencia < 0 || porcentajeAsistencia > 100) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia debe ser un número entre 0 y 100';
+      }
+    }
+
     if (Object.keys(nuevosErrores).length > 0) {
       setErrors(nuevosErrores);
       return;
@@ -419,9 +444,16 @@ const AdminEventos = () => {
         tipo_audiencia_eve: evento.tipo_audiencia_eve,
         es_gratuito: evento.es_gratuito,
         precio: evento.es_gratuito ? null : parseFloat(evento.precio),
+
         requiere_verificacion_docs: evento.requiere_verificacion_docs, // <-- AGREGA ESTO
         requiere_carta_motivacion: evento.requiere_carta_motivacion,   // <-- Y ESTO
+
+        porcentaje_asistencia_aprobacion: parseInt(evento.porcentaje_asistencia_aprobacion, 10)
+
       };
+
+      // Debug: Ver qué datos estamos enviando
+      console.log('Datos del evento a enviar:', datosEvento);
 
       let eventoId;
       
@@ -489,9 +521,12 @@ const AdminEventos = () => {
 
     } catch (error) {
       console.error('Error al procesar evento:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el evento`,
+        message: error.response?.data?.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el evento: ${error.message}`,
         severity: 'error'
       });
     } finally {
@@ -1311,16 +1346,26 @@ const AdminEventos = () => {
                 </Grid>
               </Grid>
 
+
               {/* Nuevas opciones de verificación */}
               <Grid item xs={12}>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
                   <Info sx={{ mr: 1 }} />
                   Opciones de Verificación
+
+              {/* Criterios de Aprobación */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', color: '#6d1313' }}>
+                  <CheckCircle sx={{ mr: 1 }} />
+                  📋 Criterios de Aprobación (Obligatorios)
+
                 </Typography>
                 
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
+
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Checkbox
                         checked={evento.requiere_verificacion_docs}
@@ -1350,6 +1395,36 @@ const AdminEventos = () => {
                       }
                       label="Requiere carta de motivación"
                     />
+                  </Grid>
+
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Porcentaje mínimo de asistencia (%)"
+                      value={evento.porcentaje_asistencia_aprobacion}
+                      onChange={(e) => setEvento(prev => ({ ...prev, porcentaje_asistencia_aprobacion: e.target.value }))}
+                      error={!!errors.porcentaje_asistencia_aprobacion}
+                      helperText={errors.porcentaje_asistencia_aprobacion || 'Porcentaje mínimo requerido para aprobar (0-100)'}
+                      inputProps={{ 
+                        min: 0, 
+                        max: 100,
+                        step: 1
+                      }}
+                      required
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#6d1313',
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Alert severity="warning" sx={{ bgcolor: '#fff3cd', borderColor: '#6d1313' }}>
+                      <strong>Importante:</strong> Los participantes deberán cumplir con al menos el {evento.porcentaje_asistencia_aprobacion}% de asistencia para aprobar el evento y recibir su certificado.
+                    </Alert>
                   </Grid>
                 </Grid>
               </Grid>

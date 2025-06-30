@@ -61,8 +61,13 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
     requiere_verificacion_docs: true,
     es_gratuito: true,
     precio: '',
+
     requiere_carta_motivacion: true, // <--- NUEVO
     carta_motivacion: '',            // <--- NUEVO
+
+    porcentaje_asistencia_aprobacion: 80,
+    nota_minima_aprobacion: 7.0,
+    estado: 'ACTIVO', // ACTIVO, CERRADO
   });
 
   useEffect(() => {
@@ -95,8 +100,14 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         requiere_verificacion_docs: cursoEditado.requiere_verificacion_docs ?? true,
         es_gratuito: cursoEditado.es_gratuito !== undefined ? cursoEditado.es_gratuito : true,
         precio: cursoEditado.precio || '',
+
         requiere_carta_motivacion: cursoEditado.requiere_carta_motivacion !== undefined ? cursoEditado.requiere_carta_motivacion : true,
         carta_motivacion: cursoEditado.carta_motivacion || '',
+
+        porcentaje_asistencia_aprobacion: cursoEditado.porcentaje_asistencia_aprobacion || 80,
+        nota_minima_aprobacion: cursoEditado.nota_minima_aprobacion || 7.0,
+        estado: cursoEditado.estado || 'ACTIVO',
+
       });
     }
   }, [cursoEditado]);
@@ -227,6 +238,27 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
           return;
         }
       }
+
+      // Validar campos de aprobación
+      if (!curso.porcentaje_asistencia_aprobacion || curso.porcentaje_asistencia_aprobacion === '') {
+        setError('El porcentaje de asistencia mínimo es obligatorio.');
+        return;
+      }
+      const porcentajeAsistencia = parseFloat(curso.porcentaje_asistencia_aprobacion);
+      if (isNaN(porcentajeAsistencia) || porcentajeAsistencia < 0 || porcentajeAsistencia > 100) {
+        setError('El porcentaje de asistencia debe ser un número entre 0 y 100.');
+        return;
+      }
+
+      if (!curso.nota_minima_aprobacion || curso.nota_minima_aprobacion === '') {
+        setError('La nota mínima de aprobación es obligatoria.');
+        return;
+      }
+      const notaMinima = parseFloat(curso.nota_minima_aprobacion);
+      if (isNaN(notaMinima) || notaMinima < 0 || notaMinima > 10) {
+        setError('La nota mínima debe ser un número entre 0 y 10.');
+        return;
+      }
     }
     setError(null);
     setActiveStep((prev) => prev + 1);
@@ -246,8 +278,14 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         requiere_verificacion_docs: !!curso.requiere_verificacion_docs,
         es_gratuito: curso.es_gratuito,
         precio: curso.es_gratuito ? null : parseFloat(curso.precio),
+
         requiere_carta_motivacion: curso.requiere_carta_motivacion,
         carta_motivacion: curso.requiere_carta_motivacion ? curso.carta_motivacion : '',
+
+        porcentaje_asistencia_aprobacion: parseInt(curso.porcentaje_asistencia_aprobacion, 10),
+        nota_minima_aprobacion: parseFloat(curso.nota_minima_aprobacion),
+        estado: curso.estado || 'ACTIVO',
+
       };
       let idCur = cursoEditado ? cursoEditado.id_cur : undefined;
       if (cursoEditado) {
@@ -295,6 +333,59 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
               value={curso.des_cur}
               onChange={handleChange('des_cur')}
             />
+            
+            {/* Campos de aprobación - MOVIDOS AQUÍ PARA MAYOR VISIBILIDAD */}
+            <Box sx={{ mt: 2, mb: 2, p: 2, border: '2px solid #6d1313', borderRadius: 2, bgcolor: '#fafafa' }}>
+              <Typography variant="h6" sx={{ color: '#6d1313', fontWeight: 'bold', mb: 2 }}>
+                📋 Criterios de Aprobación (Obligatorios)
+              </Typography>
+              
+              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Porcentaje mínimo de asistencia (%)"
+                  value={curso.porcentaje_asistencia_aprobacion}
+                  onChange={handleChange('porcentaje_asistencia_aprobacion')}
+                  helperText="Porcentaje mínimo requerido para aprobar (0-100)"
+                  inputProps={{ 
+                    min: 0, 
+                    max: 100,
+                    step: 1
+                  }}
+                  required
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#6d1313',
+                      },
+                    },
+                  }}
+                />
+                
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Nota mínima de aprobación"
+                  value={curso.nota_minima_aprobacion}
+                  onChange={handleChange('nota_minima_aprobacion')}
+                  helperText="Nota mínima para aprobar el curso (0-10)"
+                  inputProps={{ 
+                    min: 0, 
+                    max: 10,
+                    step: 0.1
+                  }}
+                  required
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#6d1313',
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
             <TextField
               fullWidth
               type="date"
@@ -445,6 +536,7 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
                 required
               />
             )}
+            
             <FormControl fullWidth sx={{ marginBottom: 3 }}>
               <InputLabel shrink={!!curso.ced_org_cur}>Organizador</InputLabel>
               <Select
@@ -513,6 +605,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
             )}
             <Typography variant="body1"><strong>¿Requiere verificación de documentos?:</strong> {curso.requiere_verificacion_docs ? 'Sí' : 'No'}</Typography>
             <Typography variant="body1"><strong>Tipo de curso:</strong> {curso.es_gratuito ? 'Gratuito' : `Pagado - $${curso.precio}`}</Typography>
+            <Typography variant="body1"><strong>Porcentaje mínimo de asistencia:</strong> {curso.porcentaje_asistencia_aprobacion}%</Typography>
+            <Typography variant="body1"><strong>Nota mínima de aprobación:</strong> {curso.nota_minima_aprobacion}</Typography>
           </Box>
         );
       case 2:
