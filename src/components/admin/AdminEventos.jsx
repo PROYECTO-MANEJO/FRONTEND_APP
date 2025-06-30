@@ -105,6 +105,20 @@ const AdminEventos = () => {
   const [cartaSeleccionada, setCartaSeleccionada] = useState('');
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
+  // Funciones para el modal de carta de motivación
+  const handleVerCartaMotivacion = (carta, usuario) => {
+    console.log('📄 Abriendo carta de motivación:', { carta, usuario });
+    setCartaSeleccionada(carta || '');
+    setUsuarioSeleccionado(usuario);
+    setModalCartaOpen(true);
+  };
+
+  const handleCerrarModalCarta = () => {
+    setModalCartaOpen(false);
+    setCartaSeleccionada('');
+    setUsuarioSeleccionado(null);
+  };
+
   // Constantes
   const AREAS_EVENTO = [
     'PRACTICA',
