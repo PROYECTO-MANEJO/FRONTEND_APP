@@ -24,28 +24,27 @@ import {
   Menu,
   MenuOpen
 } from '@mui/icons-material';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useUserSidebar } from '../../context/UserSidebarContext';
 
 const UserSidebar = () => {
   const { isCollapsed, toggleSidebar } = useUserSidebar();
   const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.location.href = '/';
   };
 
   const isActive = (path) => location.pathname === path;
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Mis Cursos', icon: <School />, path: '/cursos' },
-    { text: 'Mis Eventos', icon: <Event />, path: '/eventos' },
-    { text: 'Mis Inscripciones', icon: <ListAlt />, path: '/mis-inscripciones' },
+   // { text: 'Mis Cursos', icon: <School />, path: '/cursos' },
+    //{ text: 'Mis Eventos', icon: <Event />, path: '/eventos' },
+    //{ text: 'Mis Inscripciones', icon: <ListAlt />, path: '/mis-inscripciones' },
     { text: 'Mis Certificados', icon: <CardMembership />, path: '/certificados' },
     { text: 'Solicitudes', icon: <Assignment />, path: '/solicitudes' },
     { text: 'Mi Perfil', icon: <AccountCircle />, path: '/perfil' },

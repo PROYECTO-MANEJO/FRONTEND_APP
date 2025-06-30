@@ -49,8 +49,16 @@ const Login = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     setIsSubmitting(true);
     try {
-      await login(values.email, values.password);
-      navigate('/dashboard');
+      const response = await login(values.email, values.password);
+      
+      // Redirigir según el rol del usuario
+      if (response.user.rol === 'DESARROLLADOR') {
+        navigate('/developer/solicitudes');
+      } else if (response.user.rol === 'ADMINISTRADOR' || response.user.rol === 'MASTER') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Error en login:', error);
     } finally {

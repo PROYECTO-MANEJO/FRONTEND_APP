@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import theme from './theme/theme';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
@@ -15,8 +17,12 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import MasterRoute from './components/auth/MasterRoute';
 
+import VerificarCuenta from './components/auth/VerificarCuenta';
+import DeveloperRoute from './components/auth/DeveloperRoute';
+
 // User components
 import Dashboard from './components/user/Dashboard';
+import UserLayout from './components/user/UserLayout';
 import CursosPage from './components/user/CursosPage';
 import EventosPage from './components/user/EventosPage';
 import UserProfile from './components/user/UserProfile';
@@ -25,12 +31,15 @@ import MisCertificadosWrapper from './components/user/MisCertificadosWrapper';
 
 // Admin components
 import AdminDashboard from './components/admin/AdminDashboard';
+import AdminLayout from './components/admin/AdminLayout';
 import AdminSolicitudes from './components/admin/AdminSolicitudes';
+import DetalleSolicitudAdmin from './components/admin/DetalleSolicitudAdmin';
 import AdminUsuarios from './components/admin/AdminUsuarios';
 import AdminEventos from './components/admin/AdminEventos';
 import CrearEventos from './components/admin/CrearEventos';
 import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
+import RevisionPlanes from './components/admin/RevisionPlanes';
 
 
 import HistorialReportesFinancieros from './components/admin/HistorialReportesFinancieros';
@@ -38,10 +47,30 @@ import HistorialReportesFinancieros from './components/admin/HistorialReportesFi
 import AdminVerificacionDocumentos from './components/admin/AdminVerificacionDocumentos';
 import AdminGestionInscripciones from './components/admin/AdminGestionInscripciones';
 import HistorialReportesGenerales from './components/admin/HistorialReportesGenerales';
+import GestionNotasCurso from './components/admin/GestionNotasCurso';
+import GestionAsistenciaEvento from './components/admin/GestionAsistenciaEvento';
 
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
+import CrearSolicitud from './components/solicitudes/CrearSolicitud';
+
+// Admin solicitudes components
+import AdminMisSolicitudes from './components/admin/AdminMisSolicitudes';
+import AdminCrearSolicitud from './components/admin/AdminCrearSolicitud';
+
+// Developer solicitudes components
+import DeveloperMisSolicitudes from './components/developer/DeveloperMisSolicitudes';
+import DeveloperCrearSolicitud from './components/developer/DeveloperCrearSolicitud';
+
+// Developer components
+import DeveloperLayout from './components/developer/DeveloperLayout';
+import SolicitudesDesarrollador from './components/developer/SolicitudesDesarrollador';
+import DetalleSolicitudDesarrollador from './components/developer/DetalleSolicitudDesarrollador';
+
+// HomePage component
+import HomePage from './components/HomePage';
+import AuthenticatedHomePage from './components/AuthenticatedHomePage';
 
 function App() {
   return (
@@ -51,8 +80,8 @@ function App() {
         <SidebarProvider>
           <Router>
           <Routes>
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Home page - accessible to everyone */}
+            <Route path="/" element={<HomePage />} />
             
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
@@ -66,7 +95,9 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserSidebarProvider>
-                    <Dashboard />
+                    <UserLayout>
+                      <AuthenticatedHomePage />
+                    </UserLayout>
                   </UserSidebarProvider>
                 </ProtectedRoute>
               } 
@@ -78,6 +109,28 @@ function App() {
                 <ProtectedRoute>
                   <UserSidebarProvider>
                     <SolicitudesUsuario />
+                  </UserSidebarProvider>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/solicitudes/crear" 
+              element={
+                <ProtectedRoute>
+                  <UserSidebarProvider>
+                    <CrearSolicitud />
+                  </UserSidebarProvider>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/solicitudes/editar/:id" 
+              element={
+                <ProtectedRoute>
+                  <UserSidebarProvider>
+                    <CrearSolicitud />
                   </UserSidebarProvider>
                 </ProtectedRoute>
               } 
@@ -99,7 +152,9 @@ function App() {
               path="/admin" 
               element={
                 <AdminRoute>
-                  <AdminDashboard />
+                  <AdminLayout>
+                    <AuthenticatedHomePage />
+                  </AdminLayout>
                 </AdminRoute>
               } 
             />
@@ -107,9 +162,11 @@ function App() {
             <Route 
               path="/admin/usuarios" 
               element={
-                <AdminRoute>
-                  <AdminUsuarios />
-                </AdminRoute>
+                <MasterRoute>
+                  <SidebarProvider>
+                    <AdminUsuarios />
+                  </SidebarProvider>
+                </MasterRoute>
               } 
             />
             
@@ -117,7 +174,9 @@ function App() {
               path="/admin/verificacion-documentos" 
               element={
                 <MasterRoute>
-                  <AdminVerificacionDocumentos />
+                  <SidebarProvider>
+                    <AdminVerificacionDocumentos />
+                  </SidebarProvider>
                 </MasterRoute>
               } 
             />
@@ -126,7 +185,9 @@ function App() {
               path="/admin/eventos" 
               element={
                 <AdminRoute>
-                  <AdminEventos />
+                  <SidebarProvider>
+                    <AdminEventos />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -135,7 +196,9 @@ function App() {
               path="/admin/crear-eventos" 
               element={
                 <AdminRoute>
-                  <CrearEventos />
+                  <SidebarProvider>
+                    <CrearEventos />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -144,7 +207,9 @@ function App() {
               path="/admin/editar-evento/:id" 
               element={
                 <AdminRoute>
-                  <CrearEventos />
+                  <SidebarProvider>
+                    <CrearEventos />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -153,7 +218,9 @@ function App() {
               path="/admin/cursos" 
               element={
                 <AdminRoute>
-                  <AdminCursos />
+                  <SidebarProvider>
+                    <AdminCursos />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -162,7 +229,9 @@ function App() {
               path="/admin/gestion-inscripciones" 
               element={
                 <AdminRoute>
-                  <AdminGestionInscripciones />
+                  <SidebarProvider>
+                    <AdminGestionInscripciones />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -170,17 +239,94 @@ function App() {
             <Route 
               path="/admin/solicitudes" 
               element={
+                <MasterRoute>
+                  <SidebarProvider>
+                    <AdminSolicitudes />
+                  </SidebarProvider>
+                </MasterRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/solicitud/:id" 
+              element={
+                <MasterRoute>
+                  <SidebarProvider>
+                    <DetalleSolicitudAdmin />
+                  </SidebarProvider>
+                </MasterRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/revision-planes" 
+              element={
+                <MasterRoute>
+                  <SidebarProvider>
+                    <RevisionPlanes />
+                  </SidebarProvider>
+                </MasterRoute>
+              } 
+            />
+
+            {/* Admin solicitudes routes */}
+            <Route 
+              path="/admin/mis-solicitudes" 
+              element={
                 <AdminRoute>
-                  <AdminSolicitudes />
+                  <SidebarProvider>
+                    <AdminMisSolicitudes />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
             
             <Route 
+              path="/admin/mis-solicitudes/crear" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <AdminCrearSolicitud />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/mis-solicitudes/editar/:id" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <AdminCrearSolicitud />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+
+            {/* Developer routes */}
+            <Route 
+              path="/developer" 
+              element={
+                <DeveloperRoute>
+                  <DeveloperLayout />
+                </DeveloperRoute>
+              }
+            >
+              <Route index element={<Navigate to="/developer/solicitudes" replace />} />
+              <Route path="solicitudes" element={<SolicitudesDesarrollador />} />
+              <Route path="solicitud/:id" element={<DetalleSolicitudDesarrollador />} />
+              <Route path="mis-solicitudes" element={<DeveloperMisSolicitudes />} />
+              <Route path="mis-solicitudes/crear" element={<DeveloperCrearSolicitud />} />
+              <Route path="mis-solicitudes/editar/:id" element={<DeveloperCrearSolicitud />} />
+            </Route>
+            
+            <Route 
               path="/admin/reportes" 
               element={
                 <AdminRoute>
-                  <AdminReportes />
+                  <SidebarProvider>
+                    <AdminReportes />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -188,7 +334,9 @@ function App() {
               path="/admin/reportes/historial" 
               element={
                 <AdminRoute>
-                  <HistorialReportesFinancieros />
+                  <SidebarProvider>
+                    <HistorialReportesFinancieros />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -199,7 +347,9 @@ function App() {
               path="/admin/historial-reportes-financieros" 
               element={
                 <AdminRoute>
-                  <HistorialReportesFinancieros />
+                  <SidebarProvider>
+                    <HistorialReportesFinancieros />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -208,7 +358,9 @@ function App() {
               path="/admin/reportes/historial-usuarios" 
               element={
                 <AdminRoute>
-                  <HistorialReportesGenerales />
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -216,7 +368,9 @@ function App() {
               path="/admin/reportes/historial-eventos" 
               element={
                 <AdminRoute>
-                  <HistorialReportesGenerales />
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -224,7 +378,44 @@ function App() {
               path="/admin/reportes/historial-cursos" 
               element={
                 <AdminRoute>
-                  <HistorialReportesGenerales />
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+            
+            {/* Reportes de Solicitudes (Solo MASTER) */}
+            <Route 
+              path="/admin/reportes/historial-solicitudes" 
+              element={
+                <MasterRoute>
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
+                </MasterRoute>
+              } 
+            />
+            
+            {/* Gestión de Notas y Asistencia */}
+            <Route 
+              path="/admin/gestion-notas-curso/:id" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <GestionNotasCurso />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/gestion-asistencia-evento/:id" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <GestionAsistenciaEvento />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -273,13 +464,26 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+
+            <Route path="/verificar-cuenta" element={<VerificarCuenta />} />
             
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
         </SidebarProvider>
       </AuthProvider>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </ThemeProvider>
   );
 }

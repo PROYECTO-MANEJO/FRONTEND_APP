@@ -29,12 +29,14 @@ import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
   Description as DocumentIcon,
+  DoneAll as DoneAllIcon,
   School as StudentIcon,
   Person as UserIcon
 } from '@mui/icons-material';
 import { documentService } from '../../services/documentService';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
+
 
 const AdminVerificacionDocumentos = () => {
   const { getMainContentStyle } = useSidebarLayout();
@@ -52,6 +54,14 @@ const AdminVerificacionDocumentos = () => {
     user: null
   });
   const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
+
+  // visor de documentos
+  const [viewerDialog, setViewerDialog] = useState({
+    open: false,
+    pdfUrl: '',
+    user: null,
+    documentType: ''
+  });
 
   useEffect(() => {
     loadPendingDocuments();
@@ -81,24 +91,22 @@ const AdminVerificacionDocumentos = () => {
     setTabValue(newValue);
   };
 
-  const handleDownloadDocument = async (userId, documentType, filename) => {
+  const handleViewDocument = async (user, documentType) => {
     try {
-      const response = await documentService.downloadUserDocument(userId, documentType);
-      
-      // Crear URL del blob y descargar
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename || `${documentType}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      showAlert(`Documento ${documentType} descargado correctamente`);
+      const response = await documentService.downloadUserDocument(user.id_usu, documentType);
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: "application/pdf" })
+      );
+
+      setViewerDialog({
+        open: true,
+        pdfUrl: url,
+        user,
+        documentType
+      });
     } catch (error) {
-      console.error('Error descargando documento:', error);
-      showAlert('Error al descargar el documento', 'error');
+      console.error("Error visualizando documento:", error);
+      showAlert("Error al cargar el documento para visualización", "error");
     }
   };
 
@@ -118,13 +126,30 @@ const AdminVerificacionDocumentos = () => {
     });
   };
 
+  const handleApproveAll = async (user) => {
+    try {
+      setActionLoading(true);
+      await documentService.approveAllDocuments(user.id_usu);
+      showAlert(`Documentos de ${user.nombre_completo} verificados globalmente desde el CRUD`);
+      loadPendingDocuments();
+    } catch (error) {
+      console.error(error);
+      showAlert("Error en aprobación global", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const executeAction = async () => {
     try {
       setActionLoading(true);
       const { action, user } = confirmDialog;
 
       if (action === 'approve') {
-        await documentService.approveUserDocuments(user.id_usu);
+        await documentService.approveUserDocument(
+          user.id_usu,
+          user.rol === 'ESTUDIANTE' ? 'all' : 'cedula'
+        );
         showAlert(`Documentos de ${user.nombre_completo} aprobados exitosamente`);
       } else if (action === 'reject') {
         await documentService.rejectUserDocuments(user.id_usu);
@@ -132,7 +157,7 @@ const AdminVerificacionDocumentos = () => {
       }
 
       setConfirmDialog({ open: false, action: '', user: null });
-      loadPendingDocuments(); // Recargar la lista
+      loadPendingDocuments();
     } catch (error) {
       console.error('Error ejecutando acción:', error);
       showAlert('Error al procesar la acción', 'error');
@@ -141,41 +166,70 @@ const AdminVerificacionDocumentos = () => {
     }
   };
 
+  const executeApproveInViewer = async () => {
+    try {
+      setActionLoading(true);
+      await documentService.approveUserDocument(
+        viewerDialog.user.id_usu,
+        viewerDialog.documentType
+      );
+      showAlert(`Documento de ${viewerDialog.user.nombre_completo} aprobado exitosamente`);
+      setViewerDialog({ open: false, pdfUrl: '', user: null, documentType: '' });
+      loadPendingDocuments();
+    } catch (error) {
+      console.error(error);
+      showAlert("Error aprobando documento", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const executeRejectInViewer = async () => {
+    try {
+      setActionLoading(true);
+      await documentService.rejectUserDocuments(viewerDialog.user.id_usu);
+      showAlert(`Documentos de ${viewerDialog.user.nombre_completo} rechazados`, "warning");
+      setViewerDialog({ open: false, pdfUrl: '', user: null, documentType: '' });
+      loadPendingDocuments();
+    } catch (error) {
+      console.error(error);
+      showAlert("Error rechazando documentos", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const renderDocumentButtons = (user) => (
     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
       {user.documentos.cedula_subida && (
-        <Tooltip title="Descargar Cédula">
+        <Tooltip title="Ver Cédula">
           <IconButton
             size="small"
-            onClick={() => handleDownloadDocument(user.id_usu, 'cedula', user.documentos.cedula_filename)}
+            onClick={() => handleViewDocument(user, 'cedula')}
             sx={{
               backgroundColor: '#d32f2f',
               color: 'white',
-              '&:hover': {
-                backgroundColor: '#b71c1c'
-              },
+              '&:hover': { backgroundColor: '#b71c1c' },
               border: '2px solid #d32f2f'
             }}
           >
-            <DownloadIcon />
+            <DocumentIcon />
           </IconButton>
         </Tooltip>
       )}
       {user.documentos.matricula_subida && (
-        <Tooltip title="Descargar Matrícula">
+        <Tooltip title="Ver Matrícula">
           <IconButton
             size="small"
-            onClick={() => handleDownloadDocument(user.id_usu, 'matricula', user.documentos.matricula_filename)}
+            onClick={() => handleViewDocument(user, 'matricula')}
             sx={{
               backgroundColor: '#1976d2',
               color: 'white',
-              '&:hover': {
-                backgroundColor: '#1565c0'
-              },
+              '&:hover': { backgroundColor: '#1565c0' },
               border: '2px solid #1976d2'
             }}
           >
-            <DownloadIcon />
+            <DocumentIcon />
           </IconButton>
         </Tooltip>
       )}
@@ -202,6 +256,15 @@ const AdminVerificacionDocumentos = () => {
           <RejectIcon />
         </IconButton>
       </Tooltip>
+      <Tooltip title="Aprobar Global (CRUD)">
+        <IconButton
+          size="small"
+          color="primary"
+          onClick={() => handleApproveAll(user)}
+        >
+          <DoneAllIcon />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 
@@ -215,7 +278,7 @@ const AdminVerificacionDocumentos = () => {
             <TableCell>Email</TableCell>
             {userType === 'estudiante' && <TableCell>Carrera</TableCell>}
             <TableCell>Documentos</TableCell>
-            <TableCell>Descargar</TableCell>
+            <TableCell>Ver</TableCell>
             <TableCell>Acciones</TableCell>
           </TableRow>
         </TableHead>
@@ -238,32 +301,10 @@ const AdminVerificacionDocumentos = () => {
               <TableCell>
                 <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                   {user.documentos.cedula_subida && (
-                    <Chip
-                      label="Cédula"
-                      size="small"
-                      color="error"
-                      variant="filled"
-                      icon={<DocumentIcon />}
-                      sx={{ 
-                        fontWeight: 'bold',
-                        color: 'white',
-                        bgcolor: '#d32f2f'
-                      }}
-                    />
+                    <Chip label="Cédula" size="small" color="error" icon={<DocumentIcon />} />
                   )}
                   {user.documentos.matricula_subida && (
-                    <Chip
-                      label="Matrícula"
-                      size="small"
-                      color="info"
-                      variant="filled"
-                      icon={<DocumentIcon />}
-                      sx={{ 
-                        fontWeight: 'bold',
-                        color: 'white',
-                        bgcolor: '#1976d2'
-                      }}
-                    />
+                    <Chip label="Matrícula" size="small" color="info" icon={<DocumentIcon />} />
                   )}
                 </Box>
               </TableCell>
@@ -287,18 +328,9 @@ const AdminVerificacionDocumentos = () => {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
-      
+
       <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
-        {/* Header */}
-        <Box 
-          sx={{
-            background: 'linear-gradient(135deg, #6d1313 0%, #8b1a1a 100%)',
-            borderRadius: 3,
-            p: 4,
-            color: 'white',
-            mb: 3
-          }}
-        >
+        <Box sx={{ background: 'linear-gradient(135deg, #6d1313 0%, #8b1a1a 100%)', borderRadius: 3, p: 4, color: 'white', mb: 3 }}>
           <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
             Verificación de Documentos
           </Typography>
@@ -320,16 +352,8 @@ const AdminVerificacionDocumentos = () => {
             </Typography>
 
             <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-              <Tab 
-                label={`Estudiantes (${documentData.estudiantes.length})`}
-                icon={<StudentIcon />}
-                iconPosition="start"
-              />
-              <Tab 
-                label={`Usuarios (${documentData.usuarios.length})`}
-                icon={<UserIcon />}
-                iconPosition="start"
-              />
+              <Tab label={`Estudiantes (${documentData.estudiantes.length})`} icon={<StudentIcon />} iconPosition="start" />
+              <Tab label={`Usuarios (${documentData.usuarios.length})`} icon={<UserIcon />} iconPosition="start" />
             </Tabs>
 
             {tabValue === 0 ? (
@@ -348,7 +372,7 @@ const AdminVerificacionDocumentos = () => {
           </CardContent>
         </Card>
 
-        {/* Dialog de Confirmación */}
+        {/* Dialog de confirmación */}
         <Dialog
           open={confirmDialog.open}
           onClose={() => setConfirmDialog({ open: false, action: '', user: null })}
@@ -360,27 +384,53 @@ const AdminVerificacionDocumentos = () => {
           </DialogTitle>
           <DialogContent>
             <Typography>
-              {confirmDialog.action === 'approve' 
+              {confirmDialog.action === 'approve'
                 ? `¿Está seguro de que desea aprobar los documentos de ${confirmDialog.user?.nombre_completo}?`
-                : `¿Está seguro de que desea rechazar los documentos de ${confirmDialog.user?.nombre_completo}? Los documentos serán eliminados y el usuario deberá subir nuevos archivos.`
-              }
+                : `¿Está seguro de que desea rechazar los documentos de ${confirmDialog.user?.nombre_completo}? Los documentos serán eliminados.`}
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button 
-              onClick={() => setConfirmDialog({ open: false, action: '', user: null })}
-              disabled={actionLoading}
-            >
+            <Button onClick={() => setConfirmDialog({ open: false, action: '', user: null })} disabled={actionLoading}>
               Cancelar
             </Button>
-            <Button
-              onClick={executeAction}
-              color={confirmDialog.action === 'approve' ? 'success' : 'error'}
-              variant="contained"
-              disabled={actionLoading}
-              startIcon={actionLoading ? <CircularProgress size={20} /> : null}
-            >
+            <Button onClick={executeAction} color={confirmDialog.action === 'approve' ? 'success' : 'error'} variant="contained" disabled={actionLoading}>
               {confirmDialog.action === 'approve' ? 'Aprobar' : 'Rechazar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* visor embebido de PDF */}
+        <Dialog
+          open={viewerDialog.open}
+          onClose={() => setViewerDialog({ open: false, pdfUrl: '', user: null, documentType: '' })}
+          maxWidth="x1"
+          fullWidth
+        >
+          <DialogTitle>
+            Vista previa de {viewerDialog.documentType} de {viewerDialog.user?.nombre_completo}
+          </DialogTitle>
+          <DialogContent sx={{ height: '80vh' }}>
+            {viewerDialog.pdfUrl ? (
+              <iframe
+                src={viewerDialog.pdfUrl}
+                title="Vista previa PDF"
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+              ></iframe>
+            ) : (
+              <CircularProgress />
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={executeApproveInViewer} color="success" variant="contained" disabled={actionLoading}>
+              Aprobar
+            </Button>
+            <Button onClick={executeRejectInViewer} color="error" variant="contained" disabled={actionLoading}>
+              Rechazar
+            </Button>
+            <Button onClick={() => setViewerDialog({ open: false, pdfUrl: '', user: null, documentType: '' })}>
+              Cerrar
             </Button>
           </DialogActions>
         </Dialog>
@@ -389,4 +439,4 @@ const AdminVerificacionDocumentos = () => {
   );
 };
 
-export default AdminVerificacionDocumentos; 
+export default AdminVerificacionDocumentos;

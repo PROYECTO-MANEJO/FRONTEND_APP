@@ -26,21 +26,21 @@ import {
   VerifiedUser,
   ManageAccounts,
   MenuOpen,
-  Menu
+  Menu,
+  CheckCircle
 } from '@mui/icons-material';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useSidebar } from '../../context/SidebarContext';
 
 const AdminSidebar = () => {
   const { user, logout } = useContext(AuthContext);
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.location.href = '/';
   };
 
   const isActive = (path) => location.pathname === path;
@@ -52,7 +52,9 @@ const AdminSidebar = () => {
     { text: 'Eventos', icon: <Event />, path: '/admin/eventos' },
     { text: 'Cursos', icon: <School />, path: '/admin/cursos' },
     { text: 'Gestión', icon: <ManageAccounts />, path: '/admin/gestion-inscripciones' },
-    { text: 'Solicitudes', icon: <RequestPage />, path: '/admin/solicitudes' },
+    { text: 'Mis Solicitudes', icon: <Assignment />, path: '/admin/mis-solicitudes' },
+    ...(user?.rol === 'MASTER' ? [{ text: 'Gestión Solicitudes', icon: <RequestPage />, path: '/admin/solicitudes' }] : []),
+    ...(user?.rol === 'MASTER' ? [{ text: 'Revisión de Planes', icon: <CheckCircle />, path: '/admin/revision-planes' }] : []),
     { text: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
   ];
 
