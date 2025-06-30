@@ -29,12 +29,14 @@ import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
   Description as DocumentIcon,
+  DoneAll as DoneAllIcon,
   School as StudentIcon,
   Person as UserIcon
 } from '@mui/icons-material';
 import { documentService } from '../../services/documentService';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
+
 
 const AdminVerificacionDocumentos = () => {
   const { getMainContentStyle } = useSidebarLayout();
@@ -53,7 +55,7 @@ const AdminVerificacionDocumentos = () => {
   });
   const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
 
-  // NUEVO: visor de documentos
+  // visor de documentos
   const [viewerDialog, setViewerDialog] = useState({
     open: false,
     pdfUrl: '',
@@ -124,13 +126,30 @@ const AdminVerificacionDocumentos = () => {
     });
   };
 
+  const handleApproveAll = async (user) => {
+    try {
+      setActionLoading(true);
+      await documentService.approveAllDocuments(user.id_usu);
+      showAlert(`Documentos de ${user.nombre_completo} verificados globalmente desde el CRUD`);
+      loadPendingDocuments();
+    } catch (error) {
+      console.error(error);
+      showAlert("Error en aprobación global", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const executeAction = async () => {
     try {
       setActionLoading(true);
       const { action, user } = confirmDialog;
 
       if (action === 'approve') {
-        await documentService.approveUserDocuments(user.id_usu);
+        await documentService.approveUserDocument(
+          user.id_usu,
+          user.rol === 'ESTUDIANTE' ? 'all' : 'cedula'
+        );
         showAlert(`Documentos de ${user.nombre_completo} aprobados exitosamente`);
       } else if (action === 'reject') {
         await documentService.rejectUserDocuments(user.id_usu);
@@ -147,17 +166,19 @@ const AdminVerificacionDocumentos = () => {
     }
   };
 
-  // NUEVO: aprobar/rechazar desde visor
   const executeApproveInViewer = async () => {
     try {
       setActionLoading(true);
-      await documentService.approveUserDocuments(viewerDialog.user.id_usu);
-      showAlert(`Documentos de ${viewerDialog.user.nombre_completo} aprobados exitosamente`);
+      await documentService.approveUserDocument(
+        viewerDialog.user.id_usu,
+        viewerDialog.documentType
+      );
+      showAlert(`Documento de ${viewerDialog.user.nombre_completo} aprobado exitosamente`);
       setViewerDialog({ open: false, pdfUrl: '', user: null, documentType: '' });
       loadPendingDocuments();
     } catch (error) {
       console.error(error);
-      showAlert("Error aprobando documentos", "error");
+      showAlert("Error aprobando documento", "error");
     } finally {
       setActionLoading(false);
     }
@@ -233,6 +254,15 @@ const AdminVerificacionDocumentos = () => {
           onClick={() => handleRejectDocuments(user)}
         >
           <RejectIcon />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Aprobar Global (CRUD)">
+        <IconButton
+          size="small"
+          color="primary"
+          onClick={() => handleApproveAll(user)}
+        >
+          <DoneAllIcon />
         </IconButton>
       </Tooltip>
     </Box>
@@ -342,7 +372,7 @@ const AdminVerificacionDocumentos = () => {
           </CardContent>
         </Card>
 
-        {/* Dialog de confirmación (se mantiene) */}
+        {/* Dialog de confirmación */}
         <Dialog
           open={confirmDialog.open}
           onClose={() => setConfirmDialog({ open: false, action: '', user: null })}
@@ -369,7 +399,7 @@ const AdminVerificacionDocumentos = () => {
           </DialogActions>
         </Dialog>
 
-        {/* NUEVO: visor embebido de PDF */}
+        {/* visor embebido de PDF */}
         <Dialog
           open={viewerDialog.open}
           onClose={() => setViewerDialog({ open: false, pdfUrl: '', user: null, documentType: '' })}
