@@ -12,7 +12,7 @@ const DeveloperRoute = ({ children }) => {
   // Verificar que el usuario tenga rol de DESARROLLADOR
   if (user?.rol !== 'DESARROLLADOR') {
     // Redirigir según el rol del usuario
-    if (user?.rol === 'ADMIN' || user?.rol === 'MASTER') {
+    if (user?.rol === 'ADMINISTRADOR' || user?.rol === 'MASTER') {
       return <Navigate to="/admin" replace />;
     }
     return <Navigate to="/dashboard" replace />;

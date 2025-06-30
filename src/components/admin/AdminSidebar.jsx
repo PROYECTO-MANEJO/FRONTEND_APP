@@ -53,7 +53,8 @@ const AdminSidebar = () => {
     { text: 'Eventos', icon: <Event />, path: '/admin/eventos' },
     { text: 'Cursos', icon: <School />, path: '/admin/cursos' },
     { text: 'Gestión', icon: <ManageAccounts />, path: '/admin/gestion-inscripciones' },
-    ...(user?.rol === 'MASTER' ? [{ text: 'Solicitudes de Cambio', icon: <RequestPage />, path: '/admin/solicitudes' }] : []),
+    { text: 'Mis Solicitudes', icon: <Assignment />, path: '/admin/mis-solicitudes' },
+    ...(user?.rol === 'MASTER' ? [{ text: 'Gestión Solicitudes', icon: <RequestPage />, path: '/admin/solicitudes' }] : []),
     ...(user?.rol === 'MASTER' ? [{ text: 'Revisión de Planes', icon: <CheckCircle />, path: '/admin/revision-planes' }] : []),
     { text: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
   ];
