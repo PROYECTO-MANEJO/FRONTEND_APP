@@ -47,7 +47,6 @@ import UserSidebar from './UserSidebar';
 import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
-import { carreraService } from '../../services/carreraService';
 import { documentService } from '../../services/documentService';
 
 const validationSchema = Yup.object().shape({
@@ -58,12 +57,15 @@ const validationSchema = Yup.object().shape({
   fec_nac_usu: Yup.date().required('La fecha de nacimiento es obligatoria'),
   num_tel_usu: Yup.string()
     .matches(/^[0-9+\-\s()]+$/, 'Número de teléfono inválido')
+
     .min(10, 'Mínimo 10 dígitos'),
   id_car_per: Yup.string().when('isEstudiante', {
     is: true,
     then: () => Yup.string().required('Debes seleccionar una carrera'),
     otherwise: () => Yup.string()
-  })
+  }),
+  github_token: Yup.string()
+    .matches(/^ghp_[a-zA-Z0-9]{36}$/, 'Formato de token GitHub inválido (debe comenzar con ghp_ y tener 40 caracteres)')
 });
 
 const UserProfile = () => {
@@ -74,7 +76,6 @@ const UserProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [userData, setUserData] = useState(null);
-  const [carreras, setCarreras] = useState([]);
   
   // Estados para documentos
   const [tabValue, setTabValue] = useState(0);
@@ -98,11 +99,6 @@ const UserProfile = () => {
         
         const userResponse = await userService.getProfile();
         setUserData(userResponse);
-
-        if (userResponse?.rol === 'ESTUDIANTE') {
-          const carrerasResponse = await carreraService.getAll();
-          setCarreras(carrerasResponse);
-        }
 
         await loadDocumentStatus();
       } catch (error) {
@@ -244,10 +240,6 @@ const UserProfile = () => {
         num_tel_usu: values.num_tel_usu || null,
       };
 
-      if (isEstudiante && values.id_car_per) {
-        updateData.id_car_per = values.id_car_per;
-      }
-
       const updatedUser = await userService.updateProfile(updateData);
       
       setUserData(updatedUser);
@@ -272,11 +264,6 @@ const UserProfile = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toISOString().split('T')[0];
-  };
-
-  const getCarreraNombre = (carreraId) => {
-    const carrera = carreras.find(c => c.id_car === carreraId);
-    return carrera ? carrera.nom_car : 'Carrera no encontrada';
   };
 
   const handleCancel = () => {
@@ -352,7 +339,8 @@ const UserProfile = () => {
     fec_nac_usu: formatDate(userData?.fec_nac_usu) || '',
     num_tel_usu: userData?.num_tel_usu || '',
     id_car_per: userData?.id_car_per || '',
-    isEstudiante: isEstudiante
+    github_token: userData?.github_token || '',
+
   };
 
   return (
@@ -524,7 +512,7 @@ const UserProfile = () => {
                          <School sx={{ mr: 1.5, color: 'text.secondary', fontSize: '1.1rem' }} />
                          <Box>
                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                             {userData?.carrera?.nom_car || getCarreraNombre(userData?.id_car_per)}
+                             {userData?.carrera?.nom_car || 'Carrera asignada'}
                            </Typography>
                            {userData?.carrera?.nom_fac_per && (
                              <Typography variant="caption" color="text.secondary">
@@ -647,6 +635,31 @@ const UserProfile = () => {
                                  size="small"
                                />
                              </Grid>
+
+
+                             {/* GitHub Token para desarrolladores */}
+                             {(userData?.rol === 'DESARROLLADOR' || userData?.rol === 'MASTER') && (
+                               <Grid item xs={12}>
+                                 <TextField
+                                   fullWidth
+                                   name="github_token"
+                                   label="GitHub Personal Access Token"
+                                   type="password"
+                                   value={values.github_token}
+                                   onChange={handleChange}
+                                   onBlur={handleBlur}
+                                   disabled={!isEditing}
+                                   error={touched.github_token && !!errors.github_token}
+                                   helperText={
+                                     touched.github_token && errors.github_token
+                                       ? errors.github_token
+                                       : "Token personal para crear branches y PRs en GitHub. Si no se proporciona, se usará el token del sistema."
+                                   }
+                                   size="small"
+                                   placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                 />
+                               </Grid>
+                             )}
 
                              {/* Carrera solo para estudiantes */}
                              {isEstudiante && (
