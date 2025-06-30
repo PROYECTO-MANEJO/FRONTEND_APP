@@ -57,7 +57,15 @@ const validationSchema = Yup.object().shape({
   fec_nac_usu: Yup.date().required('La fecha de nacimiento es obligatoria'),
   num_tel_usu: Yup.string()
     .matches(/^[0-9+\-\s()]+$/, 'Número de teléfono inválido')
-    .min(10, 'Mínimo 10 dígitos')
+
+    .min(10, 'Mínimo 10 dígitos'),
+  id_car_per: Yup.string().when('isEstudiante', {
+    is: true,
+    then: () => Yup.string().required('Debes seleccionar una carrera'),
+    otherwise: () => Yup.string()
+  }),
+  github_token: Yup.string()
+    .matches(/^ghp_[a-zA-Z0-9]{36}$/, 'Formato de token GitHub inválido (debe comenzar con ghp_ y tener 40 caracteres)')
 });
 
 const UserProfile = () => {
@@ -329,7 +337,10 @@ const UserProfile = () => {
     ape_usu1: userData?.ape_usu1 || '',
     ape_usu2: userData?.ape_usu2 || '',
     fec_nac_usu: formatDate(userData?.fec_nac_usu) || '',
-    num_tel_usu: userData?.num_tel_usu || ''
+    num_tel_usu: userData?.num_tel_usu || '',
+    id_car_per: userData?.id_car_per || '',
+    github_token: userData?.github_token || '',
+
   };
 
   return (
@@ -624,6 +635,59 @@ const UserProfile = () => {
                                  size="small"
                                />
                              </Grid>
+
+
+                             {/* GitHub Token para desarrolladores */}
+                             {(userData?.rol === 'DESARROLLADOR' || userData?.rol === 'MASTER') && (
+                               <Grid item xs={12}>
+                                 <TextField
+                                   fullWidth
+                                   name="github_token"
+                                   label="GitHub Personal Access Token"
+                                   type="password"
+                                   value={values.github_token}
+                                   onChange={handleChange}
+                                   onBlur={handleBlur}
+                                   disabled={!isEditing}
+                                   error={touched.github_token && !!errors.github_token}
+                                   helperText={
+                                     touched.github_token && errors.github_token
+                                       ? errors.github_token
+                                       : "Token personal para crear branches y PRs en GitHub. Si no se proporciona, se usará el token del sistema."
+                                   }
+                                   size="small"
+                                   placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                 />
+                               </Grid>
+                             )}
+
+                             {/* Carrera solo para estudiantes */}
+                             {isEstudiante && (
+                               <Grid item xs={12} sm={6}>
+                                 <FormControl fullWidth size="small">
+                                   <InputLabel>Carrera</InputLabel>
+                                   <Select
+                                     name="id_car_per"
+                                     value={values.id_car_per}
+                                     label="Carrera"
+                                     onChange={handleChange}
+                                     disabled={!isEditing}
+                                     error={touched.id_car_per && !!errors.id_car_per}
+                                   >
+                                     {carreras.map((carrera) => (
+                                       <MenuItem key={carrera.id_car} value={carrera.id_car}>
+                                         {carrera.nom_car}
+                                       </MenuItem>
+                                     ))}
+                                   </Select>
+                                   {touched.id_car_per && errors.id_car_per && (
+                                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                                       {errors.id_car_per}
+                                     </Typography>
+                                   )}
+                                 </FormControl>
+                               </Grid>
+                             )}
                            </Grid>
                          </Box>
 
