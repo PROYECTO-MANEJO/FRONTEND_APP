@@ -50,234 +50,201 @@ function App() {
       <AuthProvider>
         <SidebarProvider>
           <Router>
-          <Routes>
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            
-            {/* Protected user routes */}
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <UserSidebarProvider>
-                    <Dashboard />
-                  </UserSidebarProvider>
-                </ProtectedRoute>
-              } 
-            />
-            
-            <Route 
-              path="/solicitudes" 
-              element={
-                <ProtectedRoute>
-                  <UserSidebarProvider>
-                    <SolicitudesUsuario />
-                  </UserSidebarProvider>
-                </ProtectedRoute>
-              } 
-            />
-            
-            <Route 
-              path="/perfil" 
-              element={
-                <ProtectedRoute>
-                  <UserSidebarProvider>
-                    <UserProfile />
-                  </UserSidebarProvider>
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Admin routes */}
-            <Route 
-              path="/admin" 
-              element={
-                <AdminRoute>
-                  <AdminDashboard />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/usuarios" 
-              element={
-                <AdminRoute>
-                  <AdminUsuarios />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/verificacion-documentos" 
-              element={
-                <MasterRoute>
-                  <AdminVerificacionDocumentos />
-                </MasterRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/eventos" 
-              element={
-                <AdminRoute>
-                  <AdminEventos />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/crear-eventos" 
-              element={
-                <AdminRoute>
-                  <CrearEventos />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/editar-evento/:id" 
-              element={
-                <AdminRoute>
-                  <CrearEventos />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/cursos" 
-              element={
-                <AdminRoute>
-                  <AdminCursos />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/gestion-inscripciones" 
-              element={
-                <AdminRoute>
-                  <AdminGestionInscripciones />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/solicitudes" 
-              element={
-                <AdminRoute>
-                  <AdminSolicitudes />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/reportes" 
-              element={
-                <AdminRoute>
-                  <AdminReportes />
-                </AdminRoute>
-              } 
-            />
-            <Route 
-              path="/admin/reportes/historial" 
-              element={
-                <AdminRoute>
-                  <HistorialReportesFinancieros />
-                </AdminRoute>
-              } 
-            />
-            
+            <Routes>
+              {/* Redirect root to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            
-            <Route 
-              path="/admin/historial-reportes-financieros" 
-              element={
-                <AdminRoute>
-                  <HistorialReportesFinancieros />
-                </AdminRoute>
-              } 
-            />
-            
-            <Route 
-              path="/admin/reportes/historial-usuarios" 
-              element={
-                <AdminRoute>
-                  <HistorialReportesGenerales />
-                </AdminRoute>
-              } 
-            />
-            <Route 
-              path="/admin/reportes/historial-eventos" 
-              element={
-                <AdminRoute>
-                  <HistorialReportesGenerales />
-                </AdminRoute>
-              } 
-            />
-            <Route 
-              path="/admin/reportes/historial-cursos" 
-              element={
-                <AdminRoute>
-                  <HistorialReportesGenerales />
-                </AdminRoute>
-              } 
-            />
-            
-            {/* User pages */}
-            <Route 
-              path="/cursos" 
-              element={
-                <ProtectedRoute>
-                  <UserSidebarProvider>
-                    <CursosPage />
-                  </UserSidebarProvider>
-                </ProtectedRoute>
-              } 
-            />
-            
-            <Route 
-              path="/eventos" 
-              element={
-                <ProtectedRoute>
-                  <UserSidebarProvider>
-                    <EventosPage />
-                  </UserSidebarProvider>
-                </ProtectedRoute>
-              } 
-            />
-            
-            <Route 
-              path="/mis-inscripciones" 
-              element={
-                <ProtectedRoute>
-                  <UserSidebarProvider>
-                    <MisInscripciones />
-                  </UserSidebarProvider>
-                </ProtectedRoute>
-              } 
-            />
-            
-            <Route 
-              path="/certificados" 
-              element={
-                <ProtectedRoute>
-                  <UserSidebarProvider>
-                    <MisCertificadosWrapper />
-                  </UserSidebarProvider>
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Router>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+              {/* Protected user routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <UserSidebarProvider>
+                      <Dashboard />
+                    </UserSidebarProvider>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/solicitudes"
+                element={
+                  <ProtectedRoute>
+                    <UserSidebarProvider>
+                      <SolicitudesUsuario />
+                    </UserSidebarProvider>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/perfil"
+                element={
+                  <ProtectedRoute>
+                    <UserSidebarProvider>
+                      <UserProfile />
+                    </UserSidebarProvider>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin routes */}
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/usuarios"
+                element={
+                  <AdminRoute>
+                    <AdminUsuarios />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/verificacion-documentos"
+                element={
+                  <MasterRoute>
+                    <AdminVerificacionDocumentos />
+                  </MasterRoute>
+                }
+              />
+
+              <Route
+                path="/admin/eventos"
+                element={
+                  <AdminRoute>
+                    <AdminEventos />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/crear-eventos"
+                element={
+                  <AdminRoute>
+                    <CrearEventos />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/editar-evento/:id"
+                element={
+                  <AdminRoute>
+                    <CrearEventos />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/cursos"
+                element={
+                  <AdminRoute>
+                    <AdminCursos />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/gestion-inscripciones"
+                element={
+                  <AdminRoute>
+                    <AdminGestionInscripciones />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/solicitudes"
+                element={
+                  <AdminRoute>
+                    <AdminSolicitudes />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/reportes"
+                element={
+                  <AdminRoute>
+                    <AdminReportes />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/reportes/historial"
+                element={
+                  <AdminRoute>
+                    <HistorialReportesFinancieros />
+                  </AdminRoute>
+                }
+              />
+
+
+
+              <Route
+                path="/admin/historial-reportes-financieros"
+                element={
+                  <AdminRoute>
+                    <HistorialReportesFinancieros />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/reportes/historial-usuarios"
+                element={
+                  <AdminRoute>
+                    <HistorialReportesGenerales />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/reportes/historial-eventos"
+                element={
+                  <AdminRoute>
+                    <HistorialReportesGenerales />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/reportes/historial-cursos"
+                element={
+                  <AdminRoute>
+                    <HistorialReportesGenerales />
+                  </AdminRoute>
+                }
+              />
+
+
+              <Route
+                path="/certificados"
+                element={
+                  <ProtectedRoute>
+                    <UserSidebarProvider>
+                      <MisCertificadosWrapper />
+                    </UserSidebarProvider>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Router>
         </SidebarProvider>
       </AuthProvider>
     </ThemeProvider>
