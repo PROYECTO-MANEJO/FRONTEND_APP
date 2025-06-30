@@ -51,6 +51,7 @@ import {
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
+import ModalCartaMotivacion from './ModalCartaMotivacion';
 
 const AdminEventos = () => {
   const [eventos, setEventos] = useState([]);
@@ -98,6 +99,11 @@ const AdminEventos = () => {
     requiere_verificacion_docs: true,
     requiere_carta_motivacion: true, // <-- SIEMPRE MARCADO POR DEFECTO
   });
+
+  // Estados para el modal de carta de motivación
+  const [modalCartaOpen, setModalCartaOpen] = useState(false);
+  const [cartaSeleccionada, setCartaSeleccionada] = useState('');
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
   // Constantes
   const AREAS_EVENTO = [
@@ -841,6 +847,7 @@ const AdminEventos = () => {
                         color="info" 
                         size="small"
                         title="Ver detalles"
+                        onClick={() => handleVerCartaMotivacion(evento.carta_motivacion, evento.usuario_creador)}
                       >
                         <Visibility />
                       </IconButton>
@@ -1332,6 +1339,14 @@ const AdminEventos = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Modal de Carta de Motivación */}
+        <ModalCartaMotivacion
+          open={modalCartaOpen}
+          onClose={handleCerrarModalCarta}
+          carta={cartaSeleccionada}
+          usuario={usuarioSeleccionado}
+        />
 
         {/* Snackbar */}
         <Snackbar

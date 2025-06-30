@@ -33,13 +33,15 @@ import {
   Visibility,
   FilterList,
   Refresh,
-  Close
+  Close,
+  Assignment
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import DetalleEventoCurso from './DetalleEventoCurso';
 import api from '../../services/api';
+import ModalCartaMotivacion from './ModalCartaMotivacion';
 
 const AdminGestionInscripciones = () => {
   const { getMainContentStyle } = useSidebarLayout();
@@ -67,11 +69,22 @@ const AdminGestionInscripciones = () => {
   const [openCartaModal, setOpenCartaModal] = useState(false);
   const [cartaMotivacion, setCartaMotivacion] = useState('');
 
+  // Estados para el modal de carta de motivación
+  const [modalCartaOpen, setModalCartaOpen] = useState(false);
+  const [cartaSeleccionada, setCartaSeleccionada] = useState('');
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+
   // Función para manejar la carta de motivación
-  const handleVerCartaMotivacion = (carta) => {
-    console.log('📝 Mostrando carta:', carta); // Para debug
-    setCartaMotivacion(carta);
-    setOpenCartaModal(true);
+  const handleVerCartaMotivacion = (carta, usuario) => {
+    setCartaSeleccionada(carta || '');
+    setUsuarioSeleccionado(usuario);
+    setModalCartaOpen(true);
+  };
+
+  const handleCerrarModalCarta = () => {
+    setModalCartaOpen(false);
+    setCartaSeleccionada('');
+    setUsuarioSeleccionado(null);
   };
 
   const cargarDatos = async () => {
@@ -396,6 +409,14 @@ const AdminGestionInscripciones = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal de Carta de Motivación */}
+      <ModalCartaMotivacion
+        open={modalCartaOpen}
+        onClose={handleCerrarModalCarta}
+        carta={cartaSeleccionada}
+        usuario={usuarioSeleccionado}
+      />
     </Box>
   );
 };
