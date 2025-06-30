@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import theme from './theme/theme';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
@@ -41,6 +43,8 @@ import HistorialReportesFinancieros from './components/admin/HistorialReportesFi
 import AdminVerificacionDocumentos from './components/admin/AdminVerificacionDocumentos';
 import AdminGestionInscripciones from './components/admin/AdminGestionInscripciones';
 import HistorialReportesGenerales from './components/admin/HistorialReportesGenerales';
+import GestionNotasCurso from './components/admin/GestionNotasCurso';
+import GestionAsistenciaEvento from './components/admin/GestionAsistenciaEvento';
 
 
 // Solicitudes components
@@ -292,6 +296,29 @@ function App() {
               } 
             />
             
+            {/* Gestión de Notas y Asistencia */}
+            <Route 
+              path="/admin/gestion-notas-curso/:id" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <GestionNotasCurso />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/gestion-asistencia-evento/:id" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <GestionAsistenciaEvento />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+            
             {/* User pages */}
             <Route 
               path="/cursos" 
@@ -343,6 +370,17 @@ function App() {
         </Router>
         </SidebarProvider>
       </AuthProvider>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </ThemeProvider>
   );
 }
