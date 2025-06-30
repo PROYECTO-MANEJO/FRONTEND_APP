@@ -51,7 +51,15 @@ import {
   Done,
   CallMerge,
   GitHub,
-  Warning
+  Warning,
+  Code,
+  Commit,
+  Add,
+  Remove,
+  Edit,
+  Description,
+  Schedule,
+  AccountCircle
 } from '@mui/icons-material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -85,16 +93,17 @@ const AdminSolicitudes = () => {
       setDialogRevisionPR(true);
       setLoadingPR(true);
       
-      const response = await solicitudesAdminService.obtenerInformacionPR(solicitud.id_sol);
-      if (response.data.success) {
-        setPrInfo(response.data.data);
+      // Obtener múltiples PRs de la solicitud
+      const response = await solicitudesAdminService.obtenerMultiplesPRs(solicitud.id_sol);
+      if (response.success) {
+        setPrInfo(response.data || []);
       } else {
-        setError('No se pudo cargar la información del PR');
-        setPrInfo(null);
+        setError('No se pudo cargar la información de los PRs');
+        setPrInfo([]);
       }
     } catch (err) {
-      setError('Error al cargar información del PR: ' + err.message);
-      setPrInfo(null);
+      setError('Error al cargar información de los PRs: ' + err.message);
+      setPrInfo([]);
     } finally {
       setLoadingPR(false);
     }
@@ -111,6 +120,11 @@ const AdminSolicitudes = () => {
   // Estados para el formulario de rechazo de PR
   const [comentarioUsuario, setComentarioUsuario] = useState('');
   const [comentarioDesarrollador, setComentarioDesarrollador] = useState('');
+  
+  // Estados para múltiples PRs
+  const [tabActivoPR, setTabActivoPR] = useState(0);
+  const [comentariosPR, setComentariosPR] = useState({});
+  const [procesandoPR, setProcesandoPR] = useState({});
   
   // Filtros y paginación
   const [filtros, setFiltros] = useState({
@@ -441,36 +455,7 @@ const AdminSolicitudes = () => {
     }
   };
 
-  // Manejar aprobación de PR
-  const handleAprobarPR = async () => {
-    try {
-      setLoadingPR(true);
-      setError(null);
 
-      // Aprobar el PR en GitHub y hacer merge automáticamente
-      await solicitudesAdminService.aprobarPRMaster(selectedSolicitud.id_sol, {
-        comentarios: `PR aprobado y mergeado automáticamente por MASTER el ${new Date().toLocaleString()}`
-      });
-
-      // Cerrar el diálogo y mostrar mensaje de éxito
-      setDialogRevisionPR(false);
-      setSuccess('PR aprobado y mergeado correctamente');
-
-      // Recargar la lista de solicitudes
-      await cargarSolicitudes();
-    } catch (error) {
-      console.error('Error al aprobar PR:', error);
-      setError('Error al aprobar PR: ' + error.message);
-    } finally {
-      setLoadingPR(false);
-    }
-  };
-
-  const handleRechazarPR = async () => {
-    if (!selectedSolicitud) return;
-    setDialogRevisionPR(false);
-    setDialogRechazoPR(true);
-  };
 
   // Función para manejar el rechazo de PR con comentarios diferenciados
   const handleRechazarPRConComentarios = async () => {
@@ -508,6 +493,262 @@ const AdminSolicitudes = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Aprobar PR específico por repositorio
+  const handleAprobarPRIndividual = async (repositoryType) => {
+    try {
+      setProcesandoPR(prev => ({ ...prev, [`aprobar_${repositoryType}`]: true }));
+      
+      const comentarios = comentariosPR[repositoryType] || '';
+      await solicitudesAdminService.aprobarPRPorRepositorio(
+        selectedSolicitud.id_sol,
+        repositoryType,
+        comentarios
+      );
+
+      setSuccess(`PR ${repositoryType} aprobado exitosamente`);
+      
+      // Recargar información de PRs
+      await abrirRevisionPR(selectedSolicitud);
+      await cargarSolicitudes();
+      await cargarEstadisticas();
+      
+    } catch (error) {
+      setError(`Error al aprobar PR ${repositoryType}: ` + error.message);
+    } finally {
+      setProcesandoPR(prev => ({ ...prev, [`aprobar_${repositoryType}`]: false }));
+    }
+  };
+
+  // Rechazar PR específico por repositorio
+  const handleRechazarPRIndividual = async (repositoryType) => {
+    try {
+      setProcesandoPR(prev => ({ ...prev, [`rechazar_${repositoryType}`]: true }));
+      
+      const comentarios = comentariosPR[repositoryType] || '';
+      if (!comentarios.trim()) {
+        setError('Debes agregar un comentario para rechazar el PR');
+        return;
+      }
+
+      await solicitudesAdminService.rechazarPRPorRepositorio(
+        selectedSolicitud.id_sol,
+        repositoryType,
+        comentarios
+      );
+
+      setSuccess(`PR ${repositoryType} rechazado. Solicitud devuelta a desarrollo`);
+      
+      // Recargar información de PRs
+      await abrirRevisionPR(selectedSolicitud);
+      await cargarSolicitudes();
+      await cargarEstadisticas();
+      
+    } catch (error) {
+      setError(`Error al rechazar PR ${repositoryType}: ` + error.message);
+    } finally {
+      setProcesandoPR(prev => ({ ...prev, [`rechazar_${repositoryType}`]: false }));
+    }
+  };
+
+  // Función para renderizar información detallada del PR
+  const renderPRDetails = (rama) => {
+    if (!rama.pr_info) return null;
+
+    const { pr_info } = rama;
+
+    return (
+      <Box sx={{ mt: 2 }}>
+        {/* Información del PR de GitHub */}
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Description />
+              Información del Pull Request
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" color="text.secondary">Título:</Typography>
+                <Typography variant="body1">{pr_info.title}</Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" color="text.secondary">Estado:</Typography>
+                <Chip 
+                  label={pr_info.state === 'open' ? 'ABIERTO' : pr_info.merged ? 'MERGEADO' : 'CERRADO'} 
+                  color={pr_info.state === 'open' ? 'warning' : pr_info.merged ? 'success' : 'default'}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" color="text.secondary">Autor:</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccountCircle />
+                  <Typography variant="body1">{pr_info.user?.login}</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" color="text.secondary">Creado:</Typography>
+                <Typography variant="body1">
+                  {new Date(pr_info.created_at).toLocaleDateString('es-ES')}
+                </Typography>
+              </Grid>
+              {pr_info.body && (
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">Descripción:</Typography>
+                  <Typography variant="body2" sx={{ 
+                    backgroundColor: '#f5f5f5', 
+                    p: 1, 
+                    borderRadius: 1,
+                    fontFamily: 'monospace',
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    {pr_info.body}
+                  </Typography>
+                </Grid>
+              )}
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Estadísticas del PR */}
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Code />
+              Estadísticas de Cambios
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={4}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" sx={{ color: '#4caf50' }}>
+                    +{pr_info.stats?.additions || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">Líneas agregadas</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={4}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" sx={{ color: '#f44336' }}>
+                    -{pr_info.stats?.deletions || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">Líneas eliminadas</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={4}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" sx={{ color: '#2196f3' }}>
+                    {pr_info.stats?.changed_files || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">Archivos modificados</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Commits */}
+        {pr_info.commits && pr_info.commits.length > 0 && (
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Commit />
+                Commits ({pr_info.commits.length})
+              </Typography>
+              
+              <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+                {pr_info.commits.map((commit, index) => (
+                  <Box key={index} sx={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: 2, 
+                    p: 1,
+                    borderBottom: index < pr_info.commits.length - 1 ? '1px solid #eee' : 'none'
+                  }}>
+                    <Chip 
+                      label={commit.sha} 
+                      size="small" 
+                      sx={{ fontFamily: 'monospace', minWidth: 70 }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {commit.message.split('\n')[0]}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        por {commit.author} • {new Date(commit.date).toLocaleDateString('es-ES')}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Archivos modificados */}
+        {pr_info.files && pr_info.files.length > 0 && (
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Edit />
+                Archivos Modificados ({pr_info.files.length})
+              </Typography>
+              
+              <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+                {pr_info.files.map((file, index) => (
+                  <Box key={index} sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 2, 
+                    p: 1,
+                    borderBottom: index < pr_info.files.length - 1 ? '1px solid #eee' : 'none'
+                  }}>
+                    <Chip 
+                      label={file.status.toUpperCase()} 
+                      size="small"
+                      color={
+                        file.status === 'added' ? 'success' :
+                        file.status === 'removed' ? 'error' :
+                        file.status === 'modified' ? 'warning' : 'default'
+                      }
+                      sx={{ minWidth: 80 }}
+                    />
+                    <Typography variant="body2" sx={{ 
+                      fontFamily: 'monospace', 
+                      flex: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {file.filename}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      {file.additions > 0 && (
+                        <Chip 
+                          icon={<Add />}
+                          label={file.additions}
+                          size="small"
+                          sx={{ backgroundColor: '#e8f5e8', color: '#2e7d32' }}
+                        />
+                      )}
+                      {file.deletions > 0 && (
+                        <Chip 
+                          icon={<Remove />}
+                          label={file.deletions}
+                          size="small"
+                          sx={{ backgroundColor: '#ffebee', color: '#d32f2f' }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        )}
+      </Box>
+    );
   };
 
   // Función para obtener información del estado con colores distintivos
@@ -777,8 +1018,8 @@ const AdminSolicitudes = () => {
                       </Tooltip>
 
                       {/* Botón para revisar PR cuando está EN_TESTING */}
-                      {solicitud.estado_sol === 'EN_TESTING' && solicitud.github_pr_number && (
-                        <Tooltip title="Revisar Pull Request">
+                      {solicitud.estado_sol === 'EN_TESTING' && (
+                        <Tooltip title="Revisar Pull Requests">
                           <IconButton
                             size="small"
                             onClick={() => abrirRevisionPR(solicitud)}
@@ -1611,36 +1852,7 @@ const AdminSolicitudes = () => {
               <></>
             )}
 
-            {/* Botón para simular EN_TESTING si no existe PR */}
-            {selectedSolicitud?.estado_sol === 'EN_TESTING' && !selectedSolicitud?.github_pr_number && (
-              <Button
-                onClick={async () => {
-                  try {
-                    setLoading(true);
-                    await solicitudesAdminService.actualizarSolicitudMaster(selectedSolicitud.id_sol, {
-                      
-                      comentarios_internos_sol: 'PR ficticio #123 agregado para pruebas de revisión'
-                    });
-                    // Recargar el modal
-                    const response = await solicitudesAdminService.obtenerSolicitudParaAdmin(selectedSolicitud.id_sol);
-                    setSelectedSolicitud(response.data);
-                  } catch (error) {
-                    setError('Error al simular PR: ' + error.message);
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                variant="contained"
-                color="warning"
-                disabled={loading}
-                sx={{ 
-                  bgcolor: '#ff9800',
-                  '&:hover': { bgcolor: '#f57c00' }
-                }}
-              >
-                🧪 Simular PR para Pruebas
-              </Button>
-            )}
+
 
             {/* NUEVA SECCIÓN: Gestión de Despliegue para solicitudes EN_DESPLIEGUE */}
             {selectedSolicitud?.estado_sol === 'EN_DESPLIEGUE' && (
@@ -2096,7 +2308,7 @@ const AdminSolicitudes = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Modal de Revisión de Pull Request */}
+      {/* Modal de Revisión de Múltiples Pull Requests */}
       <Dialog
         open={dialogRevisionPR}
         onClose={() => setDialogRevisionPR(false)}
@@ -2112,7 +2324,7 @@ const AdminSolicitudes = () => {
         }}>
           <GitHub />
           <Typography variant="h6">
-            Revisión de Pull Request #{selectedSolicitud?.github_pr_number}
+            Revisión de Pull Requests - {selectedSolicitud?.titulo_sol}
           </Typography>
         </DialogTitle>
 
@@ -2120,237 +2332,251 @@ const AdminSolicitudes = () => {
           {loadingPR ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
               <CircularProgress />
-              <Typography sx={{ ml: 2 }}>Cargando información del Pull Request...</Typography>
+              <Typography sx={{ ml: 2 }}>Cargando información de los Pull Requests...</Typography>
             </Box>
-          ) : prInfo ? (
-            <Box sx={{ p: 3 }}>
-              {/* Alerta de error si hay problemas con la API */}
-              {prInfo.error && (
-                <Alert severity="warning" sx={{ mb: 3 }}>
-                  <Typography variant="body2">
-                     
-                    Se muestra información básica disponible.
-                  </Typography>
-                </Alert>
-              )}
-              
-              {/* Información General del PR */}
-              <Card sx={{ mb: 3 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <GitHub />
-                    Información del Pull Request
-                  </Typography>
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Typography variant="body2" color="text.secondary">Título:</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>{prInfo.title}</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Typography variant="body2" color="text.secondary">Autor:</Typography>
-                        <Typography variant="body1">{prInfo.author}</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Typography variant="body2" color="text.secondary">Estado:</Typography>
-                        <Chip 
-                          label={prInfo.state} 
-                          color={prInfo.state === 'open' ? 'success' : 'default'}
-                          size="small"
-                        />
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Typography variant="body2" color="text.secondary">Creado:</Typography>
-                        <Typography variant="body1">
-                          {new Date(prInfo.created_at).toLocaleDateString('es-ES')}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-
-                  <Button
-                    variant="outlined"
-                    startIcon={<Visibility />}
-                    href={prInfo.url}
-                    target="_blank"
-                    sx={{ mt: 2 }}
+          ) : prInfo && prInfo.length > 0 ? (
+            <Box>
+              {/* Tabs si hay múltiples PRs */}
+              {prInfo.length > 1 ? (
+                <Box>
+                  <Tabs 
+                    value={tabActivoPR} 
+                    onChange={(e, newValue) => setTabActivoPR(newValue)}
+                    sx={{ borderBottom: 1, borderColor: 'divider' }}
                   >
-                    Ver en GitHub
-                  </Button>
-                </CardContent>
-              </Card>
+                    {prInfo.map((rama) => (
+                      <Tab 
+                        key={rama.id}
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {rama.repository_type === 'FRONTEND' ? '🎨' : '⚙️'}
+                            {rama.repository_type}
+                            <Chip 
+                              label={rama.pr_status || 'PENDING'} 
+                              size="small" 
+                              color={
+                                rama.pr_status === 'APPROVED' ? 'success' : 
+                                rama.pr_status === 'REJECTED' ? 'error' : 
+                                rama.pr_status === 'IN_REVIEW' ? 'warning' : 'default'
+                              }
+                            />
+                          </Box>
+                        }
+                      />
+                    ))}
+                  </Tabs>
+                  
+                  {/* Contenido del tab activo */}
+                  {prInfo.filter((_, index) => tabActivoPR === index).map((rama) => (
+                      <Box key={rama.id} sx={{ p: 3 }}>
+                        {/* Información básica del PR */}
+                        <Card sx={{ mb: 3 }}>
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <GitHub />
+                              Pull Request {rama.repository_type}
+                            </Typography>
+                            
+                            <Grid container spacing={2}>
+                              <Grid item xs={12} md={6}>
+                                <Typography variant="body2" color="text.secondary">Rama:</Typography>
+                                <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{rama.branch_name}</Typography>
+                              </Grid>
+                              <Grid item xs={12} md={6}>
+                                <Typography variant="body2" color="text.secondary">Estado en BD:</Typography>
+                                <Chip 
+                                  label={rama.pr_status || 'PENDING'} 
+                                  color={
+                                    rama.pr_status === 'APPROVED' ? 'success' : 
+                                    rama.pr_status === 'REJECTED' ? 'error' : 
+                                    rama.pr_status === 'IN_REVIEW' ? 'warning' : 'default'
+                                  }
+                                  size="small"
+                                />
+                              </Grid>
+                              <Grid item xs={12} md={6}>
+                                <Typography variant="body2" color="text.secondary">PR #:</Typography>
+                                <Typography variant="body1">{rama.pr_number || 'No creado'}</Typography>
+                              </Grid>
+                              {rama.pr_url && (
+                                <Grid item xs={12} md={6}>
+                                  <Button
+                                    variant="outlined"
+                                    startIcon={<Visibility />}
+                                    href={rama.pr_url}
+                                    target="_blank"
+                                    sx={{ mt: 1 }}
+                                  >
+                                    Ver en GitHub
+                                  </Button>
+                                </Grid>
+                              )}
+                            </Grid>
+                          </CardContent>
+                        </Card>
 
-                             {/* Estadísticas del PR */}
-               <Card sx={{ mb: 3 }}>
-                 <CardContent>
-                   <Typography variant="h6" gutterBottom>
-                     📊 Estadísticas del Cambio
-                   </Typography>
-                   <Grid container spacing={2}>
-                     <Grid item xs={3}>
-                       <Box sx={{ textAlign: 'center', p: 2 }}>
-                         <Typography variant="h4" color="text.primary">
-                           {prInfo.stats?.commits_count || 0}
-                         </Typography>
-                         <Typography variant="body2" color="text.secondary">
-                           Commits
-                         </Typography>
-                       </Box>
-                     </Grid>
-                     <Grid item xs={3}>
-                       <Box sx={{ textAlign: 'center', p: 2 }}>
-                         <Typography variant="h4" color="text.primary">
-                           {prInfo.stats?.files_changed || 0}
-                         </Typography>
-                         <Typography variant="body2" color="text.secondary">
-                           Archivos Modificados
-                         </Typography>
-                       </Box>
-                     </Grid>
-                     <Grid item xs={3}>
-                       <Box sx={{ textAlign: 'center', p: 2, color: '#16a34a' }}>
-                         <Typography variant="h4" sx={{ color: 'inherit' }}>
-                           +{prInfo.stats?.additions || 0}
-                         </Typography>
-                         <Typography variant="body2" color="text.secondary">
-                           Líneas Agregadas
-                         </Typography>
-                       </Box>
-                     </Grid>
-                     <Grid item xs={3}>
-                       <Box sx={{ textAlign: 'center', p: 2, color: '#dc2626' }}>
-                         <Typography variant="h4" sx={{ color: 'inherit' }}>
-                           -{prInfo.stats?.deletions || 0}
-                         </Typography>
-                         <Typography variant="body2" color="text.secondary">
-                           Líneas Eliminadas
-                         </Typography>
-                       </Box>
-                     </Grid>
-                   </Grid>
-                 </CardContent>
-               </Card>
+                        {/* Información detallada del PR de GitHub */}
+                        {renderPRDetails(rama)}
 
-               {/* Lista de Commits */}
-               {prInfo.commits && prInfo.commits.length > 0 && (
-                 <Card sx={{ mb: 3 }}>
-                   <CardContent>
-                     <Typography variant="h6" gutterBottom>
-                       📝 Historial de Commits ({prInfo.stats?.commits_count || 0})
-                     </Typography>
-                     
-                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                       {prInfo.commits.map((commit) => (
-                         <Box 
-                           key={commit.sha}
-                           sx={{ 
-                             p: 2, 
-                             border: 1, 
-                             borderColor: 'divider', 
-                             borderRadius: 1,
-                             bgcolor: '#fafafa'
-                           }}
-                         >
-                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                               {commit.message}
-                             </Typography>
-                             <Chip 
-                               label={commit.sha} 
-                               size="small" 
-                               variant="outlined"
-                               sx={{ fontFamily: 'monospace' }}
-                             />
-                           </Box>
-                           <Typography variant="body2" color="text.secondary">
-                             Por {commit.author} • {commit.formattedDate || new Date(commit.date).toLocaleDateString('es-ES')}
-                           </Typography>
-                         </Box>
-                       ))}
-                     </Box>
-                   </CardContent>
-                 </Card>
-               )}
+                        {/* Comentarios y acciones para este PR */}
+                        {rama.pr_number && (
+                          <Card>
+                            <CardContent>
+                              <Typography variant="h6" gutterBottom>
+                                Revisión del PR {rama.repository_type}
+                              </Typography>
+                              
+                              <TextField
+                                fullWidth
+                                multiline
+                                rows={3}
+                                label={`Comentarios para ${rama.repository_type}`}
+                                placeholder="Agregar comentarios sobre este Pull Request..."
+                                value={comentariosPR[rama.repository_type] || ''}
+                                onChange={(e) => setComentariosPR(prev => ({
+                                  ...prev,
+                                  [rama.repository_type]: e.target.value
+                                }))}
+                                sx={{ mb: 2 }}
+                              />
+                              
+                              <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Button
+                                  variant="outlined"
+                                  color="error"
+                                  startIcon={<Close />}
+                                  onClick={() => handleRechazarPRIndividual(rama.repository_type)}
+                                  disabled={procesandoPR[`rechazar_${rama.repository_type}`] || rama.pr_status === 'REJECTED'}
+                                >
+                                  {procesandoPR[`rechazar_${rama.repository_type}`] ? 'Rechazando...' : 'Rechazar'}
+                                </Button>
+                                
+                                <Button
+                                  variant="contained"
+                                  color="success"
+                                  startIcon={<Check />}
+                                  onClick={() => handleAprobarPRIndividual(rama.repository_type)}
+                                  disabled={procesandoPR[`aprobar_${rama.repository_type}`] || rama.pr_status === 'APPROVED'}
+                                >
+                                  {procesandoPR[`aprobar_${rama.repository_type}`] ? 'Aprobando...' : 'Aprobar'}
+                                </Button>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </Box>
+                    )
+                  )}
+                </Box>
+              ) : (
+                /* Un solo PR - sin tabs */
+                <Box sx={{ p: 3 }}>
+                  {prInfo.map((rama) => (
+                    <Box key={rama.id}>
+                      {/* Información básica del PR */}
+                      <Card sx={{ mb: 3 }}>
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <GitHub />
+                            Pull Request {rama.repository_type}
+                          </Typography>
+                          
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} md={6}>
+                              <Typography variant="body2" color="text.secondary">Rama:</Typography>
+                              <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{rama.branch_name}</Typography>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                              <Typography variant="body2" color="text.secondary">Estado en BD:</Typography>
+                              <Chip 
+                                label={rama.pr_status || 'PENDING'} 
+                                color={
+                                  rama.pr_status === 'APPROVED' ? 'success' : 
+                                  rama.pr_status === 'REJECTED' ? 'error' : 
+                                  rama.pr_status === 'IN_REVIEW' ? 'warning' : 'default'
+                                }
+                                size="small"
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                              <Typography variant="body2" color="text.secondary">PR #:</Typography>
+                              <Typography variant="body1">{rama.pr_number || 'No creado'}</Typography>
+                            </Grid>
+                            {rama.pr_url && (
+                              <Grid item xs={12} md={6}>
+                                <Button
+                                  variant="outlined"
+                                  startIcon={<Visibility />}
+                                  href={rama.pr_url}
+                                  target="_blank"
+                                  sx={{ mt: 1 }}
+                                >
+                                  Ver en GitHub
+                                </Button>
+                              </Grid>
+                            )}
+                          </Grid>
+                        </CardContent>
+                      </Card>
 
-               {/* Lista de Archivos Modificados */}
-               {prInfo.files && prInfo.files.length > 0 && (
-                 <Card>
-                   <CardContent>
-                     <Typography variant="h6" gutterBottom>
-                       📁 Archivos Modificados ({prInfo.files.length})
-                     </Typography>
-                     
-                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                       {prInfo.files.map((file, index) => (
-                         <Box 
-                           key={index}
-                           sx={{ 
-                             p: 2, 
-                             border: 1, 
-                             borderColor: 'divider', 
-                             borderRadius: 1,
-                             bgcolor: '#fafafa',
-                             display: 'flex',
-                             justifyContent: 'space-between',
-                             alignItems: 'center'
-                           }}
-                         >
-                           <Box sx={{ flex: 1 }}>
-                             <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
-                               {file.filename}
-                             </Typography>
-                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                               <Chip 
-                                 label={file.statusLabel || file.status}
-                                 size="small"
-                                 sx={{ 
-                                   bgcolor: file.statusColor || '#6b7280',
-                                   color: 'white',
-                                   fontSize: '0.7rem',
-                                   height: '20px'
-                                 }}
-                               />
-                               {file.extension && (
-                                 <Chip 
-                                   label={file.extension.toUpperCase()}
-                                   size="small"
-                                   variant="outlined"
-                                   sx={{ fontSize: '0.7rem', height: '20px' }}
-                                 />
-                               )}
-                             </Box>
-                           </Box>
-                           
-                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: '120px', justifyContent: 'flex-end' }}>
-                             {file.additions > 0 && (
-                               <Typography variant="body2" sx={{ color: '#22c55e', fontWeight: 'bold' }}>
-                                 +{file.additions}
-                               </Typography>
-                             )}
-                             {file.deletions > 0 && (
-                               <Typography variant="body2" sx={{ color: '#ef4444', fontWeight: 'bold' }}>
-                                 -{file.deletions}
-                               </Typography>
-                             )}
-                           </Box>
-                         </Box>
-                       ))}
-                     </Box>
-                   </CardContent>
-                 </Card>
-               )}
+                      {/* Información detallada del PR de GitHub */}
+                      {renderPRDetails(rama)}
+
+                      {/* Comentarios y acciones para este PR */}
+                      {rama.pr_number && (
+                        <Card>
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Revisión del PR {rama.repository_type}
+                            </Typography>
+                            
+                            <TextField
+                              fullWidth
+                              multiline
+                              rows={3}
+                              label={`Comentarios para ${rama.repository_type}`}
+                              placeholder="Agregar comentarios sobre este Pull Request..."
+                              value={comentariosPR[rama.repository_type] || ''}
+                              onChange={(e) => setComentariosPR(prev => ({
+                                ...prev,
+                                [rama.repository_type]: e.target.value
+                              }))}
+                              sx={{ mb: 2 }}
+                            />
+                            
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                              <Button
+                                variant="outlined"
+                                color="error"
+                                startIcon={<Close />}
+                                onClick={() => handleRechazarPRIndividual(rama.repository_type)}
+                                disabled={procesandoPR[`rechazar_${rama.repository_type}`] || rama.pr_status === 'REJECTED'}
+                              >
+                                {procesandoPR[`rechazar_${rama.repository_type}`] ? 'Rechazando...' : 'Rechazar'}
+                              </Button>
+                              
+                              <Button
+                                variant="contained"
+                                color="success"
+                                startIcon={<Check />}
+                                onClick={() => handleAprobarPRIndividual(rama.repository_type)}
+                                disabled={procesandoPR[`aprobar_${rama.repository_type}`] || rama.pr_status === 'APPROVED'}
+                              >
+                                {procesandoPR[`aprobar_${rama.repository_type}`] ? 'Aprobando...' : 'Aprobar'}
+                              </Button>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
           ) : (
             <Box sx={{ p: 4, textAlign: 'center' }}>
               <Typography color="text.secondary">
-                No se pudo cargar la información del Pull Request
+                No se encontraron Pull Requests para esta solicitud
               </Typography>
             </Box>
           )}
@@ -2363,27 +2589,6 @@ const AdminSolicitudes = () => {
           >
             Cerrar
           </Button>
-          
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Close />}
-            onClick={handleRechazarPR}
-            disabled={loading}
-            sx={{ mr: 'auto' }}
-          >
-            Rechazar PR
-          </Button>
-          
-                     <Button
-             variant="contained"
-             color="success"
-             startIcon={<Check />}
-             onClick={handleAprobarPR}
-             disabled={loading}
-           >
-             Aprobar PR & Desplegar
-           </Button>
         </DialogActions>
       </Dialog>
 

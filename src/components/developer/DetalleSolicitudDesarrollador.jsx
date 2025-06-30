@@ -62,7 +62,8 @@ import {
   Key
 } from '@mui/icons-material';
 import desarrolladorService from '../../services/desarrolladorService';
-import GitHubSection from './GitHubSection';
+import RamasGitHub from '../shared/RamasGitHub';
+import GestionRamas from '../shared/GestionRamas';
 import Snackbar from '@mui/material/Snackbar';
 
 const DetalleSolicitudDesarrollador = () => {
@@ -404,9 +405,9 @@ const DetalleSolicitudDesarrollador = () => {
                     {procesando ? 'Guardando...' : 'Guardar Comentario'}
                   </Button>
                 </DialogActions>
-              </Dialog>
+                            </Dialog>
 
-              {/* Estado: EN_DESARROLLO con comentarios internos */}
+              {/* Estado: EN_DESARROLLO con comentarios internos (rechazado por MASTER) */}
               {solicitud.estado_sol === 'EN_DESARROLLO' && solicitud.comentarios_internos_sol && (
                 <Paper sx={{ p: 2, mb: 3, bgcolor: '#fff8e1', border: '1px solid #ffcc02' }}>
                   {/* Encabezado del mensaje */}
@@ -418,7 +419,7 @@ const DetalleSolicitudDesarrollador = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
                           MASTER - Comentarios Técnicos
-                    </Typography>
+                        </Typography>
                         <Chip 
                           label="Solo para Desarrollador" 
                           size="small" 
@@ -430,10 +431,10 @@ const DetalleSolicitudDesarrollador = () => {
                           }} 
                         />
                       </Box>
-                    <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary">
                         {formatearFecha(solicitud.fec_ultima_actualizacion)}
-                    </Typography>
-                  </Box>
+                      </Typography>
+                    </Box>
                   </Box>
 
                   {/* Mensaje principal */}
@@ -449,7 +450,7 @@ const DetalleSolicitudDesarrollador = () => {
                     <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Warning fontSize="small" />
                       El MASTER ha rechazado el Pull Request anterior
-                  </Typography>
+                    </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Por favor revisa los comentarios técnicos y realiza las correcciones necesarias:
                     </Typography>
@@ -457,35 +458,6 @@ const DetalleSolicitudDesarrollador = () => {
                       {solicitud.comentarios_internos_sol}
                     </Typography>
                   </Alert>
-
-                  {/* Acciones */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<Send />}
-                      onClick={async () => {
-                        try {
-                          setProcesando(true);
-                          await desarrolladorService.pasarATesting(solicitud.id_sol, 
-                            'Cambios solicitados por el MASTER implementados. PR listo para nueva revisión.'
-                          );
-                          await cargarSolicitud();
-                        } catch (error) {
-                          console.error('Error enviando a testing:', error);
-                        } finally {
-                          setProcesando(false);
-                        }
-                      }}
-                      disabled={procesando}
-                      sx={{ 
-                        bgcolor: '#2196f3', 
-                        '&:hover': { bgcolor: '#1976d2' }
-                      }}
-                    >
-                      Enviar a Nueva Revisión
-                    </Button>
-                  </Box>
                 </Paper>
               )}
 
@@ -613,6 +585,18 @@ const DetalleSolicitudDesarrollador = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Gestión de Ramas y Pull Requests */}
+          {(['APROBADA', 'EN_DESARROLLO', 'EN_TESTING'].includes(solicitud.estado_sol)) && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <GestionRamas 
+                  solicitud={solicitud} 
+                  onUpdate={cargarSolicitud}
+                />
+              </CardContent>
+            </Card>
+          )}
             </Box>
 
         {/* Sidebar */}
@@ -736,59 +720,12 @@ const DetalleSolicitudDesarrollador = () => {
             </CardContent>
           </Card>
 
-          {/* Sección de GitHub */}
-          <Card>
-            <CardContent>
-              <GitHubSection 
-                solicitud={solicitud} 
-                onSolicitudUpdate={cargarSolicitud}
-              />
-            </CardContent>
-          </Card>
+
         </Box>
       </Box>
 
       {/* Acciones */}
       <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        {/* Botón de Enviar a Revisión cuando está en desarrollo y tiene PR */}
-        {solicitud.estado_sol === 'EN_DESARROLLO' && solicitud.github_pr_number && (
-          <Button
-            onClick={async () => {
-              try {
-                setProcesando(true);
-                await desarrolladorService.actualizarEstadoSolicitud(solicitud.id_sol, 'EN_TESTING', {
-                  comentarios_internos_sol: `Desarrollador envió la solicitud a revisión el ${new Date().toLocaleString()}`
-                });
-                await cargarSolicitud();
-                setSnackbar({
-                  open: true,
-                  message: 'Solicitud enviada a revisión exitosamente',
-                  severity: 'success'
-                });
-              } catch (error) {
-                console.error('Error al enviar a revisión:', error);
-                setSnackbar({
-                  open: true,
-                  message: 'Error al enviar a revisión: ' + error.message,
-                  severity: 'error'
-                });
-              } finally {
-                setProcesando(false);
-              }
-            }}
-            variant="contained"
-            startIcon={<Send />}
-            disabled={procesando}
-            sx={{ 
-              bgcolor: '#0891b2',
-              '&:hover': { bgcolor: '#0e7490' },
-              minWidth: 150
-            }}
-          >
-            Enviar a Revisión
-          </Button>
-        )}
-
         <Button
           variant="outlined"
           startIcon={<ArrowBack />}
