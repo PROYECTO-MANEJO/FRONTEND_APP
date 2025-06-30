@@ -28,7 +28,6 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import utaImage from '../../assets/images/uta1.jpg';
-import { carreraService } from '../../services/carreraService';
 
 const validationSchema = yup.object().shape({
   email: yup.string().email('El correo electrónico no es válido').required('El correo electrónico es obligatorio'),
@@ -43,15 +42,7 @@ const validationSchema = yup.object().shape({
   nombre: yup.string().trim().required('El primer nombre es obligatorio'),
   nombre2: yup.string().trim(),
   apellido: yup.string().trim().required('El primer apellido es obligatorio'),
-  apellido2: yup.string().trim(),
-  cedula: yup.string()
-    .matches(/^\d{10}$/, 'La cédula debe tener 10 dígitos')
-    .required('La cédula es obligatoria'),
-  carrera_id: yup.string().when('email', {
-    is: (email) => email && email.endsWith('@uta.edu.ec'),
-    then: (schema) => schema.required('La carrera es obligatoria para estudiantes UTA'),
-    otherwise: (schema) => schema.nullable(),
-  }),
+  apellido2: yup.string().trim(),   
 });
 
 const Register = () => {
