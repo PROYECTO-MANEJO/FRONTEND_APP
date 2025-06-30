@@ -383,6 +383,18 @@ function App() {
               } 
             />
             
+            {/* Reportes de Solicitudes (Solo MASTER) */}
+            <Route 
+              path="/admin/reportes/historial-solicitudes" 
+              element={
+                <MasterRoute>
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
+                </MasterRoute>
+              } 
+            />
+            
             {/* Gestión de Notas y Asistencia */}
             <Route 
               path="/admin/gestion-notas-curso/:id" 

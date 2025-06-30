@@ -1,17 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Box, Typography, Grid, Card, CardContent, Avatar, Button
+  Box, Typography, Grid, Card, CardContent, Avatar, Button, Divider, CircularProgress, Alert
 } from '@mui/material';
 import {
-  People, Event, School, AttachMoney, Assessment
+  People, Event, School, AttachMoney, Assessment, BugReport, TrendingUp, PictureAsPdf
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 const AdminReportes = () => {
   const { getMainContentStyle } = useSidebarLayout();
+  const { isMaster } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const reportTypes = [
     {
@@ -48,9 +53,36 @@ const AdminReportes = () => {
     }
   ];
 
+  // Reportes PDF de solicitudes (solo para MASTER)
+  const solicitudesPDFTypes = [
+    {
+      tipo: 'estado',
+      title: 'Reporte por Estados',
+      description: 'Distribución de solicitudes por estados del sistema',
+      icon: <Assessment />,
+      color: '#9c27b0',
+      btnColor: 'secondary'
+    },
+    {
+      tipo: 'desarrollador',
+      title: 'Carga por Desarrollador',
+      description: 'Solicitudes asignadas y carga de trabajo por desarrollador',
+      icon: <BugReport />,
+      color: '#2196f3',
+      btnColor: 'primary'
+    },
+    {
+      tipo: 'resumen',
+      title: 'Reporte Ejecutivo',
+      description: 'Resumen general y métricas principales del sistema',
+      icon: <TrendingUp />,
+      color: '#673ab7',
+      btnColor: 'secondary'
+    }
+  ];
+
   const handleVerReportes = (tipo) => {
-    // Todos los tipos de reporte ahora navegan a su página de historial específica
-    // sin generar un reporte automáticamente
+    // Reportes existentes
     if (tipo === 'financiero') {
       navigate('/admin/reportes/historial?tipo=FINANZAS');
     } else if (tipo === 'usuarios') {
@@ -59,6 +91,45 @@ const AdminReportes = () => {
       navigate('/admin/reportes/historial-eventos?tipo=EVENTOS');
     } else if (tipo === 'cursos') {
       navigate('/admin/reportes/historial-cursos?tipo=CURSOS');
+    }
+  };
+
+  const handleGenerarPDFSolicitudes = async (tipoReporte) => {
+    try {
+      setLoading(true);
+      setMessage(null);
+
+      const endpoint = `/reportes/solicitudes/${tipoReporte}/pdf`;
+      const response = await api.post(endpoint);
+
+      if (response.data.success) {
+        setMessage({
+          type: 'success',
+          text: `✅ ${response.data.message}`
+        });
+        // Redirigir al tipo correcto de reporte
+        setTimeout(() => {
+          const tipoReporteMap = {
+            'estado': 'SOLICITUDES_ESTADO',
+            'desarrollador': 'SOLICITUDES_DESARROLLADOR',
+            'resumen': 'SOLICITUDES_RESUMEN'
+          };
+          navigate(`/admin/reportes/historial-solicitudes?tipo=${tipoReporteMap[tipoReporte]}`);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error generando reporte PDF:', error);
+      if (error.response?.status === 401) {
+        // Si es error de autenticación, redirigir al login
+        navigate('/login');
+        return;
+      }
+      setMessage({
+        type: 'error',
+        text: `❌ Error al generar el reporte: ${error.response?.data?.message || error.message}`
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,8 +148,11 @@ const AdminReportes = () => {
           </Typography>
         </Box>
 
-        {/* Report Navigation */}
+        {/* Reportes Generales */}
         <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: '#1976d2' }}>
+            📊 Reportes Generales del Sistema
+          </Typography>
           <Grid container spacing={3} sx={{ maxWidth: 800, mx: 'auto' }}>
             {reportTypes.map((report) => (
               <Grid item xs={12} sm={6} md={6} key={report.tipo}>
@@ -132,6 +206,82 @@ const AdminReportes = () => {
             ))}
           </Grid>
         </Box>
+
+        {/* Reportes de Solicitudes (Solo para MASTER) */}
+        {isMaster() && (
+          <>
+            <Divider sx={{ my: 4 }} />
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ mb: 3, textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: '#9c27b0' }}>
+                  🔒 Reportes de Solicitudes de Cambio (MASTER)
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Análisis exclusivo y auditoría del sistema de solicitudes
+                </Typography>
+              </Box>
+              {/* Mensaje de estado */}
+              {message && (
+                <Alert 
+                  severity={message.type} 
+                  sx={{ mb: 3, maxWidth: 600, mx: 'auto' }}
+                  onClose={() => setMessage(null)}
+                >
+                  {message.text}
+                </Alert>
+              )}
+
+              <Grid container spacing={3} sx={{ maxWidth: 1000, mx: 'auto' }}>
+                {solicitudesPDFTypes.map((report) => (
+                  <Grid item xs={12} sm={6} md={4} key={report.tipo}>
+                    <Card sx={{ 
+                      height: 300, 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      border: '2px solid transparent',
+                      '&:hover': {
+                        border: '2px solid #9c27b0',
+                        transform: 'translateY(-4px)',
+                        transition: 'all 0.3s ease'
+                      }
+                    }}>
+                      <CardContent sx={{ textAlign: 'center', p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: report.color,
+                            width: 64,
+                            height: 64,
+                            mx: 'auto',
+                            mb: 2
+                          }}
+                        >
+                          {report.icon}
+                        </Avatar>
+                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                          {report.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
+                          {report.description}
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          color={report.btnColor}
+                          fullWidth
+                          onClick={() => handleGenerarPDFSolicitudes(report.tipo)}
+                          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <PictureAsPdf />}
+                          disabled={loading}
+                          sx={{ mt: 'auto' }}
+                        >
+                          {loading ? 'Generando...' : 'Generar PDF'}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          </>
+        )}
       </Box>
     </Box>
   );
