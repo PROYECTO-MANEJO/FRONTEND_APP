@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Button, 
-  Grid, 
-  Box, 
-  Chip, 
-  Alert, 
+import {
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Grid,
+  Box,
+  Chip,
+  Alert,
   CircularProgress,
   Tabs,
   Tab,
   Paper,
-  Divider
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -23,11 +26,13 @@ import {
   DateRange as DateRangeIcon,
   Grade as GradeIcon,
   Groups as GroupsIcon,
-  Assignment as AssignmentIcon
+  Assignment as AssignmentIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { obtenerParticipacionesTerminadas, descargarCertificado } from '../../services/certificadoService';
 import UserSidebar from './UserSidebar';
 import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
+import api from '../../services/api';
 
 const MisCertificados = () => {
   const { getMainContentStyle } = useUserSidebarLayout();
@@ -36,6 +41,11 @@ const MisCertificados = () => {
   const [error, setError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [downloading, setDownloading] = useState(null);
+  const [viewerDialog, setViewerDialog] = useState({
+    open: false,
+    pdfUrl: '',
+    certificado: null
+  });
 
   useEffect(() => {
     cargarParticipaciones();
@@ -58,11 +68,38 @@ const MisCertificados = () => {
     try {
       setDownloading(idParticipacion);
       await descargarCertificado(tipo, idParticipacion);
-      // Mostrar mensaje de éxito (podrías usar un snackbar aquí)
+      // Mostrar mensaje de éxito (snackbar opcional)
     } catch (err) {
       setError('Error al descargar certificado: ' + (err.response?.data?.message || err.message));
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleVerCertificado = async (tipo, idParticipacion, nombreCertificado) => {
+    try {
+      const response = await api.get(
+        `/certificados/descargar/${tipo}/${idParticipacion}`,
+        {
+          responseType: 'blob',
+          headers: {
+            'x-token': localStorage.getItem('token'),
+          }
+        }
+      );
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+
+      setViewerDialog({
+        open: true,
+        pdfUrl: url,
+        certificado: nombreCertificado
+      });
+
+    } catch (error) {
+      console.error(error);
+      setError('No se pudo cargar la vista previa del certificado');
     }
   };
 
@@ -75,14 +112,15 @@ const MisCertificados = () => {
     });
   };
 
-    const CardParticipacion = ({ participacion, tipo }) => {
+  const CardParticipacion = ({ participacion, tipo }) => {
     const esAprobado = participacion.aprobado;
     const tieneCertificado = participacion.tiene_certificado_pdf;
+    const nombreCertificado = tipo === 'evento' ? participacion.evento : participacion.curso;
 
     return (
-      <Card 
-        sx={{ 
-          mb: 2, 
+      <Card
+        sx={{
+          mb: 2,
           borderRadius: 2,
           boxShadow: 2,
           '&:hover': {
@@ -110,17 +148,12 @@ const MisCertificados = () => {
             />
           </Box>
 
-          {/* Título del evento/curso */}
-          <Typography 
-            variant="h6" 
-            component="h3" 
-            sx={{ 
-              fontWeight: 'bold', 
-              mb: 2,
-              color: 'text.primary'
-            }}
+          {/* Título */}
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}
           >
-            {tipo === 'evento' ? participacion.evento : participacion.curso}
+            {nombreCertificado}
           </Typography>
 
           {/* Información de métricas */}
@@ -129,16 +162,8 @@ const MisCertificados = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <GradeIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
                 <Typography variant="body2" color="text.secondary">
-                  Asistencia: 
-                  <Typography 
-                    component="span" 
-                    variant="body2" 
-                    sx={{ 
-                      ml: 0.5, 
-                      fontWeight: 'bold',
-                      color: participacion.asi_par >= 70 ? 'success.main' : 'error.main'
-                    }}
-                  >
+                  Asistencia:
+                  <Typography component="span" variant="body2" sx={{ ml: 0.5, fontWeight: 'bold', color: participacion.asi_par >= 70 ? 'success.main' : 'error.main' }}>
                     {participacion.asi_par}%
                   </Typography>
                 </Typography>
@@ -148,16 +173,8 @@ const MisCertificados = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <GradeIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
                   <Typography variant="body2" color="text.secondary">
-                    Nota Final: 
-                    <Typography 
-                      component="span" 
-                      variant="body2" 
-                      sx={{ 
-                        ml: 0.5, 
-                        fontWeight: 'bold',
-                        color: participacion.nota_final >= 70 ? 'success.main' : 'error.main'
-                      }}
-                    >
+                    Nota Final:
+                    <Typography component="span" variant="body2" sx={{ ml: 0.5, fontWeight: 'bold', color: participacion.nota_final >= 70 ? 'success.main' : 'error.main' }}>
                       {participacion.nota_final}/100
                     </Typography>
                   </Typography>
@@ -165,32 +182,16 @@ const MisCertificados = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <GroupsIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
                   <Typography variant="body2" color="text.secondary">
-                    Asistencia: 
-                    <Typography 
-                      component="span" 
-                      variant="body2" 
-                      sx={{ 
-                        ml: 0.5, 
-                        fontWeight: 'bold',
-                        color: participacion.asistencia_porcentaje >= 70 ? 'success.main' : 'error.main'
-                      }}
-                    >
+                    Asistencia:
+                    <Typography component="span" variant="body2" sx={{ ml: 0.5, fontWeight: 'bold', color: participacion.asistencia_porcentaje >= 70 ? 'success.main' : 'error.main' }}>
                       {participacion.asistencia_porcentaje}%
                     </Typography>
                   </Typography>
                 </Box>
               </>
             )}
-            
-            {/* Información del participante */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <GroupsIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
-              <Typography variant="body2" color="text.secondary">
-                Participante: {participacion.usuario}
-              </Typography>
-            </Box>
 
-            {/* Fecha de certificado */}
+            {/* Fecha certificado */}
             {esAprobado && tieneCertificado && (
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <DateRangeIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
@@ -201,7 +202,7 @@ const MisCertificados = () => {
             )}
           </Box>
 
-          {/* Estado de comprobante */}
+          {/* Estado del certificado */}
           <Box sx={{ mb: 2 }}>
             {esAprobado && tieneCertificado ? (
               <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', color: 'success.main' }}>
@@ -221,39 +222,40 @@ const MisCertificados = () => {
             )}
           </Box>
 
-          {/* Botón de descarga */}
+          {/* Botones */}
           {esAprobado && tieneCertificado && (
-            <Button
-              variant="contained"
-              color="success"
-              fullWidth
-              startIcon={downloading === (tipo === 'evento' ? participacion.id_par : participacion.id_par_cur) ? 
-                <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
-              onClick={() => handleDescargarCertificado(
-                tipo,
-                tipo === 'evento' ? participacion.id_par : participacion.id_par_cur
-              )}
-              disabled={downloading === (tipo === 'evento' ? participacion.id_par : participacion.id_par_cur)}
-              sx={{ 
-                mt: 1,
-                py: 1,
-                fontWeight: 'bold',
-                boxShadow: 2,
-                '&:hover': {
-                  boxShadow: 4
-                }
-              }}
-            >
-              {downloading === (tipo === 'evento' ? participacion.id_par : participacion.id_par_cur) ? 
-                'Descargando...' : 'Descargar Certificado'}
-            </Button>
+            <Grid container spacing={1}>
+              <Grid item xs={6}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  fullWidth
+                  startIcon={<VisibilityIcon />}
+                  onClick={() => handleVerCertificado(tipo, tipo === 'evento' ? participacion.id_par : participacion.id_par_cur, nombreCertificado)}
+                >
+                  Ver Certificado
+                </Button>
+              </Grid>
+              <Grid item xs={6}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  fullWidth
+                  startIcon={downloading === (tipo === 'evento' ? participacion.id_par : participacion.id_par_cur) ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
+                  onClick={() => handleDescargarCertificado(tipo, tipo === 'evento' ? participacion.id_par : participacion.id_par_cur)}
+                  disabled={downloading === (tipo === 'evento' ? participacion.id_par : participacion.id_par_cur)}
+                >
+                  {downloading === (tipo === 'evento' ? participacion.id_par : participacion.id_par_cur) ? 'Descargando...' : 'Descargar'}
+                </Button>
+              </Grid>
+            </Grid>
           )}
 
-          {/* Mensaje informativo para reprobados */}
+          {/* Mensaje reprobado */}
           {!esAprobado && (
             <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
               <Typography variant="body2">
-                {tipo === 'evento' ? 
+                {tipo === 'evento' ?
                   'Se requiere mínimo 70% de asistencia para obtener certificado' :
                   'Se requiere mínimo 70% de nota final y 70% de asistencia para obtener certificado'
                 }
@@ -265,57 +267,53 @@ const MisCertificados = () => {
     );
   };
 
-  const EventosSection = ({ eventos }) => {
-    return (
-      <Box>
-        {eventos.length > 0 ? (
-          <Grid container spacing={3}>
-            {eventos.map((evento) => (
-              <Grid item xs={12} md={6} lg={4} key={evento.id_par}>
-                <CardParticipacion participacion={evento} tipo="evento" />
-              </Grid>
-            ))}
-          </Grid>
-        ) : (
-          <Box sx={{ textAlign: 'center', py: 6 }}>
-            <EventIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No tienes eventos terminados
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Los eventos aparecerán aquí una vez que finalicen
-            </Typography>
-          </Box>
-        )}
-      </Box>
-    );
-  };
+  const EventosSection = ({ eventos }) => (
+    <Box>
+      {eventos.length > 0 ? (
+        <Grid container spacing={3}>
+          {eventos.map((evento) => (
+            <Grid item xs={12} md={6} lg={4} key={evento.id_par}>
+              <CardParticipacion participacion={evento} tipo="evento" />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <EventIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No tienes eventos terminados
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Los eventos aparecerán aquí una vez que finalicen
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
 
-  const CursosSection = ({ cursos }) => {
-    return (
-      <Box>
-        {cursos.length > 0 ? (
-          <Grid container spacing={3}>
-            {cursos.map((curso) => (
-              <Grid item xs={12} md={6} lg={4} key={curso.id_par_cur}>
-                <CardParticipacion participacion={curso} tipo="curso" />
-              </Grid>
-            ))}
-          </Grid>
-        ) : (
-          <Box sx={{ textAlign: 'center', py: 6 }}>
-            <SchoolIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No tienes cursos terminados
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Los cursos aparecerán aquí una vez que finalicen
-            </Typography>
-          </Box>
-        )}
-      </Box>
-    );
-  };
+  const CursosSection = ({ cursos }) => (
+    <Box>
+      {cursos.length > 0 ? (
+        <Grid container spacing={3}>
+          {cursos.map((curso) => (
+            <Grid item xs={12} md={6} lg={4} key={curso.id_par_cur}>
+              <CardParticipacion participacion={curso} tipo="curso" />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <SchoolIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No tienes cursos terminados
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Los cursos aparecerán aquí una vez que finalicen
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
 
   if (loading) {
     return (
@@ -327,14 +325,6 @@ const MisCertificados = () => {
       </Box>
     );
   }
-
-  // Calcular estadísticas
-  const totalEventos = participaciones.eventos?.length || 0;
-  const totalCursos = participaciones.cursos?.length || 0;
-  const eventosAprobados = participaciones.eventos?.filter(e => e.aprobado).length || 0;
-  const cursosAprobados = participaciones.cursos?.filter(c => c.aprobado).length || 0;
-  const totalAprobados = eventosAprobados + cursosAprobados;
-  const totalParticipaciones = totalEventos + totalCursos;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -351,114 +341,94 @@ const MisCertificados = () => {
 
       {/* Estadísticas */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
+        {/* Totales */}
         <Grid item xs={6} sm={3}>
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              p: 2, 
-              textAlign: 'center',
-              borderRadius: 2,
-              bgcolor: '#f8f9fa'
-            }}
-          >
+          <Paper elevation={2} sx={{ p: 2, textAlign: 'center', borderRadius: 2, bgcolor: '#f8f9fa' }}>
             <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
-              {totalParticipaciones}
+              {participaciones.eventos.length + participaciones.cursos.length}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Total Participaciones
-            </Typography>
+            <Typography variant="body2" color="text.secondary">Total Participaciones</Typography>
           </Paper>
         </Grid>
-        
         <Grid item xs={6} sm={3}>
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              p: 2, 
-              textAlign: 'center',
-              borderRadius: 2,
-              bgcolor: '#f0f8f0'
-            }}
-          >
+          <Paper elevation={2} sx={{ p: 2, textAlign: 'center', borderRadius: 2, bgcolor: '#f0f8f0' }}>
             <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
-              {totalAprobados}
+              {participaciones.eventos.filter(e => e.aprobado).length + participaciones.cursos.filter(c => c.aprobado).length}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Aprobadas
-            </Typography>
+            <Typography variant="body2" color="text.secondary">Aprobadas</Typography>
           </Paper>
         </Grid>
-        
         <Grid item xs={6} sm={3}>
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              p: 2, 
-              textAlign: 'center',
-              borderRadius: 2,
-              bgcolor: '#f0f7ff'
-            }}
-          >
+          <Paper elevation={2} sx={{ p: 2, textAlign: 'center', borderRadius: 2, bgcolor: '#f0f7ff' }}>
             <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
-              {totalEventos}
+              {participaciones.eventos.length}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Eventos
-            </Typography>
+            <Typography variant="body2" color="text.secondary">Eventos</Typography>
           </Paper>
         </Grid>
-        
         <Grid item xs={6} sm={3}>
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              p: 2, 
-              textAlign: 'center',
-              borderRadius: 2,
-              bgcolor: '#f8f0ff'
-            }}
-          >
+          <Paper elevation={2} sx={{ p: 2, textAlign: 'center', borderRadius: 2, bgcolor: '#f8f0ff' }}>
             <Typography variant="h4" color="secondary" sx={{ fontWeight: 'bold' }}>
-              {totalCursos}
+              {participaciones.cursos.length}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Cursos
-            </Typography>
+            <Typography variant="body2" color="text.secondary">Cursos</Typography>
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Tabs para separar eventos y cursos */}
+      {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={tabValue} 
+        <Tabs
+          value={tabValue}
           onChange={(e, newValue) => setTabValue(newValue)}
           variant="fullWidth"
           sx={{
-            '& .MuiTab-root': {
-              fontWeight: 'bold',
-              fontSize: '1rem'
-            }
+            '& .MuiTab-root': { fontWeight: 'bold', fontSize: '1rem' }
           }}
         >
-          <Tab 
-            icon={<EventIcon />} 
-            label={`Eventos (${totalEventos})`} 
-            iconPosition="start"
-          />
-          <Tab 
-            icon={<SchoolIcon />} 
-            label={`Cursos (${totalCursos})`} 
-            iconPosition="start"
-          />
+          <Tab icon={<EventIcon />} label={`Eventos (${participaciones.eventos.length})`} iconPosition="start" />
+          <Tab icon={<SchoolIcon />} label={`Cursos (${participaciones.cursos.length})`} iconPosition="start" />
         </Tabs>
       </Box>
 
-      {/* Contenido de tabs */}
-      {tabValue === 0 && <EventosSection eventos={participaciones.eventos || []} />}
-      {tabValue === 1 && <CursosSection cursos={participaciones.cursos || []} />}
+      {/* Contenido */}
+      {tabValue === 0 && <EventosSection eventos={participaciones.eventos} />}
+      {tabValue === 1 && <CursosSection cursos={participaciones.cursos} />}
+
+      {/* Modal visor certificado */}
+      <Dialog
+        open={viewerDialog.open}
+        onClose={() => setViewerDialog({ open: false, pdfUrl: '', certificado: null })}
+        maxWidth="x1"
+        fullWidth
+      >
+        <DialogTitle>
+          Vista previa de certificado: {viewerDialog.certificado}
+        </DialogTitle>
+        <DialogContent sx={{ height: '80vh' }}>
+          {viewerDialog.pdfUrl ? (
+            <iframe
+              src={viewerDialog.pdfUrl}
+              title="Vista previa certificado"
+              width="100%"
+              height="100%"
+              style={{ border: 'none' }}
+            />
+          ) : (
+            <CircularProgress />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setViewerDialog({ open: false, pdfUrl: '', certificado: null })}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 };
 
-export default MisCertificados; 
+export default MisCertificados;
