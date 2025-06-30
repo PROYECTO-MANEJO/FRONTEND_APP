@@ -72,7 +72,14 @@ const EventoCard = ({ evento }) => {
     if (!esMiEvento) {
       cargarInscripciones();
     }
-    console.log('Inscripción exitosa en evento:', evento.nom_eve);
+    console.log('✅ Inscripción exitosa en evento:', evento.nom_eve);
+    
+    // 🔥 CERRAR AUTOMÁTICAMENTE LOS MODALES DESPUÉS DE INSCRIPCIÓN EXITOSA
+    setTimeout(() => {
+      console.log('🔄 Cerrando modales automáticamente...');
+      setInscripcionOpen(false); // Cerrar modal de inscripción
+      setOpen(false);           // Cerrar modal de detalles
+    }, 2000); // 2 segundos para que el usuario vea el mensaje de éxito
   };
 
   return (
