@@ -25,15 +25,22 @@ class AuthService {
   // Registro de usuario normal
   async register(userData) {
     try {
-      const response = await api.post('/auth/createUser', {
+      const requestData = {
         email: userData.email,
         password: userData.password,
         nombre: userData.nombre,
         nombre2: userData.nombre2 || '',
         apellido: userData.apellido,
         apellido2: userData.apellido2 || '',
-        ced_usu: userData.cedula
-      });
+        ced_usu: userData.ced_usu
+      };
+
+      // Solo incluir carrera si se proporciona
+      if (userData.carrera) {
+        requestData.carrera = userData.carrera;
+      }
+
+      const response = await api.post('/auth/createUser', requestData);
 
       if (response.data.success) {
         // Guardar token y datos del usuario en localStorage
