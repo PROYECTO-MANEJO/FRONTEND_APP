@@ -120,8 +120,8 @@ const AdminReportes = () => {
     } catch (error) {
       console.error('Error generando reporte PDF:', error);
       if (error.response?.status === 401) {
-        // Si es error de autenticación, redirigir al login
-        navigate('/login');
+        // Si es error de autenticación, redirigir al homepage
+        navigate('/');
         return;
       }
       setMessage({

@@ -29,19 +29,18 @@ import {
   Menu,
   CheckCircle
 } from '@mui/icons-material';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useSidebar } from '../../context/SidebarContext';
 
 const AdminSidebar = () => {
   const { user, logout } = useContext(AuthContext);
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.location.href = '/';
   };
 
   const isActive = (path) => location.pathname === path;
