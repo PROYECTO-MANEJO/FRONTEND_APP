@@ -29,6 +29,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { carreraService } from '../../services/carreraService';
 import utaImage from '../../assets/images/uta1.jpg';
+import { validarCedulaEcuatoriana } from '../../utils/cedulaValidator';
 
 const validationSchema = yup.object().shape({
   email: yup.string().email('El correo electrónico no es válido').required('El correo electrónico es obligatorio'),
@@ -40,7 +41,18 @@ const validationSchema = yup.object().shape({
   nombre2: yup.string().trim(),
   apellido: yup.string().trim().required('El primer apellido es obligatorio'),
   apellido2: yup.string().trim(),
-  cedula: yup.string()
+  cedula: yup.string().required('La cédula es obligatoria')
+    .length(10, 'La cédula debe tener exactamente 10 dígitos')
+    .matches(/^\d{10}$/, 'La cédula solo debe contener números')
+    .test('cedula-ecuatoriana', 'Debe ser una cédula ecuatoriana válida', function(value) {
+      if (!value) return false;
+      const resultado = validarCedulaEcuatoriana(value);
+      if (!resultado.isValid) {
+        return this.createError({ message: resultado.error });
+      }
+      return true;
+    }),
+
     .matches(/^\d{10}$/, 'La cédula debe tener 10 dígitos')
     .required('La cédula es obligatoria'),
   carrera: yup.string().when('email', {
@@ -48,6 +60,7 @@ const validationSchema = yup.object().shape({
     then: () => yup.string().required('La carrera es obligatoria para estudiantes UTA'),
     otherwise: () => yup.string()
   })
+
 });
 
 const Register = () => {
