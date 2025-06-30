@@ -15,13 +15,19 @@ import api from '../../services/api';
 const TITULOS = {
   USUARIOS: 'Historial de Reportes de Usuarios',
   EVENTOS: 'Historial de Reportes de Eventos',
-  CURSOS: 'Historial de Reportes de Cursos'
+  CURSOS: 'Historial de Reportes de Cursos',
+  SOLICITUDES_ESTADO: 'Historial de Reportes de Solicitudes por Estado',
+  SOLICITUDES_DESARROLLADOR: 'Historial de Reportes de Solicitudes por Desarrollador',
+  SOLICITUDES_RESUMEN: 'Historial de Reportes Ejecutivos de Solicitudes'
 };
 
 const ENDPOINTS = {
   USUARIOS: '/reportes/usuarios/pdf',
   EVENTOS: '/reportes/eventos/pdf',
-  CURSOS: '/reportes/cursos/pdf'
+  CURSOS: '/reportes/cursos/pdf',
+  SOLICITUDES_ESTADO: '/reportes/solicitudes/estado/pdf',
+  SOLICITUDES_DESARROLLADOR: '/reportes/solicitudes/desarrollador/pdf',
+  SOLICITUDES_RESUMEN: '/reportes/solicitudes/resumen/pdf'
 };
 
 const HistorialReportesGenerales = () => {

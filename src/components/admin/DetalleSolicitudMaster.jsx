@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
   Divider
 } from '@mui/material';
 import {
@@ -20,18 +21,21 @@ import {
   Description,
   Schedule,
   Assignment,
-  Help
+  Help,
+  Edit
 } from '@mui/icons-material';
-import desarrolladorService from '../../services/desarrolladorService';
+import solicitudesAdminService from '../../services/solicitudesAdminService';
 
-const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
+const DetalleSolicitudMaster = ({ solicitudId, onClose, open }) => {
   const [solicitud, setSolicitud] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success'
   });
+  const [comentariosTecnicos, setComentariosTecnicos] = useState('');
 
   useEffect(() => {
     if (solicitudId) {
@@ -42,7 +46,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
   const cargarSolicitud = async () => {
     try {
       setLoading(true);
-      const response = await desarrolladorService.obtenerSolicitudEspecifica(solicitudId);
+      const response = await solicitudesAdminService.obtenerSolicitudParaAdmin(solicitudId);
       setSolicitud(response.data);
     } catch (err) {
       console.error('Error cargando detalles:', err);
@@ -57,6 +61,8 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
   };
 
 
+
+  if (!open) return null;
 
   const getEstadoInfo = (estado) => {
     const estadosInfo = {
@@ -107,8 +113,6 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
     };
     return traducciones[urgencia] || urgencia;
   };
-
-  if (!open) return null;
 
   return (
     <Dialog
@@ -381,9 +385,9 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                         </Box>
                       </Box>
 
-                      {/* Comentarios del administrador si existen - Espacio reducido */}
+                      {/* Comentarios del administrador si existen */}
                       {solicitud.comentarios_admin_sol && (
-                        <Box sx={{ height: '300px' }}>
+                        <Box sx={{ height: '180px' }}>
                           <Typography variant="subtitle2" sx={{ 
                             color: '#6d1313', 
                             fontWeight: 600, 
@@ -395,7 +399,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                           <Paper variant="outlined" sx={{ 
                             p: 2, 
                             bgcolor: '#f0fdf4',
-                            height: '270px',
+                            height: '150px',
                             overflow: 'auto',
                             borderRadius: 2
                           }}>
@@ -409,6 +413,36 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                           </Paper>
                         </Box>
                       )}
+
+                      {/* Comentarios técnicos - Solo para MASTER */}
+                      <Box sx={{ flex: 1, minHeight: '150px' }}>
+                        <Typography variant="subtitle2" sx={{ 
+                          color: '#6d1313', 
+                          fontWeight: 600, 
+                          mb: 2,
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <Edit sx={{ fontSize: 16, color: '#b91c1c' }} />
+                          Comentarios Técnicos (MASTER)
+                        </Typography>
+                        <TextField
+                          multiline
+                          rows={6}
+                          fullWidth
+                          value={comentariosTecnicos}
+                          onChange={(e) => setComentariosTecnicos(e.target.value)}
+                          placeholder="Agregar comentarios técnicos o instrucciones especiales..."
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              bgcolor: '#fef9e7',
+                              borderRadius: 2
+                            }
+                          }}
+                        />
+                      </Box>
                     </Box>
                   </Paper>
                 </Box>
@@ -435,6 +469,16 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
         >
           Cerrar
         </Button>
+        <Button
+          variant="contained"
+          sx={{
+            bgcolor: '#6d1313',
+            color: 'white',
+            '&:hover': { bgcolor: '#991b1b' }
+          }}
+        >
+          Guardar Comentarios
+        </Button>
       </DialogActions>
 
       <Snackbar
@@ -450,4 +494,4 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
   );
 };
 
-export default DetalleSolicitudDesarrollador; 
+export default DetalleSolicitudMaster; 

@@ -31,12 +31,11 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Si es un 401, redirigir al login
+    // Si es un 401, solo limpiar el localStorage
     if (error.response?.status === 401) {
       // Token expirado o inválido
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
     }
     
     // Para solicitudes de aprobar/rechazar planes, manejar 500 como posible éxito

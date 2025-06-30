@@ -33,15 +33,16 @@ const DeveloperSidebar = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [solicitudesOpen, setSolicitudesOpen] = useState(true);
+  const [misSolicitudesPersonalesOpen, setMisSolicitudesPersonalesOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.location.href = '/';
   };
 
   const menuItems = [
     {
-      text: 'Mis Solicitudes',
+      text: 'Solicitudes Asignadas',
       icon: <Assignment />,
       path: '/developer/solicitudes',
       color: '#7b1fa2',
@@ -77,6 +78,13 @@ const DeveloperSidebar = () => {
           color: '#388e3c'
         }
       ]
+    },
+    {
+      text: 'Mis Solicitudes Personales',
+      icon: <Assignment />,
+      path: '/developer/mis-solicitudes',
+      color: '#1976d2',
+      submenu: []
     }
   ];
 
@@ -152,9 +160,11 @@ const DeveloperSidebar = () => {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 onClick={() => {
-                  if (item.submenu) {
-                    if (item.text === 'Mis Solicitudes') {
+                  if (item.submenu && item.submenu.length > 0) {
+                    if (item.text === 'Solicitudes Asignadas') {
                       setSolicitudesOpen(!solicitudesOpen);
+                    } else if (item.text === 'Mis Solicitudes Personales') {
+                      setMisSolicitudesPersonalesOpen(!misSolicitudesPersonalesOpen);
                     }
                   } else {
                     navigate(item.path);
@@ -182,15 +192,17 @@ const DeveloperSidebar = () => {
                     }
                   }}
                 />
-                {item.submenu && (
-                  item.text === 'Mis Solicitudes' ? 
-                    (solicitudesOpen ? <ExpandLess /> : <ExpandMore />) : null
+                {item.submenu && item.submenu.length > 0 && (
+                  item.text === 'Solicitudes Asignadas' ? 
+                    (solicitudesOpen ? <ExpandLess /> : <ExpandMore />) : 
+                  item.text === 'Mis Solicitudes Personales' ? 
+                    (misSolicitudesPersonalesOpen ? <ExpandLess /> : <ExpandMore />) : null
                 )}
               </ListItemButton>
             </ListItem>
 
             {/* Submenu */}
-            {item.submenu && item.text === 'Mis Solicitudes' && (
+            {item.submenu && item.text === 'Solicitudes Asignadas' && (
               <Collapse in={solicitudesOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   {item.submenu.map((subItem) => (

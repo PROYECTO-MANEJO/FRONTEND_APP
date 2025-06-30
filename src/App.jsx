@@ -55,6 +55,14 @@ import GestionAsistenciaEvento from './components/admin/GestionAsistenciaEvento'
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
 import CrearSolicitud from './components/solicitudes/CrearSolicitud';
 
+// Admin solicitudes components
+import AdminMisSolicitudes from './components/admin/AdminMisSolicitudes';
+import AdminCrearSolicitud from './components/admin/AdminCrearSolicitud';
+
+// Developer solicitudes components
+import DeveloperMisSolicitudes from './components/developer/DeveloperMisSolicitudes';
+import DeveloperCrearSolicitud from './components/developer/DeveloperCrearSolicitud';
+
 // Developer components
 import DeveloperLayout from './components/developer/DeveloperLayout';
 import SolicitudesDesarrollador from './components/developer/SolicitudesDesarrollador';
@@ -261,6 +269,40 @@ function App() {
               } 
             />
 
+            {/* Admin solicitudes routes */}
+            <Route 
+              path="/admin/mis-solicitudes" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <AdminMisSolicitudes />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/mis-solicitudes/crear" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <AdminCrearSolicitud />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/mis-solicitudes/editar/:id" 
+              element={
+                <AdminRoute>
+                  <SidebarProvider>
+                    <AdminCrearSolicitud />
+                  </SidebarProvider>
+                </AdminRoute>
+              } 
+            />
+
             {/* Developer routes */}
             <Route 
               path="/developer" 
@@ -273,6 +315,9 @@ function App() {
               <Route index element={<Navigate to="/developer/solicitudes" replace />} />
               <Route path="solicitudes" element={<SolicitudesDesarrollador />} />
               <Route path="solicitud/:id" element={<DetalleSolicitudDesarrollador />} />
+              <Route path="mis-solicitudes" element={<DeveloperMisSolicitudes />} />
+              <Route path="mis-solicitudes/crear" element={<DeveloperCrearSolicitud />} />
+              <Route path="mis-solicitudes/editar/:id" element={<DeveloperCrearSolicitud />} />
             </Route>
             
             <Route 
@@ -337,6 +382,18 @@ function App() {
                     <HistorialReportesGenerales />
                   </SidebarProvider>
                 </AdminRoute>
+              } 
+            />
+            
+            {/* Reportes de Solicitudes (Solo MASTER) */}
+            <Route 
+              path="/admin/reportes/historial-solicitudes" 
+              element={
+                <MasterRoute>
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
+                </MasterRoute>
               } 
             />
             
@@ -411,7 +468,7 @@ function App() {
             <Route path="/verificar-cuenta" element={<VerificarCuenta />} />
             
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
         </SidebarProvider>

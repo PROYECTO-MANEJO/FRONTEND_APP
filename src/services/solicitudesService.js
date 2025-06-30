@@ -274,6 +274,24 @@ export const obtenerUrgencias = () => [
   { value: 'CRITICA', label: 'Crítica' }
 ];
 
+// Obtener opciones de estado para filtros
+export const getOpcionesEstado = () => [
+  { value: 'BORRADOR', label: 'Borrador' },
+  { value: 'PENDIENTE', label: 'Pendiente' },
+  { value: 'EN_REVISION', label: 'En Revisión' },
+  { value: 'APROBADA', label: 'Aprobada' },
+  { value: 'RECHAZADA', label: 'Rechazada' },
+  { value: 'CANCELADA', label: 'Cancelada' },
+  { value: 'EN_DESARROLLO', label: 'En Desarrollo' },
+  { value: 'EN_TESTING', label: 'En Testing' },
+  { value: 'EN_DESPLIEGUE', label: 'En Despliegue' },
+  { value: 'COMPLETADA', label: 'Completada' },
+  { value: 'FALLIDA', label: 'Fallida' }
+];
+
+// Obtener opciones de tipo de cambio para filtros
+export const getOpcionesTipoCambio = () => obtenerTiposCambio();
+
 export default {
   crearSolicitud,
   obtenerMisSolicitudes,
@@ -291,5 +309,7 @@ export default {
   obtenerTiposCambio,
   obtenerPrioridades,
   obtenerUrgencias,
-  getPrioridadColor
+  getPrioridadColor,
+  getOpcionesEstado,
+  getOpcionesTipoCambio
 }; 
