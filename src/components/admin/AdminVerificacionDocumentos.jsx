@@ -400,7 +400,7 @@ const AdminVerificacionDocumentos = () => {
               Rechazar
             </Button>
             <Button onClick={() => setViewerDialog({ open: false, pdfUrl: '', user: null, documentType: '' })}>
-              Cerrar
+              Cerrarr
             </Button>
           </DialogActions>
         </Dialog>
