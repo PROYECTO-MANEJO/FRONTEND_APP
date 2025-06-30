@@ -20,6 +20,7 @@ import DeveloperRoute from './components/auth/DeveloperRoute';
 
 // User components
 import Dashboard from './components/user/Dashboard';
+import UserLayout from './components/user/UserLayout';
 import CursosPage from './components/user/CursosPage';
 import EventosPage from './components/user/EventosPage';
 import UserProfile from './components/user/UserProfile';
@@ -28,6 +29,7 @@ import MisCertificadosWrapper from './components/user/MisCertificadosWrapper';
 
 // Admin components
 import AdminDashboard from './components/admin/AdminDashboard';
+import AdminLayout from './components/admin/AdminLayout';
 import AdminSolicitudes from './components/admin/AdminSolicitudes';
 import DetalleSolicitudAdmin from './components/admin/DetalleSolicitudAdmin';
 import AdminUsuarios from './components/admin/AdminUsuarios';
@@ -58,6 +60,7 @@ import DetalleSolicitudDesarrollador from './components/developer/DetalleSolicit
 
 // HomePage component
 import HomePage from './components/HomePage';
+import AuthenticatedHomePage from './components/AuthenticatedHomePage';
 
 function App() {
   return (
@@ -82,7 +85,9 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserSidebarProvider>
-                    <Dashboard />
+                    <UserLayout>
+                      <AuthenticatedHomePage />
+                    </UserLayout>
                   </UserSidebarProvider>
                 </ProtectedRoute>
               } 
@@ -137,7 +142,9 @@ function App() {
               path="/admin" 
               element={
                 <AdminRoute>
-                  <AdminDashboard />
+                  <AdminLayout>
+                    <AuthenticatedHomePage />
+                  </AdminLayout>
                 </AdminRoute>
               } 
             />
@@ -146,7 +153,9 @@ function App() {
               path="/admin/usuarios" 
               element={
                 <MasterRoute>
-                  <AdminUsuarios />
+                  <SidebarProvider>
+                    <AdminUsuarios />
+                  </SidebarProvider>
                 </MasterRoute>
               } 
             />
@@ -155,7 +164,9 @@ function App() {
               path="/admin/verificacion-documentos" 
               element={
                 <MasterRoute>
-                  <AdminVerificacionDocumentos />
+                  <SidebarProvider>
+                    <AdminVerificacionDocumentos />
+                  </SidebarProvider>
                 </MasterRoute>
               } 
             />
@@ -164,7 +175,9 @@ function App() {
               path="/admin/eventos" 
               element={
                 <AdminRoute>
-                  <AdminEventos />
+                  <SidebarProvider>
+                    <AdminEventos />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -173,7 +186,9 @@ function App() {
               path="/admin/crear-eventos" 
               element={
                 <AdminRoute>
-                  <CrearEventos />
+                  <SidebarProvider>
+                    <CrearEventos />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -182,7 +197,9 @@ function App() {
               path="/admin/editar-evento/:id" 
               element={
                 <AdminRoute>
-                  <CrearEventos />
+                  <SidebarProvider>
+                    <CrearEventos />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -191,7 +208,9 @@ function App() {
               path="/admin/cursos" 
               element={
                 <AdminRoute>
-                  <AdminCursos />
+                  <SidebarProvider>
+                    <AdminCursos />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -200,7 +219,9 @@ function App() {
               path="/admin/gestion-inscripciones" 
               element={
                 <AdminRoute>
-                  <AdminGestionInscripciones />
+                  <SidebarProvider>
+                    <AdminGestionInscripciones />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -209,7 +230,9 @@ function App() {
               path="/admin/solicitudes" 
               element={
                 <MasterRoute>
-                  <AdminSolicitudes />
+                  <SidebarProvider>
+                    <AdminSolicitudes />
+                  </SidebarProvider>
                 </MasterRoute>
               } 
             />
@@ -218,7 +241,9 @@ function App() {
               path="/admin/solicitud/:id" 
               element={
                 <MasterRoute>
-                  <DetalleSolicitudAdmin />
+                  <SidebarProvider>
+                    <DetalleSolicitudAdmin />
+                  </SidebarProvider>
                 </MasterRoute>
               } 
             />
@@ -227,7 +252,9 @@ function App() {
               path="/admin/revision-planes" 
               element={
                 <MasterRoute>
-                  <RevisionPlanes />
+                  <SidebarProvider>
+                    <RevisionPlanes />
+                  </SidebarProvider>
                 </MasterRoute>
               } 
             />
@@ -250,7 +277,9 @@ function App() {
               path="/admin/reportes" 
               element={
                 <AdminRoute>
-                  <AdminReportes />
+                  <SidebarProvider>
+                    <AdminReportes />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -258,7 +287,9 @@ function App() {
               path="/admin/reportes/historial" 
               element={
                 <AdminRoute>
-                  <HistorialReportesFinancieros />
+                  <SidebarProvider>
+                    <HistorialReportesFinancieros />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -269,7 +300,9 @@ function App() {
               path="/admin/historial-reportes-financieros" 
               element={
                 <AdminRoute>
-                  <HistorialReportesFinancieros />
+                  <SidebarProvider>
+                    <HistorialReportesFinancieros />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -278,7 +311,9 @@ function App() {
               path="/admin/reportes/historial-usuarios" 
               element={
                 <AdminRoute>
-                  <HistorialReportesGenerales />
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -286,7 +321,9 @@ function App() {
               path="/admin/reportes/historial-eventos" 
               element={
                 <AdminRoute>
-                  <HistorialReportesGenerales />
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
@@ -294,7 +331,9 @@ function App() {
               path="/admin/reportes/historial-cursos" 
               element={
                 <AdminRoute>
-                  <HistorialReportesGenerales />
+                  <SidebarProvider>
+                    <HistorialReportesGenerales />
+                  </SidebarProvider>
                 </AdminRoute>
               } 
             />
