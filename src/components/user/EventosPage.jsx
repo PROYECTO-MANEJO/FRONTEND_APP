@@ -5,23 +5,35 @@ import {
   Grid,
   CircularProgress,
   Paper,
-  Container
+  Container,
+  Tabs,
+  Tab,
+  Divider
 } from '@mui/material';
+import { Event, EventAvailable } from '@mui/icons-material';
 import { eventoService } from '../../services/eventoService';
 import EventoCard from '../shared/EventoCard';
 import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 
 const EventosPage = () => {
-  const [eventos, setEventos] = useState([]);
+  const { getMainContentStyle } = useUserSidebarLayout();
+  const [misEventos, setMisEventos] = useState([]);
+  const [eventosDisponibles, setEventosDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     const loadEventos = async () => {
       try {
         setLoading(true);
-        const eventosData = await eventoService.getMisEventos();
-        setEventos(eventosData);
+        const [misEventosData, eventosDisponiblesData] = await Promise.all([
+          eventoService.getMisEventos(),
+          eventoService.getEventosDisponibles()
+        ]);
+        setMisEventos(misEventosData);
+        setEventosDisponibles(eventosDisponiblesData);
       } catch (err) {
         setError('Error al cargar los eventos');
         console.error(err);
@@ -33,11 +45,22 @@ const EventosPage = () => {
     loadEventos();
   }, []);
 
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
   if (error) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <Typography color="error" variant="h6">{error}</Typography>
         </Box>
       </Box>
@@ -45,11 +68,14 @@ const EventosPage = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <UserSidebar />
       
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <Box sx={{ 
+        flexGrow: 1,
+        ...getMainContentStyle()
+      }}>
         <Container maxWidth="xl" sx={{ py: 4, px: 3 }}>
           {/* Header optimizado */}
           <Box sx={{ mb: 4, textAlign: 'center' }}>
@@ -62,14 +88,14 @@ const EventosPage = () => {
                 fontSize: { xs: '2rem', md: '3rem' }
               }}
             >
-              Mis Eventos
+              Eventos
             </Typography>
             <Typography 
               variant="h6" 
               color="text.secondary"
               sx={{ maxWidth: 600, mx: 'auto' }}
             >
-              Todos los eventos en los que estás inscrito o participando
+              Gestiona tus eventos inscritos y descubre eventos disponibles
             </Typography>
           </Box>
 
@@ -79,61 +105,132 @@ const EventosPage = () => {
             </Box>
           ) : (
             <>
-              {eventos.length === 0 ? (
-                <Paper 
-                  elevation={2}
-                  sx={{ 
-                    p: 6, 
-                    textAlign: 'center',
-                    borderRadius: 3,
-                    maxWidth: 500,
-                    mx: 'auto'
+              {/* Tabs para alternar entre mis eventos y eventos disponibles */}
+              <Paper elevation={1} sx={{ mb: 3, borderRadius: 2 }}>
+                <Tabs 
+                  value={tabValue} 
+                  onChange={handleTabChange}
+                  variant="fullWidth"
+                  sx={{
+                    '& .MuiTab-root': {
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      py: 2
+                    }
                   }}
                 >
-                  <Typography variant="h5" color="text.secondary" gutterBottom>
-                    No tienes eventos inscritos
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    Aún no te has inscrito en ningún evento. Explora los eventos disponibles en el dashboard.
-                  </Typography>
-                </Paper>
-              ) : (
-                <>
-                  {/* Contador de eventos */}
-                  <Box sx={{ mb: 3, textAlign: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                      Tienes <strong>{eventos.length}</strong> evento{eventos.length !== 1 ? 's' : ''} inscrito{eventos.length !== 1 ? 's' : ''}
-                    </Typography>
-                  </Box>
+                  <Tab 
+                    icon={<Event />} 
+                    label={`Mis Eventos (${misEventos.length})`}
+                    iconPosition="start"
+                  />
+                  <Tab 
+                    icon={<EventAvailable />} 
+                    label={`Disponibles (${eventosDisponibles.length})`}
+                    iconPosition="start"
+                  />
+                </Tabs>
+              </Paper>
 
-                  {/* Grid perfecto de eventos */}
-                  <Grid 
-                    container 
-                    spacing={{ xs: 2, sm: 3, md: 4 }}
-                    sx={{
-                      '& .MuiGrid-item': {
-                        display: 'flex',
-                        height: '300px' // ALTURA FIJA OBLIGATORIA
-                      }
-                    }}
-                  >
-                    {eventos.map(evento => (
+              {/* Contenido basado en el tab seleccionado */}
+              {tabValue === 0 ? (
+                // Mis Eventos
+                <>
+                  {misEventos.length === 0 ? (
+                    <Paper 
+                      elevation={2}
+                      sx={{ 
+                        p: 6, 
+                        textAlign: 'center',
+                        borderRadius: 3,
+                        maxWidth: 500,
+                        mx: 'auto'
+                      }}
+                    >
+                      <Typography variant="h5" color="text.secondary" gutterBottom>
+                        No tienes eventos inscritos
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        Aún no te has inscrito en ningún evento. Explora los eventos disponibles en la pestaña de "Disponibles".
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <>
+                      {/* Grid de mis eventos */}
                       <Grid 
-                        item 
-                        xs={12} 
-                        sm={6} 
-                        md={4} 
-                        lg={3}
-                        key={evento.id_eve}
-                        sx={{ 
-                          display: 'flex',
-                          height: '300px !important' // FUERZA LA ALTURA
-                        }}
+                        container 
+                        spacing={{ xs: 2, sm: 3, md: 4 }}
+                        justifyContent="flex-start"
                       >
-                        <EventoCard evento={evento} />
+                        {misEventos.map(evento => (
+                          <Grid 
+                            item 
+                            xs={12} 
+                            sm={6} 
+                            md={4} 
+                            lg={3}
+                            key={evento.id_eve}
+                            sx={{ 
+                              display: 'flex',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <EventoCard evento={evento} />
+                          </Grid>
+                        ))}
                       </Grid>
-                    ))}
-                  </Grid>
+                    </>
+                  )}
+                </>
+              ) : (
+                // Eventos Disponibles
+                <>
+                  {eventosDisponibles.length === 0 ? (
+                    <Paper 
+                      elevation={2}
+                      sx={{ 
+                        p: 6, 
+                        textAlign: 'center',
+                        borderRadius: 3,
+                        maxWidth: 500,
+                        mx: 'auto'
+                      }}
+                    >
+                      <Typography variant="h5" color="text.secondary" gutterBottom>
+                        No hay eventos disponibles
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        No hay eventos disponibles para tu carrera o perfil en este momento.
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <>
+                      {/* Grid de eventos disponibles */}
+                      <Grid 
+                        container 
+                        spacing={{ xs: 2, sm: 3, md: 4 }}
+                        justifyContent="flex-start"
+                      >
+                        {eventosDisponibles.map(evento => (
+                          <Grid 
+                            item 
+                            xs={12} 
+                            sm={6} 
+                            md={4} 
+                            lg={3}
+                            key={evento.id_eve}
+                            sx={{ 
+                              display: 'flex',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <EventoCard evento={evento} />
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </>
+                  )}
                 </>
               )}
             </>

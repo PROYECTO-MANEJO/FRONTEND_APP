@@ -11,7 +11,7 @@ const Dashboard = () => {
   }
 
   // Si es usuario normal, mostrar el UserDashboard
-  return <UserDashboard user={user} />;
+  return <UserDashboard />;
 };
 
 export default Dashboard;

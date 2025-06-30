@@ -68,6 +68,9 @@ export const useInscripciones = () => {
       metodoPago: inscripcion.met_pag_ins,
       valorPagado: inscripcion.val_ins,
       enlacePago: inscripcion.enl_ord_pag_ins,
+      tieneComprobante: !!inscripcion.comprobante_pago_pdf,
+      nombreComprobante: inscripcion.comprobante_filename,
+      fechaSubidaComprobante: inscripcion.fec_subida_comprobante,
       fechaAprobacion: inscripcion.fec_aprobacion,
       inscripcion: inscripcion
     };
@@ -85,6 +88,9 @@ export const useInscripciones = () => {
       metodoPago: inscripcion.met_pag_ins,
       valorPagado: inscripcion.val_ins,
       enlacePago: inscripcion.enl_ord_pag_ins,
+      tieneComprobante: !!inscripcion.comprobante_pago_pdf,
+      nombreComprobante: inscripcion.comprobante_filename,
+      fechaSubidaComprobante: inscripcion.fec_subida_comprobante,
       fechaAprobacion: inscripcion.fec_aprobacion,
       inscripcion: inscripcion
     };

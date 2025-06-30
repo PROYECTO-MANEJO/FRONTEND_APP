@@ -17,13 +17,17 @@ import {
   School,
   CalendarToday,
   LocationOn,
-  AccessTime
+  AccessTime,
+  Payment,
+  Description
 } from '@mui/icons-material';
 import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 import EstadoInscripcion from '../shared/EstadoInscripcion';
 import { useInscripciones } from '../../hooks/useInscripciones';
 
 const MisInscripciones = () => {
+  const { getMainContentStyle } = useUserSidebarLayout();
   const { 
     inscripcionesEventos, 
     inscripcionesCursos, 
@@ -33,9 +37,16 @@ const MisInscripciones = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <CircularProgress size={60} sx={{ color: '#b91c1c' }} />
         </Box>
       </Box>
@@ -44,9 +55,16 @@ const MisInscripciones = () => {
 
   if (error) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <Alert severity="error" sx={{ maxWidth: 500 }}>
             Error al cargar tus inscripciones: {error}
           </Alert>
@@ -58,11 +76,15 @@ const MisInscripciones = () => {
   const totalInscripciones = inscripcionesEventos.length + inscripcionesCursos.length;
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <UserSidebar />
       
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <Box sx={{ 
+        flexGrow: 1,
+        p: 3,
+        ...getMainContentStyle()
+      }}>
         <Container maxWidth="xl" sx={{ py: 4, px: 3 }}>
           {/* Header */}
           <Box sx={{ mb: 4, textAlign: 'center' }}>
@@ -205,12 +227,15 @@ const InscripcionCard = ({ inscripcion, tipo }) => {
 
   const estadoInscripcion = {
     inscrito: true,
-    estado: inscripcion.estado_pago || 'PENDIENTE',
-    fechaInscripcion: inscripcion.fec_ins,
-    metodoPago: inscripcion.met_pag_ins,
-    valorPagado: inscripcion.val_ins,
-    enlacePago: inscripcion.enl_ord_pag_ins,
-    fechaAprobacion: inscripcion.fec_aprobacion
+    estado: esEvento ? inscripcion.estado_pago : inscripcion.estado_pago_cur,
+    fechaInscripcion: esEvento ? inscripcion.fec_ins : inscripcion.fec_ins_cur,
+    metodoPago: esEvento ? inscripcion.met_pag_ins : inscripcion.met_pag_ins_cur,
+    valorPagado: esEvento ? inscripcion.val_ins : inscripcion.val_ins_cur,
+    enlacePago: esEvento ? inscripcion.enl_ord_pag_ins : inscripcion.enl_ord_pag_ins_cur,
+    tieneComprobante: !!inscripcion.comprobante_pago_pdf,
+    nombreComprobante: inscripcion.comprobante_filename,
+    fechaSubidaComprobante: inscripcion.fec_subida_comprobante,
+    fechaAprobacion: esEvento ? inscripcion.fec_aprobacion : inscripcion.fec_aprobacion_cur
   };
 
   return (
@@ -228,7 +253,12 @@ const InscripcionCard = ({ inscripcion, tipo }) => {
               fontWeight: 600
             }}
           />
-          <EstadoInscripcion estado={estadoInscripcion} tamaño="small" />
+          <EstadoInscripcion 
+            estado={estadoInscripcion.estado} 
+            showDetails={false}
+            mostrarTexto={false}
+            dataCompleta={estadoInscripcion}
+          />
         </Box>
 
         {/* Título */}
@@ -274,17 +304,37 @@ const InscripcionCard = ({ inscripcion, tipo }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AccessTime sx={{ fontSize: '1rem', color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
-              Inscrito el: {new Date(inscripcion.fec_ins).toLocaleDateString()}
+              Inscrito el: {new Date(estadoInscripcion.fechaInscripcion).toLocaleDateString()}
             </Typography>
           </Box>
+
+          {/* Información de pago y comprobante */}
+          {estadoInscripcion.valorPagado && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Payment sx={{ fontSize: '1rem', color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary">
+                Valor: ${estadoInscripcion.valorPagado}
+              </Typography>
+            </Box>
+          )}
+
+          {estadoInscripcion.tieneComprobante && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Description sx={{ fontSize: '1rem', color: 'success.main' }} />
+              <Typography variant="body2" color="success.main">
+                Comprobante PDF enviado
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* Estado detallado */}
         <Box sx={{ mt: 2 }}>
           <EstadoInscripcion 
-            estado={estadoInscripcion} 
-            tamaño="medium" 
-            mostrarTexto={false}
+            estado={estadoInscripcion.estado} 
+            showDetails={true}
+            mostrarTexto={true}
+            dataCompleta={estadoInscripcion}
           />
         </Box>
       </CardContent>

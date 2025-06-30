@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/theme';
 import { AuthProvider } from './context/AuthContext';
+import { SidebarProvider } from './context/SidebarContext';
+import { UserSidebarProvider } from './context/UserSidebarContext';
 
 // Auth components
 import Login from './components/auth/Login';
@@ -11,6 +13,8 @@ import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
+import MasterRoute from './components/auth/MasterRoute';
+import DeveloperRoute from './components/auth/DeveloperRoute';
 
 // User components
 import Dashboard from './components/user/Dashboard';
@@ -18,29 +22,46 @@ import CursosPage from './components/user/CursosPage';
 import EventosPage from './components/user/EventosPage';
 import UserProfile from './components/user/UserProfile';
 import MisInscripciones from './components/user/MisInscripciones';
+import MisCertificadosWrapper from './components/user/MisCertificadosWrapper';
 
 // Admin components
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminSolicitudes from './components/admin/AdminSolicitudes';
+import DetalleSolicitudAdmin from './components/admin/DetalleSolicitudAdmin';
 import AdminUsuarios from './components/admin/AdminUsuarios';
 import AdminEventos from './components/admin/AdminEventos';
 import CrearEventos from './components/admin/CrearEventos';
 import AdminCursos from './components/admin/AdminCursos';
 import AdminReportes from './components/admin/AdminReportes';
-import AdminConfiguracion from './components/admin/AdminConfiguracion';
+import RevisionPlanes from './components/admin/RevisionPlanes';
+
+
+import HistorialReportesFinancieros from './components/admin/HistorialReportesFinancieros';
+
+import AdminVerificacionDocumentos from './components/admin/AdminVerificacionDocumentos';
+import AdminGestionInscripciones from './components/admin/AdminGestionInscripciones';
+import HistorialReportesGenerales from './components/admin/HistorialReportesGenerales';
+
 
 // Solicitudes components
 import SolicitudesUsuario from './components/solicitudes/SolicitudesUsuario';
+import CrearSolicitud from './components/solicitudes/CrearSolicitud';
+
+// Developer components
+import DeveloperLayout from './components/developer/DeveloperLayout';
+import SolicitudesDesarrollador from './components/developer/SolicitudesDesarrollador';
+import DetalleSolicitudDesarrollador from './components/developer/DetalleSolicitudDesarrollador';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
+        <SidebarProvider>
+          <Router>
           <Routes>
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Redirect root to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
@@ -53,7 +74,9 @@ function App() {
               path="/dashboard" 
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <UserSidebarProvider>
+                    <Dashboard />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -62,7 +85,31 @@ function App() {
               path="/solicitudes" 
               element={
                 <ProtectedRoute>
-                  <SolicitudesUsuario />
+                  <UserSidebarProvider>
+                    <SolicitudesUsuario />
+                  </UserSidebarProvider>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/solicitudes/crear" 
+              element={
+                <ProtectedRoute>
+                  <UserSidebarProvider>
+                    <CrearSolicitud />
+                  </UserSidebarProvider>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/solicitudes/editar/:id" 
+              element={
+                <ProtectedRoute>
+                  <UserSidebarProvider>
+                    <CrearSolicitud />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -71,7 +118,9 @@ function App() {
               path="/perfil" 
               element={
                 <ProtectedRoute>
-                  <UserProfile />
+                  <UserSidebarProvider>
+                    <UserProfile />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -89,9 +138,18 @@ function App() {
             <Route 
               path="/admin/usuarios" 
               element={
-                <AdminRoute>
+                <MasterRoute>
                   <AdminUsuarios />
-                </AdminRoute>
+                </MasterRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/verificacion-documentos" 
+              element={
+                <MasterRoute>
+                  <AdminVerificacionDocumentos />
+                </MasterRoute>
               } 
             />
             
@@ -132,13 +190,54 @@ function App() {
             />
             
             <Route 
-              path="/admin/solicitudes" 
+              path="/admin/gestion-inscripciones" 
               element={
                 <AdminRoute>
-                  <AdminSolicitudes />
+                  <AdminGestionInscripciones />
                 </AdminRoute>
               } 
             />
+            
+            <Route 
+              path="/admin/solicitudes" 
+              element={
+                <MasterRoute>
+                  <AdminSolicitudes />
+                </MasterRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/solicitud/:id" 
+              element={
+                <MasterRoute>
+                  <DetalleSolicitudAdmin />
+                </MasterRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/revision-planes" 
+              element={
+                <MasterRoute>
+                  <RevisionPlanes />
+                </MasterRoute>
+              } 
+            />
+
+            {/* Developer routes */}
+            <Route 
+              path="/developer" 
+              element={
+                <DeveloperRoute>
+                  <DeveloperLayout />
+                </DeveloperRoute>
+              }
+            >
+              <Route index element={<Navigate to="/developer/solicitudes" replace />} />
+              <Route path="solicitudes" element={<SolicitudesDesarrollador />} />
+              <Route path="solicitud/:id" element={<DetalleSolicitudDesarrollador />} />
+            </Route>
             
             <Route 
               path="/admin/reportes" 
@@ -148,12 +247,47 @@ function App() {
                 </AdminRoute>
               } 
             />
-            
             <Route 
-              path="/admin/configuracion" 
+              path="/admin/reportes/historial" 
               element={
                 <AdminRoute>
-                  <AdminConfiguracion />
+                  <HistorialReportesFinancieros />
+                </AdminRoute>
+              } 
+            />
+            
+
+            
+            <Route 
+              path="/admin/historial-reportes-financieros" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesFinancieros />
+                </AdminRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/reportes/historial-usuarios" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesGenerales />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/reportes/historial-eventos" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesGenerales />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/reportes/historial-cursos" 
+              element={
+                <AdminRoute>
+                  <HistorialReportesGenerales />
                 </AdminRoute>
               } 
             />
@@ -163,7 +297,9 @@ function App() {
               path="/cursos" 
               element={
                 <ProtectedRoute>
-                  <CursosPage />
+                  <UserSidebarProvider>
+                    <CursosPage />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -172,7 +308,9 @@ function App() {
               path="/eventos" 
               element={
                 <ProtectedRoute>
-                  <EventosPage />
+                  <UserSidebarProvider>
+                    <EventosPage />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
@@ -181,15 +319,29 @@ function App() {
               path="/mis-inscripciones" 
               element={
                 <ProtectedRoute>
-                  <MisInscripciones />
+                  <UserSidebarProvider>
+                    <MisInscripciones />
+                  </UserSidebarProvider>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/certificados" 
+              element={
+                <ProtectedRoute>
+                  <UserSidebarProvider>
+                    <MisCertificadosWrapper />
+                  </UserSidebarProvider>
                 </ProtectedRoute>
               } 
             />
             
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Router>
+        </SidebarProvider>
       </AuthProvider>
     </ThemeProvider>
   );
