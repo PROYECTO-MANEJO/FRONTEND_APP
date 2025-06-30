@@ -16,6 +16,8 @@ import ResetPassword from './components/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import MasterRoute from './components/auth/MasterRoute';
+
+import VerificarCuenta from './components/auth/VerificarCuenta';
 import DeveloperRoute from './components/auth/DeveloperRoute';
 
 // User components
@@ -405,6 +407,8 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+
+            <Route path="/verificar-cuenta" element={<VerificarCuenta />} />
             
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/login" replace />} />

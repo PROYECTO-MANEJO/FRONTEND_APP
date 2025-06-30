@@ -116,10 +116,12 @@ const Register = () => {
     carrera: ''
 
   };
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (values, { setSubmitting }) => {
     setIsSubmitting(true);
     try {
+
       // Preparar datos para envío
       const registerData = {
         email: values.email,
@@ -136,8 +138,10 @@ const Register = () => {
         registerData.carrera = values.carrera;
       }
 
-      await register(registerData);
-      navigate('/dashboard');
+       await register(values);
+      setSuccessMessage("✅ Se te envió un correo de verificación. Revisa tu bandeja para activar la cuenta.");
+      navigate('/login');
+
     } catch (error) {
       console.error('Error en registro:', error);
     } finally {
@@ -226,7 +230,7 @@ const Register = () => {
           >
             Crea tu cuenta y forma parte del Sistema de Gestión de Eventos Académicos
           </Typography>
-          
+
           <Box sx={{ mt: 4 }}>
             <Typography variant="body2" sx={{ mb: 2, textAlign: 'center', opacity: 0.8 }}>
               Conecta con redes sociales
