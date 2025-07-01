@@ -35,7 +35,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
 
   useEffect(() => {
     if (solicitudId) {
-      cargarSolicitud();
+    cargarSolicitud();
     }
   }, [solicitudId]);
 
@@ -110,7 +110,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
 
   if (!open) return null;
 
-  return (
+    return (
     <Dialog
       open={open}
       onClose={onClose}
@@ -135,7 +135,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
               Detalles de mi solicitud de cambio
             </Typography>
           </Box>
-        </Box>
+      </Box>
         <IconButton
           onClick={onClose}
           sx={{ color: 'white' }}
@@ -161,17 +161,17 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                     <Typography variant="h5" sx={{ fontWeight: 600, color: '#6d1313' }}>
-                      {solicitud.titulo_sol}
-                    </Typography>
-                    <Chip
+            {solicitud.titulo_sol}
+          </Typography>
+        <Chip
                       label={getEstadoInfo(solicitud.estado_sol).label}
                       sx={{
                         bgcolor: getEstadoInfo(solicitud.estado_sol).color,
                         color: 'white',
                         fontWeight: 'bold'
                       }}
-                    />
-                  </Box>
+        />
+      </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                     <strong>ID:</strong> #{solicitud.id_sol}
                   </Typography>
@@ -182,18 +182,18 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                 
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Assignment sx={{ fontSize: 16, color: '#b91c1c' }} />
                       <Typography variant="body2">
                         <strong>Tipo:</strong> {traducirTipo(solicitud.tipo_cambio_sol)}
                       </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Schedule sx={{ fontSize: 16, color: '#b91c1c' }} />
                       <Typography variant="body2">
                         <strong>Prioridad:</strong> {traducirPrioridad(solicitud.prioridad_sol)}
-                      </Typography>
-                    </Box>
+                        </Typography>
+                      </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Help sx={{ fontSize: 16, color: '#b91c1c' }} />
                       <Typography variant="body2">
@@ -203,7 +203,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                   </Box>
                 </Grid>
               </Grid>
-            </Box>
+                  </Box>
 
             {/* Contenido principal - DISEÑO ESTÁTICO 50-50 */}
             <Box sx={{ p: 2 }}>
@@ -225,7 +225,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                     overflow: 'hidden'
                   }}>
                     <Typography variant="h6" sx={{ 
-                      mb: 2, 
+                      mb: 2,
                       color: '#6d1313', 
                       fontWeight: 600,
                       display: 'flex',
@@ -254,7 +254,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                           alignItems: 'center'
                         }}>
                           Descripción del Cambio
-                        </Typography>
+                    </Typography>
                         <Paper variant="outlined" sx={{ 
                           p: 2, 
                           bgcolor: '#fef2f2',
@@ -268,9 +268,9 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                             lineHeight: 1.5
                           }}>
                             {solicitud.descripcion_sol || 'Sin descripción'}
-                          </Typography>
-                        </Paper>
-                      </Box>
+                  </Typography>
+                </Paper>
+                  </Box>
 
                       {/* Justificación - Reducida */}
                       <Box sx={{ height: '220px' }}>
@@ -283,7 +283,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                           alignItems: 'center'
                         }}>
                           Justificación del Negocio
-                        </Typography>
+                </Typography>
                         <Paper variant="outlined" sx={{ 
                           p: 2, 
                           bgcolor: '#fef2f2',
@@ -297,11 +297,11 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                             lineHeight: 1.5
                           }}>
                             {solicitud.justificacion_sol || 'Sin justificación'}
-                          </Typography>
-                        </Paper>
+                      </Typography>
+                    </Paper>
                       </Box>
                     </Box>
-                  </Paper>
+                    </Paper>
                 </Box>
 
                 {/* Columna derecha - EXACTAMENTE 50% */}
@@ -340,7 +340,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                           height: '20px'
                         }}>
                           Estado y Fechas
-                        </Typography>
+                    </Typography>
                         <Box sx={{ 
                           height: '130px',
                           display: 'flex',
@@ -351,7 +351,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, height: '32px' }}>
                             <Typography variant="body2" sx={{ fontWeight: 600, minWidth: '60px' }}>
                               <strong>Estado:</strong>
-                            </Typography>
+                      </Typography>
                             <Chip
                               icon={getEstadoInfo(solicitud.estado_sol).icon}
                               label={getEstadoInfo(solicitud.estado_sol).label}
@@ -363,23 +363,23 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                                 height: '28px'
                               }}
                             />
-                          </Box>
-                          
+            </Box>
+
                           {/* Fecha de aprobación */}
                           {solicitud.fec_respuesta_sol && (
                             <Typography variant="body2" sx={{ height: '20px', display: 'flex', alignItems: 'center' }}>
                               <strong>Aprobada:</strong> {new Date(solicitud.fec_respuesta_sol).toLocaleDateString('es-ES')} {new Date(solicitud.fec_respuesta_sol).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                            </Typography>
+              </Typography>
                           )}
                           
                           {/* Fecha deseada */}
                           {solicitud.fecha_limite_deseada_sol && (
                             <Typography variant="body2" sx={{ height: '20px', display: 'flex', alignItems: 'center' }}>
                               <strong>Fecha deseada:</strong> {new Date(solicitud.fecha_limite_deseada_sol).toLocaleDateString('es-ES')}
-                            </Typography>
+                       </Typography>
                           )}
-                        </Box>
-                      </Box>
+                     </Box>
+                   </Box>
 
                       {/* Comentarios del administrador si existen - Espacio reducido */}
                       {solicitud.comentarios_admin_sol && (
@@ -391,7 +391,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                             height: '20px'
                           }}>
                             Comentarios del Administrador
-                          </Typography>
+              </Typography>
                           <Paper variant="outlined" sx={{ 
                             p: 2, 
                             bgcolor: '#f0fdf4',
@@ -405,16 +405,16 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
                               lineHeight: 1.5
                             }}>
                               {solicitud.comentarios_admin_sol}
-                            </Typography>
+                  </Typography>
                           </Paper>
-                        </Box>
+              </Box>
                       )}
-                    </Box>
+              </Box>
                   </Paper>
                 </Box>
               </Box>
-            </Box>
-          </Box>
+        </Box>
+      </Box>
         )}
       </DialogContent>
 
@@ -424,7 +424,7 @@ const DetalleSolicitudDesarrollador = ({ solicitudId, onClose, open }) => {
         bgcolor: '#fef2f2',
         borderTop: '1px solid #fecaca'
       }}>
-        <Button 
+        <Button
           onClick={onClose} 
           variant="outlined"
           sx={{ 
