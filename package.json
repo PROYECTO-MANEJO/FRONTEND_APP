@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "serve -s dist -l $PORT"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -24,6 +25,7 @@
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.1",
     "react-toastify": "^11.0.5",
+    "serve": "^14.2.4",
     "yup": "^1.6.1"
   },
   "devDependencies": {
