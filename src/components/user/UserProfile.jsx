@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -48,6 +48,7 @@ import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
 import { documentService } from '../../services/documentService';
+import { carreraService } from '../../services/carreraService';
 
 const validationSchema = Yup.object().shape({
   nom_usu1: Yup.string().required('El primer nombre es obligatorio'),
@@ -76,6 +77,7 @@ const UserProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [userData, setUserData] = useState(null);
+  const [carreras, setCarreras] = useState([]);
   
   // Estados para documentos
   const [tabValue, setTabValue] = useState(0);
@@ -92,6 +94,21 @@ const UserProfile = () => {
 
   // Refs para los inputs (se pueden agregar si se necesitan en el futuro)
 
+  const loadDocumentStatus = useCallback(async () => {
+    try {
+      setDocumentLoading(true);
+      const response = await documentService.getDocumentStatus();
+      setDocumentStatus(response.data);
+      
+      // Nota: Removemos la actualización automática de userData aquí para evitar bucles
+      // Solo actualizamos si es necesario (ej: después de subir documentos)
+    } catch (error) {
+      console.error('Error cargando estado de documentos:', error);
+    } finally {
+      setDocumentLoading(false);
+    }
+  }, []); // Removemos updateUser de las dependencias
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -99,6 +116,12 @@ const UserProfile = () => {
         
         const userResponse = await userService.getProfile();
         setUserData(userResponse);
+
+        // Cargar carreras solo si es estudiante
+        if (userResponse?.rol === 'ESTUDIANTE') {
+          const carrerasResponse = await carreraService.getAll();
+          setCarreras(carrerasResponse || []);
+        }
 
         await loadDocumentStatus();
       } catch (error) {
@@ -113,7 +136,7 @@ const UserProfile = () => {
     };
 
     loadData();
-  }, []);
+  }, [loadDocumentStatus]); // Ahora es seguro incluir loadDocumentStatus
 
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 KB';
@@ -121,23 +144,6 @@ const UserProfile = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const loadDocumentStatus = async () => {
-    try {
-      setDocumentLoading(true);
-      const response = await documentService.getDocumentStatus();
-      setDocumentStatus(response.data);
-      
-      // También actualizar userData con información fresca
-      const userResponse = await userService.getProfile();
-      setUserData(userResponse);
-      updateUser(userResponse);
-    } catch (error) {
-      console.error('Error cargando estado de documentos:', error);
-    } finally {
-      setDocumentLoading(false);
-    }
   };
 
   const handleFileSelect = (event, tipo) => {
@@ -217,6 +223,11 @@ const UserProfile = () => {
       if (matriculaInput) matriculaInput.value = '';
 
       await loadDocumentStatus();
+      
+      // Actualizar userData solo después de subir documentos exitosamente
+      const userResponse = await userService.getProfile();
+      setUserData(userResponse);
+      updateUser(userResponse);
     } catch (error) {
       setMessage({
         type: 'error',
@@ -542,7 +553,7 @@ const UserProfile = () => {
                            </Typography>
                            <Grid container spacing={2}>
                              {/* Nombres */}
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  name="nom_usu1"
@@ -557,7 +568,7 @@ const UserProfile = () => {
                                />
                              </Grid>
                              
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  name="nom_usu2"
@@ -573,7 +584,7 @@ const UserProfile = () => {
                              </Grid>
 
                              {/* Apellidos */}
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  name="ape_usu1"
@@ -588,7 +599,7 @@ const UserProfile = () => {
                                />
                              </Grid>
                              
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  name="ape_usu2"
@@ -604,7 +615,7 @@ const UserProfile = () => {
                              </Grid>
 
                              {/* Información personal */}
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  name="fec_nac_usu"
@@ -621,7 +632,7 @@ const UserProfile = () => {
                                />
                              </Grid>
                              
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  name="num_tel_usu"
@@ -639,7 +650,7 @@ const UserProfile = () => {
 
                              {/* GitHub Token para desarrolladores */}
                              {(userData?.rol === 'DESARROLLADOR' || userData?.rol === 'MASTER') && (
-                               <Grid item xs={12}>
+                               <Grid xs={12}>
                                  <TextField
                                    fullWidth
                                    name="github_token"
@@ -663,7 +674,7 @@ const UserProfile = () => {
 
                              {/* Carrera solo para estudiantes */}
                              {isEstudiante && (
-                               <Grid item xs={12} sm={6}>
+                               <Grid xs={12} sm={6}>
                                  <FormControl fullWidth size="small">
                                    <InputLabel>Carrera</InputLabel>
                                    <Select
@@ -702,7 +713,7 @@ const UserProfile = () => {
                              🔒 Información del Sistema (Solo Lectura)
                            </Typography>
                            <Grid container spacing={2}>
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  label="Email"
@@ -718,7 +729,7 @@ const UserProfile = () => {
                                />
                              </Grid>
 
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  label="Rol"
@@ -734,7 +745,7 @@ const UserProfile = () => {
                                />
                              </Grid>
 
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  label="Cédula"
@@ -750,7 +761,7 @@ const UserProfile = () => {
                                />
                              </Grid>
 
-                             <Grid item xs={12} sm={6}>
+                             <Grid xs={12} sm={6}>
                                <TextField
                                  fullWidth
                                  label="ID Usuario"
@@ -845,7 +856,7 @@ const UserProfile = () => {
               ) : (
                 <Grid container spacing={3}>
                   {/* Cédula */}
-                  <Grid item xs={12} md={6}>
+                  <Grid xs={12} md={6}>
                     <Card variant="outlined" sx={{ borderRadius: 2 }}>
                       <CardContent>
                         <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -916,7 +927,7 @@ const UserProfile = () => {
 
                   {/* Matrícula (solo para estudiantes) */}
                   {isEstudiante && (
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <Card variant="outlined" sx={{ borderRadius: 2 }}>
                         <CardContent>
                           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -988,7 +999,7 @@ const UserProfile = () => {
 
                   {/* Botón de subida */}
                   {(files.cedula_pdf || files.matricula_pdf) && (
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                         <Button
                           variant="contained"

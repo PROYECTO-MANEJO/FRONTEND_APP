@@ -121,7 +121,6 @@ const Register = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     setIsSubmitting(true);
     try {
-
       // Preparar datos para envío
       const registerData = {
         email: values.email,
@@ -138,7 +137,7 @@ const Register = () => {
         registerData.carrera = values.carrera;
       }
 
-       await register(values);
+      await register(registerData);
       setSuccessMessage("✅ Se te envió un correo de verificación. Revisa tu bandeja para activar la cuenta.");
       navigate('/login');
 
@@ -302,6 +301,13 @@ const Register = () => {
           {error && (
             <Alert severity="error" sx={{ mb: 3, borderRadius: 0 }}>
               {error}
+            </Alert>
+          )}
+
+          {/* Success Alert */}
+          {successMessage && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: 0 }}>
+              {successMessage}
             </Alert>
           )}
 

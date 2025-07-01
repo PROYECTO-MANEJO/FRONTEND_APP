@@ -16,6 +16,7 @@ import {
   Login as LoginIcon
 } from '@mui/icons-material';
 import utaImage from '../assets/images/uta1.jpg';
+import CarreraEventosCursos from './CarreraEventosCursos';
 
 const HomePage = () => {
   const theme = useTheme();
@@ -237,6 +238,9 @@ const HomePage = () => {
           </Box>
         ))}
       </Container>
+
+      {/* Eventos y Cursos por Carrera */}
+      <CarreraEventosCursos />
 
       {/* Call to Action Section */}
       <Box
