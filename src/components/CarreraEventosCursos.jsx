@@ -6,15 +6,40 @@ import {
   Grid,
   Card,
   CardContent,
-  CardMedia,
   CardActions,
   Button,
   Chip,
   useTheme,
   Skeleton,
-  Alert
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Divider,
+  IconButton,
+  Stack,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
-import { EventAvailable, School, Public, Groups } from '@mui/icons-material';
+import { 
+  EventAvailable, 
+  School, 
+  Public, 
+  Groups, 
+  Close,
+  CalendarToday,
+  AccessTime,
+  LocationOn,
+  Person,
+  AttachMoney,
+  Category,
+  DateRange,
+  Timer,
+  AccountBalance
+} from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import paginaPrincipalService from '../services/paginaPrincipalService';
 
@@ -24,6 +49,12 @@ const CarreraEventosCursos = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState({ eventos: [], cursos: [], carrera: null });
+  
+  // Estados para modales
+  const [eventoModalOpen, setEventoModalOpen] = useState(false);
+  const [cursoModalOpen, setCursoModalOpen] = useState(false);
+  const [selectedEvento, setSelectedEvento] = useState(null);
+  const [selectedCurso, setSelectedCurso] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,6 +100,53 @@ const CarreraEventosCursos = () => {
     fetchData();
   }, [user, isAuthenticated]);
 
+  // Funciones para abrir modales
+  const handleEventoDetalles = (evento) => {
+    setSelectedEvento(evento);
+    setEventoModalOpen(true);
+  };
+
+  const handleCursoDetalles = (curso) => {
+    setSelectedCurso(curso);
+    setCursoModalOpen(true);
+  };
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return 'No especificada';
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatearHora = (hora) => {
+    if (!hora) return 'No especificada';
+    // La hora puede venir como un objeto Date o como un string en formato ISO
+    try {
+      if (typeof hora === 'string' && hora.includes('T')) {
+        // Es un string ISO completo
+        return new Date(hora).toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } else if (hora instanceof Date) {
+        // Es un objeto Date
+        return hora.toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } else {
+        // Es solo la parte de la hora (como viene del backend)
+        return hora;
+      }
+    } catch (error) {
+      console.error("Error al formatear hora:", error);
+      return hora || 'No especificada';
+    }
+  };
+
   // No mostrar para roles administrativos
   if (isAuthenticated && !['ESTUDIANTE', 'USUARIO'].includes(user?.rol)) {
     return null;
@@ -83,11 +161,11 @@ const CarreraEventosCursos = () => {
             {[1, 2, 3, 4].map((item) => (
               <Grid item xs={12} sm={6} md={3} key={item}>
                 <Card>
-                  <Skeleton variant="rectangular" height={140} />
                   <CardContent>
                     <Skeleton variant="text" height={32} />
                     <Skeleton variant="text" height={20} />
                     <Skeleton variant="text" height={20} />
+                    <Skeleton variant="text" height={40} />
                   </CardContent>
                 </Card>
               </Grid>
@@ -190,28 +268,59 @@ const CarreraEventosCursos = () => {
                       flexDirection: 'column',
                       transition: 'transform 0.2s',
                       '&:hover': {
-                        transform: 'translateY(-4px)'
+                        transform: 'translateY(-4px)',
+                        boxShadow: theme.shadows[8]
                       }
                     }}
                   >
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image="https://source.unsplash.com/400x200/?conference,event"
-                      alt={evento.nom_eve}
-                    />
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography gutterBottom variant="h6" component="h3">
+                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                      <Typography gutterBottom variant="h6" component="h3" sx={{ fontWeight: 'bold', mb: 2 }}>
                         {evento.nom_eve}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" paragraph>
-                        {evento.des_eve}
+                      
+                      <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 2, minHeight: 60 }}>
+                        {evento.des_eve.length > 100 ? `${evento.des_eve.substring(0, 100)}...` : evento.des_eve}
                       </Typography>
+
+                      {/* Información clave del evento */}
+                      <Stack spacing={1} sx={{ mb: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CalendarToday fontSize="small" color="primary" />
+                          <Typography variant="body2">
+                            {formatearFecha(evento.fec_ini_eve)}
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AccessTime fontSize="small" color="primary" />
+                          <Typography variant="body2">
+                            {formatearHora(evento.hor_ini_eve)} - {formatearHora(evento.hor_fin_eve)}
+                          </Typography>
+                        </Box>
+
+                        {evento.ubi_eve && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <LocationOn fontSize="small" color="primary" />
+                            <Typography variant="body2" noWrap>
+                              {evento.ubi_eve}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Person fontSize="small" color="primary" />
+                          <Typography variant="body2">
+                            {evento.inscripciones?.length || 0} / {evento.capacidad_max_eve} cupos
+                          </Typography>
+                        </Box>
+                      </Stack>
+
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         <Chip 
                           label={evento.es_gratuito ? 'Gratuito' : `$${evento.precio}`}
                           color={evento.es_gratuito ? 'success' : 'primary'}
                           size="small"
+                          icon={<AttachMoney fontSize="small" />}
                         />
                         <Chip 
                           icon={getAudienciaIcon(evento.tipo_audiencia_eve)}
@@ -219,18 +328,16 @@ const CarreraEventosCursos = () => {
                           variant="outlined"
                           size="small"
                         />
-                        {evento.categoria && (
-                          <Chip 
-                            label={evento.categoria.nom_cat}
-                            variant="outlined"
-                            size="small"
-                            color="secondary"
-                          />
-                        )}
                       </Box>
                     </CardContent>
-                    <CardActions>
-                      <Button size="small" color="primary">
+                    <CardActions sx={{ p: 2, pt: 0 }}>
+                      <Button 
+                        size="small" 
+                        color="primary" 
+                        variant="contained"
+                        fullWidth
+                        onClick={() => handleEventoDetalles(evento)}
+                      >
                         Ver Detalles
                       </Button>
                     </CardActions>
@@ -267,28 +374,59 @@ const CarreraEventosCursos = () => {
                       flexDirection: 'column',
                       transition: 'transform 0.2s',
                       '&:hover': {
-                        transform: 'translateY(-4px)'
+                        transform: 'translateY(-4px)',
+                        boxShadow: theme.shadows[8]
                       }
                     }}
                   >
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image="https://source.unsplash.com/400x200/?course,education"
-                      alt={curso.nom_cur}
-                    />
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography gutterBottom variant="h6" component="h3">
+                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                      <Typography gutterBottom variant="h6" component="h3" sx={{ fontWeight: 'bold', mb: 2 }}>
                         {curso.nom_cur}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" paragraph>
-                        {curso.des_cur}
+                      
+                      <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 2, minHeight: 60 }}>
+                        {curso.des_cur.length > 100 ? `${curso.des_cur.substring(0, 100)}...` : curso.des_cur}
                       </Typography>
+
+                      {/* Información clave del curso */}
+                      <Stack spacing={1} sx={{ mb: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <DateRange fontSize="small" color="primary" />
+                          <Typography variant="body2">
+                            {formatearFecha(curso.fec_ini_cur)} - {formatearFecha(curso.fec_fin_cur)}
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Timer fontSize="small" color="primary" />
+                          <Typography variant="body2">
+                            {curso.dur_cur} horas académicas
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Person fontSize="small" color="primary" />
+                          <Typography variant="body2">
+                            {curso.inscripcionesCurso?.length || 0} / {curso.capacidad_max_cur} cupos
+                          </Typography>
+                        </Box>
+
+                        {curso.modalidad_cur && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <AccountBalance fontSize="small" color="primary" />
+                            <Typography variant="body2">
+                              {curso.modalidad_cur}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Stack>
+
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         <Chip 
                           label={curso.es_gratuito ? 'Gratuito' : `$${curso.precio}`}
                           color={curso.es_gratuito ? 'success' : 'primary'}
                           size="small"
+                          icon={<AttachMoney fontSize="small" />}
                         />
                         <Chip 
                           icon={getAudienciaIcon(curso.tipo_audiencia_cur)}
@@ -296,18 +434,16 @@ const CarreraEventosCursos = () => {
                           variant="outlined"
                           size="small"
                         />
-                        {curso.categoria && (
-                          <Chip 
-                            label={curso.categoria.nom_cat}
-                            variant="outlined"
-                            size="small"
-                            color="secondary"
-                          />
-                        )}
                       </Box>
                     </CardContent>
-                    <CardActions>
-                      <Button size="small" color="primary">
+                    <CardActions sx={{ p: 2, pt: 0 }}>
+                      <Button 
+                        size="small" 
+                        color="primary" 
+                        variant="contained"
+                        fullWidth
+                        onClick={() => handleCursoDetalles(curso)}
+                      >
                         Ver Detalles
                       </Button>
                     </CardActions>
@@ -330,6 +466,338 @@ const CarreraEventosCursos = () => {
           </Alert>
         )}
       </Container>
+
+      {/* Modal de Detalles del Evento */}
+      <Dialog
+        open={eventoModalOpen}
+        onClose={() => setEventoModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          backgroundColor: theme.palette.primary.main,
+          color: 'white'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <EventAvailable />
+            <Typography variant="h6" component="span">
+              Detalles del Evento
+            </Typography>
+          </Box>
+          <IconButton 
+            onClick={() => setEventoModalOpen(false)}
+            sx={{ color: 'white' }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        
+        {selectedEvento && (
+          <DialogContent sx={{ p: 3 }}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2, color: theme.palette.primary.main }}>
+              {selectedEvento.nom_eve}
+            </Typography>
+            
+            <Typography variant="body1" paragraph sx={{ mb: 3 }}>
+              {selectedEvento.des_eve}
+            </Typography>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  📅 Información del Evento
+                </Typography>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Fecha de inicio:</Typography>
+                    <Typography variant="body1">{formatearFecha(selectedEvento.fec_ini_eve)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Fecha de fin:</Typography>
+                    <Typography variant="body1">{formatearFecha(selectedEvento.fec_fin_eve)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Horario:</Typography>
+                    <Typography variant="body1">
+                      {formatearHora(selectedEvento.hor_ini_eve)} - {formatearHora(selectedEvento.hor_fin_eve)}
+                    </Typography>
+                  </Box>
+                  {selectedEvento.ubi_eve && (
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">Ubicación:</Typography>
+                      <Typography variant="body1">{selectedEvento.ubi_eve}</Typography>
+                    </Box>
+                  )}
+                </Stack>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  ℹ️ Detalles Adicionales
+                </Typography>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Precio:</Typography>
+                    <Typography variant="body1">
+                      {selectedEvento.es_gratuito ? 'Gratuito' : `$${selectedEvento.precio}`}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Cupos disponibles:</Typography>
+                    <Typography variant="body1">{selectedEvento.inscripciones?.length || 0} / {selectedEvento.capacidad_max_eve} cupos</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Dirigido a:</Typography>
+                    {selectedEvento.tipo_audiencia_eve === 'CARRERA_ESPECIFICA' && selectedEvento.eventosPorCarrera?.length > 0 ? (
+                      <Box>
+                        <Typography variant="body1">Carreras específicas:</Typography>
+                        <List dense sx={{ pl: 2 }}>
+                          {selectedEvento.eventosPorCarrera.map((item, index) => (
+                            <ListItem key={index} sx={{ py: 0 }}>
+                              <ListItemIcon sx={{ minWidth: 30 }}>
+                                <School fontSize="small" />
+                              </ListItemIcon>
+                              <ListItemText primary={item.carrera.nom_car} />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </Box>
+                    ) : (
+                      <Typography variant="body1">{getAudienciaTexto(selectedEvento.tipo_audiencia_eve)}</Typography>
+                    )}
+                  </Box>
+                  {selectedEvento.categoria && (
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">Categoría:</Typography>
+                      <Typography variant="body1">{selectedEvento.categoria.nom_cat}</Typography>
+                    </Box>
+                  )}
+                </Stack>
+              </Grid>
+            </Grid>
+
+            {selectedEvento.objetivos_eve && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  🎯 Objetivos
+                </Typography>
+                <Typography variant="body1">
+                  {selectedEvento.objetivos_eve}
+                </Typography>
+              </>
+            )}
+
+            {selectedEvento.contenido_eve && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  📚 Contenido
+                </Typography>
+                <Typography variant="body1">
+                  {selectedEvento.contenido_eve}
+                </Typography>
+              </>
+            )}
+          </DialogContent>
+        )}
+        
+        <DialogActions sx={{ p: 3, backgroundColor: theme.palette.grey[50] }}>
+          <Button onClick={() => setEventoModalOpen(false)} variant="outlined">
+            Cerrar
+          </Button>
+          {isAuthenticated && (
+            <Button variant="contained" color="primary" disabled>
+              Inscribirse (Disponible al iniciar sesión)
+            </Button>
+          )}
+          {!isAuthenticated && (
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => window.location.href = '/login'}
+            >
+              Iniciar Sesión para Inscribirse
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Detalles del Curso */}
+      <Dialog
+        open={cursoModalOpen}
+        onClose={() => setCursoModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          backgroundColor: theme.palette.primary.main,
+          color: 'white'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <School />
+            <Typography variant="h6" component="span">
+              Detalles del Curso
+            </Typography>
+          </Box>
+          <IconButton 
+            onClick={() => setCursoModalOpen(false)}
+            sx={{ color: 'white' }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        
+        {selectedCurso && (
+          <DialogContent sx={{ p: 3 }}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2, color: theme.palette.primary.main }}>
+              {selectedCurso.nom_cur}
+            </Typography>
+            
+            <Typography variant="body1" paragraph sx={{ mb: 3 }}>
+              {selectedCurso.des_cur}
+            </Typography>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  📅 Información del Curso
+                </Typography>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Fecha de inicio:</Typography>
+                    <Typography variant="body1">{formatearFecha(selectedCurso.fec_ini_cur)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Fecha de fin:</Typography>
+                    <Typography variant="body1">{formatearFecha(selectedCurso.fec_fin_cur)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Duración:</Typography>
+                    <Typography variant="body1">{selectedCurso.dur_cur} horas académicas</Typography>
+                  </Box>
+                  {selectedCurso.modalidad_cur && (
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">Modalidad:</Typography>
+                      <Typography variant="body1">{selectedCurso.modalidad_cur}</Typography>
+                    </Box>
+                  )}
+                </Stack>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  ℹ️ Detalles Adicionales
+                </Typography>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Precio:</Typography>
+                    <Typography variant="body1">
+                      {selectedCurso.es_gratuito ? 'Gratuito' : `$${selectedCurso.precio}`}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Cupos disponibles:</Typography>
+                    <Typography variant="body1">{selectedCurso.inscripcionesCurso?.length || 0} / {selectedCurso.capacidad_max_cur} cupos</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Dirigido a:</Typography>
+                    {selectedCurso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && selectedCurso.cursosPorCarrera?.length > 0 ? (
+                      <Box>
+                        <Typography variant="body1">Carreras específicas:</Typography>
+                        <List dense sx={{ pl: 2 }}>
+                          {selectedCurso.cursosPorCarrera.map((item, index) => (
+                            <ListItem key={index} sx={{ py: 0 }}>
+                              <ListItemIcon sx={{ minWidth: 30 }}>
+                                <School fontSize="small" />
+                              </ListItemIcon>
+                              <ListItemText primary={item.carrera.nom_car} />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </Box>
+                    ) : (
+                      <Typography variant="body1">{getAudienciaTexto(selectedCurso.tipo_audiencia_cur)}</Typography>
+                    )}
+                  </Box>
+                  {selectedCurso.categoria && (
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">Categoría:</Typography>
+                      <Typography variant="body1">{selectedCurso.categoria.nom_cat}</Typography>
+                    </Box>
+                  )}
+                </Stack>
+              </Grid>
+            </Grid>
+
+            {selectedCurso.objetivos_cur && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  🎯 Objetivos
+                </Typography>
+                <Typography variant="body1">
+                  {selectedCurso.objetivos_cur}
+                </Typography>
+              </>
+            )}
+
+            {selectedCurso.contenido_cur && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  📚 Contenido
+                </Typography>
+                <Typography variant="body1">
+                  {selectedCurso.contenido_cur}
+                </Typography>
+              </>
+            )}
+
+            {selectedCurso.requisitos_cur && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.secondary.main }}>
+                  📋 Requisitos
+                </Typography>
+                <Typography variant="body1">
+                  {selectedCurso.requisitos_cur}
+                </Typography>
+              </>
+            )}
+          </DialogContent>
+        )}
+        
+        <DialogActions sx={{ p: 3, backgroundColor: theme.palette.grey[50] }}>
+          <Button onClick={() => setCursoModalOpen(false)} variant="outlined">
+            Cerrar
+          </Button>
+          {isAuthenticated && (
+            <Button variant="contained" color="primary" disabled>
+              Inscribirse (Disponible al iniciar sesión)
+            </Button>
+          )}
+          {!isAuthenticated && (
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => window.location.href = '/login'}
+            >
+              Iniciar Sesión para Inscribirse
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
