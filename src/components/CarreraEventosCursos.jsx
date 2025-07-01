@@ -42,6 +42,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import paginaPrincipalService from '../services/paginaPrincipalService';
+import ModalInscripcion from './shared/ModalInscripcion';
+import { useInscripciones } from '../hooks/useInscripciones';
 
 const CarreraEventosCursos = () => {
   const theme = useTheme();
@@ -55,6 +57,17 @@ const CarreraEventosCursos = () => {
   const [cursoModalOpen, setCursoModalOpen] = useState(false);
   const [selectedEvento, setSelectedEvento] = useState(null);
   const [selectedCurso, setSelectedCurso] = useState(null);
+  
+  // Estados para inscripción
+  const [inscripcionEventoOpen, setInscripcionEventoOpen] = useState(false);
+  const [inscripcionCursoOpen, setInscripcionCursoOpen] = useState(false);
+  
+  // Hook para manejar inscripciones
+  const { 
+    cargarInscripciones,
+    estaInscritoEnEvento,
+    estaInscritoEnCurso
+  } = useInscripciones();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,6 +100,30 @@ const CarreraEventosCursos = () => {
         }
         
         console.log('Respuesta del servidor:', response);
+        
+        // Mostrar detalles de los cursos recibidos
+        if (response.cursos && response.cursos.length > 0) {
+          console.log('Cursos recibidos:');
+          response.cursos.forEach((curso, index) => {
+            console.log(`${index+1}. ${curso.nom_cur} - Audiencia: ${curso.tipo_audiencia_cur}`);
+            if (curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && curso.cursosPorCarrera) {
+              console.log('   Carreras asociadas:', curso.cursosPorCarrera.map(c => c.carrera.nom_car).join(', '));
+            }
+          });
+        } else {
+          console.log('No se recibieron cursos del servidor');
+        }
+        
+        // Mostrar detalles de los eventos recibidos
+        if (response.eventos && response.eventos.length > 0) {
+          console.log('Eventos recibidos:');
+          response.eventos.forEach((evento, index) => {
+            console.log(`${index+1}. ${evento.nom_eve} - Audiencia: ${evento.tipo_audiencia_eve}`);
+          });
+        } else {
+          console.log('No se recibieron eventos del servidor');
+        }
+        
         setData(response);
         
       } catch (error) {
@@ -104,12 +141,197 @@ const CarreraEventosCursos = () => {
   const handleEventoDetalles = (evento) => {
     setSelectedEvento(evento);
     setEventoModalOpen(true);
+    
+    // Log para depuración
+    logEstadoInscripcionEvento(evento);
   };
 
   const handleCursoDetalles = (curso) => {
     setSelectedCurso(curso);
     setCursoModalOpen(true);
+    
+    // Log para depuración
+    logEstadoInscripcion(curso);
   };
+  
+  // Funciones para inscripción
+  const handleInscripcionEventoOpen = () => {
+    setEventoModalOpen(false); // Cerrar modal de detalles
+    setInscripcionEventoOpen(true); // Abrir modal de inscripción
+  };
+  
+  const handleInscripcionCursoOpen = () => {
+    setCursoModalOpen(false); // Cerrar modal de detalles
+    setInscripcionCursoOpen(true); // Abrir modal de inscripción
+  };
+  
+  const handleInscripcionClose = () => {
+    setInscripcionEventoOpen(false);
+    setInscripcionCursoOpen(false);
+  };
+  
+  const handleInscripcionExitosa = () => {
+    // Recargar inscripciones después de una inscripción exitosa
+    cargarInscripciones();
+    console.log('Inscripción exitosa');
+  };
+  
+  // Verificar documentos para inscripción
+  const verificarDocumentosUsuario = () => {
+    if (!user || !isAuthenticated) return false;
+    
+    const isEstudiante = user.rol === 'ESTUDIANTE';
+    
+    // Si el usuario tiene documentos
+    if (user.documentos) {
+      const documentosCompletos = isEstudiante 
+        ? (user.documentos.cedula_subida && user.documentos.matricula_subida)
+        : user.documentos.cedula_subida;
+      
+      const documentosVerificados = user.documentos.documentos_verificados || false;
+      
+      // Para depuración
+      console.log('Estado documentos:', {
+        documentosCompletos,
+        documentosVerificados,
+        cedula: user.documentos.cedula_subida,
+        matricula: isEstudiante ? user.documentos.matricula_subida : 'No aplica'
+      });
+      
+      return documentosCompletos && documentosVerificados;
+    }
+    
+    // Si no tiene documentos, no puede inscribirse
+    console.log('Usuario sin documentos registrados');
+    return false;
+  };
+  
+  // Verificar si el curso está disponible para el usuario según su carrera
+  const cursoDisponibleParaUsuario = (curso) => {
+    if (!curso || !isAuthenticated) {
+      console.log('Curso no disponible: curso no existe o usuario no autenticado');
+      return false;
+    }
+    
+    // Si es público, está disponible para todos
+    if (curso.tipo_audiencia_cur === 'PUBLICO_GENERAL') {
+      console.log('Curso disponible: es público general');
+      return true;
+    }
+    
+    // Si es para todas las carreras, está disponible para estudiantes
+    if (curso.tipo_audiencia_cur === 'TODAS_CARRERAS' && user.rol === 'ESTUDIANTE') {
+      console.log('Curso disponible: es para todas las carreras y el usuario es estudiante');
+      return true;
+    }
+    
+    // Si es para carreras específicas, verificar si la carrera del usuario está incluida
+    if (curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && user.rol === 'ESTUDIANTE') {
+      console.log('Curso para carrera específica, verificando...');
+      // Si el usuario tiene una carrera asignada
+      if (user.id_car) {
+        console.log('Usuario tiene carrera asignada:', user.id_car);
+        // Verificar si la carrera está en la lista de carreras del curso
+        if (curso.cursosPorCarrera && curso.cursosPorCarrera.length > 0) {
+          console.log('Carreras del curso:', curso.cursosPorCarrera.map(c => ({ id: c.id_car, nombre: c.carrera?.nom_car })));
+          const disponible = curso.cursosPorCarrera.some(c => c.id_car === user.id_car);
+          console.log('¿Curso disponible para la carrera del usuario?', disponible);
+          return disponible;
+        } else {
+          console.log('El curso no tiene carreras asociadas');
+        }
+      } else {
+        console.log('Usuario no tiene carrera asignada');
+      }
+    }
+    
+    console.log('Curso no disponible por defecto');
+    return false;
+  };
+  
+  // Función para imprimir el estado del botón de inscripción
+  const logEstadoInscripcion = (curso) => {
+    if (!curso) return;
+    
+    console.log('=== ESTADO DE INSCRIPCIÓN ===');
+    console.log('Curso:', curso.nom_cur);
+    console.log('Usuario autenticado:', isAuthenticated);
+    console.log('Rol del usuario:', user?.rol);
+    console.log('Carrera del usuario:', user?.id_car);
+    console.log('Documentos verificados:', puedeInscribirse);
+    console.log('Ya inscrito:', estaInscritoEnCurso(curso.id_cur));
+    console.log('Curso disponible para usuario:', cursoDisponibleParaUsuario(curso));
+    console.log('Tipo de audiencia:', curso.tipo_audiencia_cur);
+    if (curso.cursosPorCarrera) {
+      console.log('Carreras asociadas:', curso.cursosPorCarrera.map(c => ({ id: c.id_car, nombre: c.carrera?.nom_car })));
+    }
+    console.log('===========================');
+  };
+  
+  // Verificar si el evento está disponible para el usuario según su carrera
+  const eventoDisponibleParaUsuario = (evento) => {
+    if (!evento || !isAuthenticated) {
+      console.log('Evento no disponible: evento no existe o usuario no autenticado');
+      return false;
+    }
+    
+    // Si es público, está disponible para todos
+    if (evento.tipo_audiencia_eve === 'PUBLICO_GENERAL') {
+      console.log('Evento disponible: es público general');
+      return true;
+    }
+    
+    // Si es para todas las carreras, está disponible para estudiantes
+    if (evento.tipo_audiencia_eve === 'TODAS_CARRERAS' && user.rol === 'ESTUDIANTE') {
+      console.log('Evento disponible: es para todas las carreras y el usuario es estudiante');
+      return true;
+    }
+    
+    // Si es para carreras específicas, verificar si la carrera del usuario está incluida
+    if (evento.tipo_audiencia_eve === 'CARRERA_ESPECIFICA' && user.rol === 'ESTUDIANTE') {
+      console.log('Evento para carrera específica, verificando...');
+      // Si el usuario tiene una carrera asignada
+      if (user.id_car) {
+        console.log('Usuario tiene carrera asignada:', user.id_car);
+        // Verificar si la carrera está en la lista de carreras del evento
+        if (evento.eventosPorCarrera && evento.eventosPorCarrera.length > 0) {
+          console.log('Carreras del evento:', evento.eventosPorCarrera.map(e => ({ id: e.id_car, nombre: e.carrera?.nom_car })));
+          const disponible = evento.eventosPorCarrera.some(e => e.id_car === user.id_car);
+          console.log('¿Evento disponible para la carrera del usuario?', disponible);
+          return disponible;
+        } else {
+          console.log('El evento no tiene carreras asociadas');
+        }
+      } else {
+        console.log('Usuario no tiene carrera asignada');
+      }
+    }
+    
+    console.log('Evento no disponible por defecto');
+    return false;
+  };
+  
+  // Función para imprimir el estado del botón de inscripción para eventos
+  const logEstadoInscripcionEvento = (evento) => {
+    if (!evento) return;
+    
+    console.log('=== ESTADO DE INSCRIPCIÓN EVENTO ===');
+    console.log('Evento:', evento.nom_eve);
+    console.log('Usuario autenticado:', isAuthenticated);
+    console.log('Rol del usuario:', user?.rol);
+    console.log('Carrera del usuario:', user?.id_car);
+    console.log('Documentos verificados:', puedeInscribirse);
+    console.log('Ya inscrito:', estaInscritoEnEvento(evento.id_eve));
+    console.log('Evento disponible para usuario:', eventoDisponibleParaUsuario(evento));
+    console.log('Tipo de audiencia:', evento.tipo_audiencia_eve);
+    if (evento.eventosPorCarrera) {
+      console.log('Carreras asociadas:', evento.eventosPorCarrera.map(e => ({ id: e.id_car, nombre: e.carrera?.nom_car })));
+    }
+    console.log('===========================');
+  };
+  
+  // Determinar si el usuario puede inscribirse
+  const puedeInscribirse = verificarDocumentosUsuario();
 
   const formatearFecha = (fecha) => {
     if (!fecha) return 'No especificada';
@@ -611,12 +833,20 @@ const CarreraEventosCursos = () => {
           <Button onClick={() => setEventoModalOpen(false)} variant="outlined">
             Cerrar
           </Button>
-          {isAuthenticated && (
-            <Button variant="contained" color="primary" disabled>
-              Inscribirse (Disponible al iniciar sesión)
+          {isAuthenticated ? (
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={handleInscripcionEventoOpen}
+              disabled={estaInscritoEnEvento(selectedEvento?.id_eve) || (!puedeInscribirse && selectedEvento?.tipo_audiencia_eve !== 'PUBLICO_GENERAL')}
+            >
+              {estaInscritoEnEvento(selectedEvento?.id_eve) 
+                ? 'Ya estás inscrito' 
+                : !puedeInscribirse && selectedEvento?.tipo_audiencia_eve !== 'PUBLICO_GENERAL'
+                  ? 'Documentos no verificados' 
+                  : 'Inscribirse'}
             </Button>
-          )}
-          {!isAuthenticated && (
+          ) : (
             <Button 
               variant="contained" 
               color="primary" 
@@ -782,12 +1012,20 @@ const CarreraEventosCursos = () => {
           <Button onClick={() => setCursoModalOpen(false)} variant="outlined">
             Cerrar
           </Button>
-          {isAuthenticated && (
-            <Button variant="contained" color="primary" disabled>
-              Inscribirse (Disponible al iniciar sesión)
+          {isAuthenticated ? (
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={handleInscripcionCursoOpen}
+              disabled={estaInscritoEnCurso(selectedCurso?.id_cur) || (!puedeInscribirse && selectedCurso?.tipo_audiencia_cur !== 'PUBLICO_GENERAL')}
+            >
+              {estaInscritoEnCurso(selectedCurso?.id_cur) 
+                ? 'Ya estás inscrito' 
+                : !puedeInscribirse && selectedCurso?.tipo_audiencia_cur !== 'PUBLICO_GENERAL'
+                  ? 'Documentos no verificados' 
+                  : 'Inscribirse'}
             </Button>
-          )}
-          {!isAuthenticated && (
+          ) : (
             <Button 
               variant="contained" 
               color="primary" 
@@ -798,6 +1036,28 @@ const CarreraEventosCursos = () => {
           )}
         </DialogActions>
       </Dialog>
+      
+      {/* Modal de Inscripción para Eventos */}
+      {selectedEvento && (
+        <ModalInscripcion
+          open={inscripcionEventoOpen}
+          onClose={handleInscripcionClose}
+          tipo="evento"
+          item={selectedEvento}
+          onInscripcionExitosa={handleInscripcionExitosa}
+        />
+      )}
+      
+      {/* Modal de Inscripción para Cursos */}
+      {selectedCurso && (
+        <ModalInscripcion
+          open={inscripcionCursoOpen}
+          onClose={handleInscripcionClose}
+          tipo="curso"
+          item={selectedCurso}
+          onInscripcionExitosa={handleInscripcionExitosa}
+        />
+      )}
     </Box>
   );
 };
