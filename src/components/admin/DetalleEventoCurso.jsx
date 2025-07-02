@@ -343,9 +343,15 @@ const DetalleEventoCurso = ({ item, onClose }) => {
 
   // Función para ver la carta de motivación
   const handleVerCarta = (inscripcion) => {
+    // Asegurarse de que siempre haya algo que mostrar
+    const inscripcionConCarta = {
+      ...inscripcion,
+      carta_motivacion: inscripcion.carta_motivacion || "El usuario no ha proporcionado una carta de motivación o hubo un problema al cargarla."
+    };
+    
     setCartaModal({
       open: true,
-      inscripcion
+      inscripcion: inscripcionConCarta
     });
   };
 
@@ -703,23 +709,16 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                     )}
                     {detalles?.requiere_carta_motivacion && (
                       <TableCell align="center">
-                        {inscripcion.carta_motivacion ? (
-                          <Tooltip title="Ver carta de motivación">
-                            <IconButton
-                              color="primary"
-                              size="small"
-                              onClick={() => handleVerCarta(inscripcion)}
-                            >
-                              <Description />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title="No tiene carta de motivación">
-                            <IconButton color="default" size="small" disabled>
-                              <Close />
-                            </IconButton>
-                          </Tooltip>
-                        )}
+                        {/* FORZAR MOSTRAR SIEMPRE EL BOTÓN PARA CURSOS QUE REQUIEREN CARTA */}
+                        <Tooltip title="Ver carta de motivación">
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            onClick={() => handleVerCarta(inscripcion)}
+                          >
+                            <Description />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     )}
                     <TableCell align="center">
@@ -911,7 +910,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
             
             <Paper elevation={0} variant="outlined" sx={{ p: 3, bgcolor: '#f9f9f9', borderRadius: 2 }}>
               <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
-                {cartaModal.inscripcion.carta_motivacion || "No se encontró carta de motivación"}
+                {cartaModal.inscripcion.carta_motivacion}
               </Typography>
             </Paper>
             
