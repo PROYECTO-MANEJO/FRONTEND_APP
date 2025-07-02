@@ -99,12 +99,67 @@ export const generarCertificadoCurso = async (idCurso, idInscripcion) => {
   }
 }; 
 
+/**
+ * Obtener participaciones completas (solo las que tienen registro de participación)
+ */
 export const obtenerParticipacionesCompletas = async () => {
   try {
     const response = await api.get(`${CERTIFICATES_BASE_URL}/mis-certificados/participaciones-completas`);
     return response.data;
   } catch (error) {
     console.error('Error al obtener participaciones completas:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener TODAS las inscripciones del usuario (incluyendo las que no tienen participación)
+ */
+export const obtenerTodasLasInscripciones = async () => {
+  try {
+    // Obtener inscripciones a eventos
+    const inscripcionesEventos = await api.get('/inscripciones/evento/mis-inscripciones');
+    
+    // Obtener inscripciones a cursos
+    const inscripcionesCursos = await api.get('/inscripcionesCursos/curso/mis-inscripciones');
+    
+    // Formatear eventos
+    const eventos = inscripcionesEventos.data.data.map(inscripcion => ({
+      id_ins: inscripcion.id_ins,
+      evento: inscripcion.evento?.nom_eve || 'Sin nombre',
+      estado_evento: inscripcion.evento?.estado_eve || 'ACTIVO',
+      fecha_inscripcion: inscripcion.fec_ins,
+      metodo_pago: inscripcion.met_pag_ins,
+      estado_pago: inscripcion.estado_pago,
+      usuario: `${inscripcion.usuario?.nom_usu1 || ''} ${inscripcion.usuario?.ape_usu1 || ''}`.trim(),
+      es_gratuito: inscripcion.evento?.es_gratuito,
+      precio: inscripcion.evento?.precio,
+      tipo: 'evento'
+    }));
+    
+    // Formatear cursos
+    const cursos = inscripcionesCursos.data.data.map(inscripcion => ({
+      id_ins_cur: inscripcion.id_ins_cur,
+      curso: inscripcion.curso?.nom_cur || 'Sin nombre',
+      estado_curso: inscripcion.curso?.estado_cur || 'ACTIVO',
+      fecha_inscripcion: inscripcion.fec_ins_cur,
+      metodo_pago: inscripcion.met_pag_ins_cur,
+      estado_pago: inscripcion.estado_pago_cur,
+      usuario: `${inscripcion.usuario?.nom_usu1 || ''} ${inscripcion.usuario?.ape_usu1 || ''}`.trim(),
+      es_gratuito: inscripcion.curso?.es_gratuito,
+      precio: inscripcion.curso?.precio,
+      tipo: 'curso'
+    }));
+    
+    return {
+      success: true,
+      data: {
+        eventos,
+        cursos
+      }
+    };
+  } catch (error) {
+    console.error('Error al obtener todas las inscripciones:', error);
     throw error;
   }
 };

@@ -27,7 +27,8 @@ import {
   Divider,
   OutlinedInput,
   Checkbox,
-  ListItemText
+  ListItemText,
+  TableCell
 } from '@mui/material';
 import {
   Add,
@@ -51,6 +52,7 @@ import {
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
+import { useEstadoDisplay } from '../../hooks/useEstadoDisplay';
 
 const AdminCursos = () => {
   const { getMainContentStyle } = useSidebarLayout();
@@ -523,39 +525,31 @@ const AdminCursos = () => {
     }
   };
 
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case 'EN_CURSO': return 'success';
-      case 'FINALIZADO': return 'error';
-      case 'PROXIMAMENTE': return 'warning';
-      case 'ACTIVO': return 'success';
-      case 'INACTIVO': return 'error';
-      case 'PENDIENTE': return 'warning';
-      default: return 'default';
-    }
-  };
-
   const formatearFecha = (fecha) => {
     if (!fecha) return 'No especificada';
     return new Date(fecha).toLocaleDateString('es-ES');
   };
 
-  // Función auxiliar para obtener el estado del curso
-  const obtenerEstadoCurso = (fechaInicio, fechaFin, estadoDB = null) => {
-    // Si el curso está cerrado en la base de datos, siempre mostrar FINALIZADO
+  // Función para obtener el estado del curso
+  const obtenerEstadoCurso = (fechaInicio, fechaFin, estadoDB) => {
+    // Si está cerrado en la base de datos, siempre mostrar FINALIZADO
     if (estadoDB === 'CERRADO') {
       console.log('✅ Curso cerrado en BD, retornando FINALIZADO para:', { estadoDB });
       return 'FINALIZADO';
     }
-    
+
     const hoy = new Date();
     const inicio = new Date(fechaInicio);
     const fin = new Date(fechaFin);
-    
-    if (hoy < inicio) return 'PROXIMAMENTE';
-    if (hoy >= inicio && hoy <= fin) return 'EN_CURSO';
+
+    // Si ya pasó la fecha fin, mostrar FINALIZADO
     if (hoy > fin) return 'FINALIZADO';
-    return 'ACTIVO'; // Estado por defecto para cursos sin fechas específicas
+
+    // Si aún no llega la fecha de inicio, mostrar PRÓXIMAMENTE
+    if (hoy < inicio) return 'PRÓXIMAMENTE';
+
+    // Si está entre las fechas y está activo, mostrar EN CURSO
+    return 'EN CURSO';
   };
 
   const statsCards = [
@@ -584,6 +578,20 @@ const AdminCursos = () => {
       color: '#8b5cf6'
     }
   ];
+
+  // Renderizar el estado del curso en la tabla
+  const CursoEstadoChip = ({ curso }) => {
+    const { estado: estadoDisplay, color: estadoColor } = useEstadoDisplay(curso, 'curso');
+    
+    return (
+      <Chip
+        label={estadoDisplay}
+        color={estadoColor}
+        size="small"
+        sx={{ fontWeight: 600 }}
+      />
+    );
+  };
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
@@ -675,11 +683,7 @@ const AdminCursos = () => {
                         }}>
                           {curso.nom_cur}
                         </Typography>
-                        <Chip 
-                          label={obtenerEstadoCurso(curso.fec_ini_cur, curso.fec_fin_cur, curso.estado)} 
-                          color={getEstadoColor(obtenerEstadoCurso(curso.fec_ini_cur, curso.fec_fin_cur, curso.estado))}
-                          size="small"
-                        />
+                        <CursoEstadoChip curso={curso} />
                       </Box>
                       <Avatar sx={{ bgcolor: '#6d1313', width: 32, height: 32 }}>
                         <School sx={{ fontSize: 18 }} />

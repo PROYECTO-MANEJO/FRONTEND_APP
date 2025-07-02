@@ -4,7 +4,7 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Crear instancia de axios
-const api = axios.create({
+const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -12,11 +12,11 @@ const api = axios.create({
 });
 
 // Interceptor para agregar el token a las peticiones
-api.interceptors.request.use(
+axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers['x-token'] = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -26,7 +26,7 @@ api.interceptors.request.use(
 );
 
 // Interceptor para manejar respuestas y errores
-api.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   (response) => {
     return response;
   },
@@ -60,5 +60,20 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Verificar y cerrar automáticamente cursos/eventos vencidos
+const verificarYCerrarAutomaticamente = async (tipo, id) => {
+  const response = await axiosInstance.post(`/${tipo}s/${id}/verificar-estado`);
+  return response.data;
+};
+
+// Exportar todas las funciones de la API
+const api = {
+  get: (url) => axiosInstance.get(url),
+  post: (url, data) => axiosInstance.post(url, data),
+  put: (url, data) => axiosInstance.put(url, data),
+  delete: (url) => axiosInstance.delete(url),
+  verificarYCerrarAutomaticamente,
+};
 
 export default api; 

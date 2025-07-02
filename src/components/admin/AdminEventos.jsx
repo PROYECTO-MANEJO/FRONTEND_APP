@@ -27,7 +27,8 @@ import {
   Divider,
   OutlinedInput,
   Checkbox,
-  ListItemText
+  ListItemText,
+  TableCell
 } from '@mui/material';
 import {
   Add,
@@ -51,6 +52,7 @@ import {
 import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
+import { useEstadoDisplay } from '../../hooks/useEstadoDisplay';
 
 const AdminEventos = () => {
   const [eventos, setEventos] = useState([]);
@@ -176,7 +178,7 @@ const AdminEventos = () => {
       // Calcular estadísticas
       const totalEventos = eventosData.length;
       const eventosActivos = eventosData.filter(e => {
-        const estado = obtenerEstadoEvento(e.fec_ini_eve, e.fec_fin_eve);
+        const estado = obtenerEstadoEvento(e.fec_ini_eve, e.fec_fin_eve, e.estado);
         return estado === 'EN_CURSO' || estado === 'PROXIMAMENTE';
       }).length;
       const totalInscripciones = eventosData.reduce((sum, e) => sum + (e.total_inscripciones || 0), 0);
@@ -484,33 +486,39 @@ const AdminEventos = () => {
     }
   };
 
-  // Función auxiliar para obtener el estado del evento
-  const obtenerEstadoEvento = (fechaInicio, fechaFin) => {
+  // Renderizar el estado del evento en la tabla
+  const EventoEstadoChip = ({ evento }) => {
+    const { estado: estadoDisplay, color: estadoColor } = useEstadoDisplay(evento, 'evento');
+    
+    return (
+      <Chip
+        label={estadoDisplay}
+        color={estadoColor}
+        size="small"
+        sx={{ fontWeight: 600 }}
+      />
+    );
+  };
+
+  // Función para obtener el estado del evento
+  const obtenerEstadoEvento = (fechaInicio, fechaFin, estadoDB) => {
+    // Si está cerrado en la base de datos, siempre mostrar FINALIZADO
+    if (estadoDB === 'CERRADO') {
+      return 'FINALIZADO';
+    }
+
     const hoy = new Date();
     const inicio = new Date(fechaInicio);
     const fin = new Date(fechaFin);
-    
-    if (hoy < inicio) return 'PROXIMAMENTE';
-    if (hoy >= inicio && hoy <= fin) return 'EN_CURSO';
-    if (hoy > fin) return 'FINALIZADO';
-    return 'INDETERMINADO';
-  };
 
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case 'EN_CURSO':
-        return '#10b981';
-      case 'FINALIZADO':
-        return '#6b7280';
-      case 'PROXIMAMENTE':
-        return '#f59e0b';
-      case 'ACTIVO':
-        return '#10b981';
-      case 'CANCELADO':
-        return '#ef4444';
-      default:
-        return '#f59e0b';
-    }
+    // Si ya pasó la fecha fin, mostrar FINALIZADO
+    if (hoy > fin) return 'FINALIZADO';
+
+    // Si aún no llega la fecha de inicio, mostrar PRÓXIMAMENTE
+    if (hoy < inicio) return 'PRÓXIMAMENTE';
+
+    // Si está entre las fechas y está activo, mostrar EN CURSO
+    return 'EN CURSO';
   };
 
   const formatearFecha = (fecha) => {
@@ -714,18 +722,13 @@ const AdminEventos = () => {
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden'
                       }}>
-                        {evento.nom_eve}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {evento.nom_eve}
+                          </Typography>
+                          <EventoEstadoChip evento={evento} />
+                        </Box>
                       </Typography>
-                      <Chip
-                        label={obtenerEstadoEvento(evento.fec_ini_eve, evento.fec_fin_eve)}
-                        size="small"
-                        sx={{
-                          bgcolor: getEstadoColor(obtenerEstadoEvento(evento.fec_ini_eve, evento.fec_fin_eve)),
-                          color: 'white',
-                          fontWeight: 500,
-                          ml: 1
-                        }}
-                      />
                     </Box>
                     
                     {/* Descripción */}

@@ -87,8 +87,9 @@ const GestionNotasCurso = () => {
     const notaFinal = cambios.nota_final !== undefined ? cambios.nota_final : (participacionActual.participacion?.nota_final || 0);
     const asistencia = cambios.asistencia_porcentaje !== undefined ? cambios.asistencia_porcentaje : (participacionActual.participacion?.asistencia_porcentaje || 0);
 
-    if (notaFinal < 0 || notaFinal > 10) {
-      toast.error('La nota debe estar entre 0 y 10');
+    // Validar nota según el rango permitido (1-10 o porcentaje)
+    if (notaFinal < 0 || (notaFinal > 10 && notaFinal > 100)) {
+      toast.error('La nota debe estar entre 0-10 o ser un porcentaje válido (0-100)');
       return;
     }
 
@@ -120,10 +121,21 @@ const GestionNotasCurso = () => {
     }
   };
 
+  const formatearNota = (nota) => {
+    if (nota > 10) {
+      return `${nota}%`;
+    }
+    return nota.toFixed(1);
+  };
+
   const calcularAprobacion = (nota, asistencia) => {
-    const notaMinima = curso?.notaMinimaAprobacion || 7.0;
-    const asistenciaMinima = curso?.porcentajeAsistenciaAprobacion || 70;
-    return nota >= notaMinima && asistencia >= asistenciaMinima;
+    const notaMinima = curso?.nota_minima_aprobacion || 7.0;
+    const asistenciaMinima = curso?.porcentaje_asistencia_aprobacion || 80;
+    
+    // Validar que la nota esté en el rango correcto según el tipo de calificación
+    const notaNormalizada = nota > 10 ? (nota / 100) * 10 : nota; // Si es porcentaje, convertir a escala 1-10
+    
+    return notaNormalizada >= notaMinima && asistencia >= asistenciaMinima;
   };
 
   if (loading) {
@@ -192,29 +204,19 @@ const GestionNotasCurso = () => {
           {/* Criterios de aprobación */}
           <Card sx={{ backgroundColor: '#e3f2fd', boxShadow: 2, mb: 3 }}>
             <CardContent>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  color: '#1976d2', 
-                  fontWeight: 'bold', 
-                  mb: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}
-              >
-                <Assignment />
+              <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
+                <Assignment sx={{ mr: 1 }} />
                 Criterios de Aprobación
               </Typography>
-              <Grid container spacing={3}>
+              <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body1" sx={{ color: '#1976d2', fontSize: '1rem' }}>
-                    📝 Nota mínima: <strong>{curso.notaMinimaAprobacion || 7.0} / 10</strong>
+                    📝 Nota mínima: <strong>{formatearNota(curso.nota_minima_aprobacion || 7.0)}</strong>
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body1" sx={{ color: '#1976d2', fontSize: '1rem' }}>
-                    👥 Asistencia mínima: <strong>{curso.porcentajeAsistenciaAprobacion || 70}%</strong>
+                    👥 Asistencia mínima: <strong>{curso.porcentaje_asistencia_aprobacion || 80}%</strong>
                   </Typography>
                 </Grid>
               </Grid>

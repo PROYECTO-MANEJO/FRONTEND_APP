@@ -40,3 +40,42 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Forzar tamaño fijo para las tarjetas */
+.fixed-card-size {
+  width: 400px !important;
+  height: 380px !important;
+  min-width: 400px !important;
+  max-width: 400px !important;
+  min-height: 380px !important;
+  max-height: 380px !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  flex-basis: 400px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+/* Selectores más específicos para Material-UI */
+.MuiCard-root.fixed-card-size {
+  width: 400px !important;
+  height: 380px !important;
+  min-width: 400px !important;
+  max-width: 400px !important;
+  min-height: 380px !important;
+  max-height: 380px !important;
+}
+
+.MuiPaper-root.fixed-card-size {
+  width: 400px !important;
+  height: 380px !important;
+  min-width: 400px !important;
+  max-width: 400px !important;
+  min-height: 380px !important;
+  max-height: 380px !important;
+}
+
+/* Para asegurar que los contenedores padre no interfieran */
+.fixed-card-size * {
+  box-sizing: border-box !important;
+}

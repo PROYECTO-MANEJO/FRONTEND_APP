@@ -27,18 +27,25 @@ import {
 } from '@mui/icons-material';
 import ModalInscripcion from './ModalInscripcion';
 import EstadoInscripcion from './EstadoInscripcion';
+import DocumentosAlert from './DocumentosAlert';
 import { useInscripciones } from '../../hooks/useInscripciones';
 import { useAuth } from '../../context/AuthContext';
+import { useEstadoDisplay } from '../../hooks/useEstadoDisplay';
+import api from '../../services/api';
 
 const CursoCard = ({ curso }) => {
   const [open, setOpen] = useState(false);
   const [inscripcionOpen, setInscripcionOpen] = useState(false);
+  const [documentosAlertOpen, setDocumentosAlertOpen] = useState(false);
   
   // Hook para manejar inscripciones (solo si no es "mis cursos")
   const { obtenerEstadoCurso, cargarInscripciones } = useInscripciones();
   
   // Hook para obtener información del usuario y documentos
   const { user } = useAuth();
+
+  // Hook para manejar el estado de visualización
+  const { estado: estadoDisplay, color: estadoColor } = useEstadoDisplay(curso, 'curso');
   
   // Verificar si este es un curso de "mis cursos" (tiene estado_inscripcion)
   const esMiCurso = Boolean(curso.estado_inscripcion);
@@ -70,7 +77,15 @@ const CursoCard = ({ curso }) => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   
-  const handleInscripcionOpen = () => setInscripcionOpen(true);
+  const handleInscripcionOpen = () => {
+    // Solo abrir modal si el usuario puede inscribirse
+    if (puedeInscribirse) {
+      setInscripcionOpen(true);
+    } else {
+      // Mostrar alerta explicativa elegante
+      setDocumentosAlertOpen(true);
+    }
+  };
   const handleInscripcionClose = () => setInscripcionOpen(false);
   
   const handleInscripcionExitosa = () => {
@@ -81,6 +96,29 @@ const CursoCard = ({ curso }) => {
     console.log('Inscripción exitosa en curso:', curso.nom_cur);
   };
 
+  // Calcular el estado del curso basado en fechas y estado real
+  const calcularEstadoCurso = (fechaInicio, fechaFin, estadoReal) => {
+    // Si está cerrado, siempre mostrar FINALIZADO
+    if (estadoReal === 'CERRADO') {
+      return 'FINALIZADO';
+    }
+
+    const hoy = new Date();
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+
+    if (hoy < inicio) {
+      return 'PRÓXIMAMENTE';
+    } else if (hoy >= inicio && hoy <= fin) {
+      return 'EN CURSO';
+    } else {
+      // Si pasó la fecha fin y no está cerrado, verificar estado
+      api.verificarYCerrarAutomaticamente('curso', curso.id_cur)
+        .catch(error => console.error('Error verificando estado:', error));
+      return 'FINALIZADO';
+    }
+  };
+
   // Función para determinar el color del estado del curso
   const getEstadoColor = (estado) => {
     switch (estado) {
@@ -89,9 +127,9 @@ const CursoCard = ({ curso }) => {
       case 'EN CURSO':
         return 'success';
       case 'FINALIZADO':
-        return 'default';
+        return 'error';
       default:
-        return 'primary';
+        return 'default';
     }
   };
 
@@ -105,51 +143,101 @@ const CursoCard = ({ curso }) => {
     });
   };
 
-  // Calcular el estado del curso basado en fechas
-  const calcularEstadoCurso = (fechaInicio, fechaFin) => {
-    const hoy = new Date();
-    const inicio = new Date(fechaInicio);
-    const fin = new Date(fechaFin);
-
-    if (hoy < inicio) {
-      return 'PRÓXIMAMENTE';
-    } else if (hoy >= inicio && hoy <= fin) {
-      return 'EN CURSO';
-    } else {
-      return 'FINALIZADO';
-    }
-  };
-
-  const estadoCurso = curso.estado || calcularEstadoCurso(curso.fec_ini_cur, curso.fec_fin_cur);
+  const estadoCurso = calcularEstadoCurso(curso.fec_ini_cur, curso.fec_fin_cur, curso.estado);
 
   return (
     <>
-      <Card sx={{ 
-        height: '300px',
-        minHeight: '300px',
-        maxHeight: '300px',
-        width: '100%',
-        minWidth: '400px',
-        maxWidth: '400px',
-        display: 'flex', 
-        flexDirection: 'column',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-        cursor: 'pointer',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
-        }
-      }}>
-        <CardContent sx={{ 
-          p: 2.5, 
-          display: 'flex', 
-          flexDirection: 'column',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden'
+      <Card 
+        className="fixed-card-size"
+        style={{
+          width: '400px',
+          height: '380px',
+          minWidth: '400px',
+          maxWidth: '400px',
+          minHeight: '380px',
+          maxHeight: '380px',
+          flexShrink: 0,
+          flexGrow: 0,
+          boxSizing: 'border-box'
+        }}
+        sx={{ 
+          width: '400px !important',
+          height: '380px !important',
+          minWidth: '400px !important',
+          maxWidth: '400px !important',
+          minHeight: '380px !important',
+          maxHeight: '380px !important',
+          flexShrink: '0 !important',
+          flexGrow: '0 !important',
+          flexBasis: '400px !important',
+          boxSizing: 'border-box',
+          overflow: 'hidden !important',
+          '&.MuiCard-root': {
+            width: '400px !important',
+            height: '380px !important',
+            minWidth: '400px !important',
+            maxWidth: '400px !important',
+            minHeight: '380px !important',
+            maxHeight: '380px !important',
+          },
+          '&.MuiPaper-root': {
+            width: '400px !important',
+            height: '380px !important',
+            minWidth: '400px !important',
+            maxWidth: '400px !important',
+            minHeight: '380px !important',
+            maxHeight: '380px !important',
+          },
+          '&.fixed-card-size': {
+            width: '400px !important',
+            height: '380px !important',
+            minWidth: '400px !important',
+            maxWidth: '400px !important',
+            minHeight: '380px !important',
+            maxHeight: '380px !important',
+          },
+          '& .MuiCardContent-root': {
+            height: '100%',
+            padding: '16px !important',
+            boxSizing: 'border-box',
+            display: 'flex !important',
+            flexDirection: 'column !important',
+            overflow: 'hidden !important',
+          },
+          '&:hover': {
+            boxShadow: '0 4px 20px 0 rgba(0,0,0,0.12)',
+            transform: 'translateY(-2px)',
+            transition: 'all 0.3s ease'
+          }
+        }}
+      >
+        <CardContent sx={{
+          height: '100% !important',
+          padding: '16px !important',
+          display: 'flex !important',
+          flexDirection: 'column !important',
+          overflow: 'hidden !important',
+          boxSizing: 'border-box !important',
+          '&.MuiCardContent-root': {
+            height: '100% !important',
+            padding: '16px !important',
+            display: 'flex !important',
+            flexDirection: 'column !important',
+            overflow: 'hidden !important',
+          }
         }}>
           {/* Chips de CURSO y ESTADO */}
-          <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 0.5, 
+            mb: 1, 
+            flexWrap: 'wrap',
+            height: '24px !important',
+            minHeight: '24px !important',
+            maxHeight: '24px !important',
+            flexShrink: '0 !important',
+            overflow: 'hidden'
+          }}>
             <Chip 
               label="CURSO" 
               size="small" 
@@ -157,6 +245,16 @@ const CursoCard = ({ curso }) => {
               sx={{ 
                 bgcolor: '#2e7d32', 
                 color: 'white',
+                fontWeight: 600,
+                fontSize: '0.7rem',
+                height: '20px'
+              }}
+            />
+            <Chip
+              label={estadoDisplay}
+              size="small"
+              color={estadoColor}
+              sx={{
                 fontWeight: 600,
                 fontSize: '0.7rem',
                 height: '20px'
@@ -170,102 +268,131 @@ const CursoCard = ({ curso }) => {
             )}
           </Box>
 
-          {/* Título - altura controlada */}
+          {/* Título con altura fija */}
           <Typography 
             variant="h6" 
-            component="h3"
+            component="h2" 
             sx={{ 
-              fontWeight: 600, 
-              color: 'text.primary',
               fontSize: '1rem',
-              lineHeight: 1.2,
+              fontWeight: 600,
               mb: 1,
-              height: '2.4rem', // ALTURA FIJA
+              height: '40px !important',
+              minHeight: '40px !important',
+              maxHeight: '40px !important',
+              lineHeight: '20px',
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
+              overflow: 'hidden !important',
+              flexShrink: '0 !important'
             }}
           >
             {curso.nom_cur}
           </Typography>
 
-          {/* Descripción - altura controlada */}
+          {/* Descripción con altura fija */}
           <Typography 
             variant="body2" 
             color="text.secondary" 
             sx={{ 
-              fontSize: '0.825rem',
-              lineHeight: 1.3,
-              mb: 1.5,
-              height: '3.9rem', // ALTURA FIJA
+              mb: 2,
+              height: '60px !important',
+              minHeight: '60px !important',
+              maxHeight: '60px !important',
+              lineHeight: '20px',
               display: '-webkit-box',
               WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
+              overflow: 'hidden !important',
+              flexShrink: '0 !important'
             }}
           >
             {curso.des_cur}
           </Typography>
 
-          {/* Información compacta */}
-          <Box sx={{ mb: 'auto' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
-              <strong>Fecha:</strong> {new Date(curso.fec_ini_cur).toLocaleDateString()}
+          {/* Detalles con altura fija */}
+          <Box sx={{ 
+            mb: 2,
+            height: '140px !important',
+            minHeight: '140px !important',
+            maxHeight: '140px !important',
+            overflow: 'hidden !important',
+            flexShrink: '0 !important'
+          }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <CalendarToday sx={{ fontSize: '0.875rem' }} />
+              <strong>Fecha:</strong> {formatearFecha(curso.fec_ini_cur)}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
-              <strong>Duración:</strong> {curso.dur_cur} horas
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Schedule sx={{ fontSize: '0.875rem' }} />
+              <strong>Duración:</strong> {curso.dur_cur || 'No especificada'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
-              <strong>Precio:</strong> {curso.es_gratuito ? 'Gratuito' : `$${curso.precio}`}
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <LocationOn sx={{ fontSize: '0.875rem' }} />
+              <strong>Lugar:</strong> {curso.lug_cur || 'Por definir'}
             </Typography>
-            {curso.organizador_nombre && (
-              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3 }}>
-                <strong>Organizador:</strong> {curso.organizador_nombre}
-              </Typography>
-            )}
-            {curso.carreras && curso.carreras.length > 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                <strong>Carreras:</strong> {curso.carreras.length > 1 ? `${curso.carreras.length} carreras` : curso.carreras[0].nombre}
-              </Typography>
-            )}
-            {curso.tipo_audiencia_cur === 'PUBLICO_GENERAL' && (
-              <Typography variant="body2" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-                ✨ Abierto al público general
-              </Typography>
-            )}
-            {curso.tipo_audiencia_cur === 'TODAS_CARRERAS' && (
-              <Typography variant="body2" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-                🎓 Todas las carreras
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <People sx={{ fontSize: '0.875rem' }} />
+              <strong>Cupos:</strong> {curso.cupos_ocupados_cur || 0}/{curso.cupos_cur || 'Ilimitados'}
+            </Typography>
+            {curso.costo_cur > 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.3, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <AttachMoney sx={{ fontSize: '0.875rem' }} />
+                <strong>Costo:</strong> ${curso.costo_cur}
               </Typography>
             )}
           </Box>
-        </CardContent>
 
-        {/* Footer con botón */}
-        <Box sx={{ p: 2, pt: 0 }}>
-          <Button
-            variant="outlined"
-            fullWidth
-            size="small"
-            startIcon={<InfoOutlined />}
-            onClick={handleOpen}
-            sx={{
-              borderColor: '#2e7d32',
-              color: '#2e7d32',
-              '&:hover': {
-                borderColor: '#1b5e20',
-                backgroundColor: '#f1f8e9',
-              },
-              textTransform: 'none',
-              fontWeight: 500,
-              fontSize: '0.8rem',
-              height: '32px'
-            }}
-          >
-            Ver Detalles
-          </Button>
-        </Box>
+          {/* Botones con altura fija */}
+          <Box sx={{ 
+            mt: 'auto',
+            pt: 1,
+            height: '36px !important',
+            minHeight: '36px !important',
+            maxHeight: '36px !important',
+            display: 'flex',
+            gap: 1,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: '0 !important'
+          }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<InfoOutlined />}
+              onClick={handleOpen}
+              sx={{ 
+                borderColor: '#2e7d32',
+                color: '#2e7d32',
+                '&:hover': {
+                  borderColor: '#1b5e20',
+                  backgroundColor: 'rgba(46, 125, 50, 0.04)'
+                }
+              }}
+            >
+              Ver Detalles
+            </Button>
+            {!esMiCurso && (
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleInscripcionOpen}
+                disabled={!puedeInscribirse || estadoInscripcion?.inscrito}
+                sx={{ 
+                  bgcolor: '#2e7d32',
+                  '&:hover': {
+                    bgcolor: '#1b5e20'
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: 'rgba(46, 125, 50, 0.12)'
+                  }
+                }}
+              >
+                {estadoInscripcion?.inscrito ? 'Inscrito' : 'Inscribirse'}
+              </Button>
+            )}
+          </Box>
+        </CardContent>
       </Card>
 
       {/* Modal de detalles */}
@@ -291,8 +418,8 @@ const CursoCard = ({ curso }) => {
                   {curso.nom_cur}
                 </Typography>
                 <Chip 
-                  label={estadoCurso} 
-                  color={getEstadoColor(estadoCurso)}
+                  label={estadoDisplay} 
+                  color={estadoColor}
                   sx={{ fontWeight: 600 }}
                 />
               </Box>
@@ -521,6 +648,13 @@ const CursoCard = ({ curso }) => {
           onInscripcionExitosa={handleInscripcionExitosa}
         />
       )}
+
+      {/* Alerta de documentos */}
+      <DocumentosAlert
+        open={documentosAlertOpen}
+        onClose={() => setDocumentosAlertOpen(false)}
+        user={user}
+      />
     </>
   );
 };

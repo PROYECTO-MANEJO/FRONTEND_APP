@@ -43,6 +43,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import paginaPrincipalService from '../services/paginaPrincipalService';
 import ModalInscripcion from './shared/ModalInscripcion';
+import DocumentosAlert from './shared/DocumentosAlert';
 import { useInscripciones } from '../hooks/useInscripciones';
 
 const CarreraEventosCursos = () => {
@@ -61,6 +62,7 @@ const CarreraEventosCursos = () => {
   // Estados para inscripción
   const [inscripcionEventoOpen, setInscripcionEventoOpen] = useState(false);
   const [inscripcionCursoOpen, setInscripcionCursoOpen] = useState(false);
+  const [documentosAlertOpen, setDocumentosAlertOpen] = useState(false);
   
   // Hook para manejar inscripciones
   const { 
@@ -156,13 +158,25 @@ const CarreraEventosCursos = () => {
   
   // Funciones para inscripción
   const handleInscripcionEventoOpen = () => {
-    setEventoModalOpen(false); // Cerrar modal de detalles
-    setInscripcionEventoOpen(true); // Abrir modal de inscripción
+    // Solo abrir modal si el usuario puede inscribirse
+    if (puedeInscribirse) {
+      setEventoModalOpen(false); // Cerrar modal de detalles
+      setInscripcionEventoOpen(true); // Abrir modal de inscripción
+    } else {
+      // Mostrar alerta explicativa elegante
+      setDocumentosAlertOpen(true);
+    }
   };
   
   const handleInscripcionCursoOpen = () => {
-    setCursoModalOpen(false); // Cerrar modal de detalles
-    setInscripcionCursoOpen(true); // Abrir modal de inscripción
+    // Solo abrir modal si el usuario puede inscribirse
+    if (puedeInscribirse) {
+      setCursoModalOpen(false); // Cerrar modal de detalles
+      setInscripcionCursoOpen(true); // Abrir modal de inscripción
+    } else {
+      // Mostrar alerta explicativa elegante
+      setDocumentosAlertOpen(true);
+    }
   };
   
   const handleInscripcionClose = () => {
@@ -463,6 +477,96 @@ const CarreraEventosCursos = () => {
         >
           {getTitulo()}
         </Typography>
+
+        {/* Alerta de estado de documentos */}
+        {isAuthenticated && (() => {
+          const isEstudiante = user?.rol === 'ESTUDIANTE';
+          const documentos = user?.documentos;
+
+          if (!documentos) {
+            return (
+              <Alert 
+                severity="warning" 
+                sx={{ mb: 3, borderRadius: 2 }}
+                action={
+                  <Button 
+                    color="inherit" 
+                    size="small" 
+                    onClick={() => window.location.href = '/user/profile'}
+                  >
+                    Ir a Mi Perfil
+                  </Button>
+                }
+              >
+                <strong>📄 Documentos Requeridos</strong>
+                <br />
+                Para inscribirte en eventos y cursos, necesitas subir tus documentos 
+                {isEstudiante ? ' (cédula y matrícula)' : ' (cédula)'} en tu perfil y esperar la verificación administrativa.
+              </Alert>
+            );
+          }
+
+          const documentosCompletos = isEstudiante 
+            ? (documentos.cedula_subida && documentos.matricula_subida)
+            : documentos.cedula_subida;
+          
+          const documentosVerificados = documentos.documentos_verificados || false;
+
+          if (!documentosCompletos) {
+            return (
+              <Alert 
+                severity="warning" 
+                sx={{ mb: 3, borderRadius: 2 }}
+                action={
+                  <Button 
+                    color="inherit" 
+                    size="small" 
+                    onClick={() => window.location.href = '/user/profile'}
+                  >
+                    Subir Documentos
+                  </Button>
+                }
+              >
+                <strong>📤 Documentos Incompletos</strong>
+                <br />
+                Te falta subir algunos documentos: 
+                {!documentos.cedula_subida && ' cédula'}
+                {isEstudiante && !documentos.matricula_subida && ' matrícula'}
+                . Súbelos en tu perfil para poder inscribirte.
+              </Alert>
+            );
+          }
+
+          if (!documentosVerificados) {
+            return (
+              <Alert 
+                severity="info" 
+                sx={{ mb: 3, borderRadius: 2 }}
+              >
+                <strong>⏳ Verificación Pendiente</strong>
+                <br />
+                Tus documentos han sido subidos exitosamente y están esperando verificación por parte de un administrador. 
+                Una vez verificados, podrás inscribirte en eventos y cursos.
+              </Alert>
+            );
+          }
+
+          // Si todo está bien, mostrar mensaje de éxito (opcional)
+          if (puedeInscribirse) {
+            return (
+              <Alert 
+                severity="success" 
+                sx={{ mb: 3, borderRadius: 2 }}
+              >
+                <strong>✅ Documentos Verificados</strong>
+                <br />
+                Tus documentos han sido verificados exitosamente. Ya puedes inscribirte en eventos y cursos disponibles.
+              </Alert>
+            );
+          }
+
+          return null;
+        })()}
         
         {/* Eventos */}
         {data.eventos.length > 0 && (
@@ -1058,6 +1162,13 @@ const CarreraEventosCursos = () => {
           onInscripcionExitosa={handleInscripcionExitosa}
         />
       )}
+
+      {/* Alerta de documentos */}
+      <DocumentosAlert
+        open={documentosAlertOpen}
+        onClose={() => setDocumentosAlertOpen(false)}
+        user={user}
+      />
     </Box>
   );
 };

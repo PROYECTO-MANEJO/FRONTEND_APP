@@ -1,4 +1,5 @@
 import api from './api';
+import axios from 'axios';
 
 export const inscripcionService = {
   // Inscripciones para eventos
@@ -15,14 +16,20 @@ export const inscripcionService = {
   // Inscripción en evento con archivo PDF
   inscribirseEventoConArchivo: async (formData) => {
     try {
-      const response = await api.post('/inscripciones/eventos', formData, {
+      console.log('📤 Enviando inscripción de evento...');
+      
+      // Usar axios directamente para evitar problemas con la URL base
+      const response = await axios.post('http://localhost:3000/api/inscripciones', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
       });
+      
+      console.log('✅ Respuesta del servidor:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error al inscribirse en evento con archivo:', error);
+      console.error('❌ Error en inscripción evento:', error);
       throw error;
     }
   },
@@ -64,14 +71,20 @@ export const inscripcionService = {
   // Inscripción en curso con archivo PDF
   inscribirseCursoConArchivo: async (formData) => {
     try {
-      const response = await api.post('/inscripcionesCursos/curso', formData, {
+      console.log('📤 Enviando inscripción de curso...');
+      
+      // Usar axios directamente para evitar problemas con la URL base
+      const response = await axios.post('http://localhost:3000/api/inscripcionesCursos', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
       });
+      
+      console.log('✅ Respuesta del servidor:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error al inscribirse en curso con archivo:', error);
+      console.error('❌ Error en inscripción curso:', error);
       throw error;
     }
   },
