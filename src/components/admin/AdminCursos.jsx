@@ -1107,6 +1107,23 @@ const AdminCursos = () => {
                       <Typography>Requiere verificación de documentos</Typography>
                     </Box>
                   </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Checkbox
+                        checked={curso.requiere_carta_motivacion === true}
+                        onChange={(e) => {
+                          const newValue = e.target.checked;
+                          console.log('Cambiando requiere_carta_motivacion a:', newValue);
+                          setCurso(prev => ({ 
+                            ...prev, 
+                            requiere_carta_motivacion: newValue 
+                          }));
+                        }}
+                      />
+                      <Typography>Requiere carta de motivación</Typography>
+                    </Box>
+                  </Grid>
                 </Grid>
               </Grid>
 

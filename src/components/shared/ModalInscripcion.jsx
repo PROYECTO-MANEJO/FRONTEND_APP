@@ -18,7 +18,8 @@ import {
   Card,
   CardContent,
   IconButton,
-  LinearProgress
+  LinearProgress,
+  TextField
 } from '@mui/material';
 import { 
   Close,
@@ -46,6 +47,7 @@ const ModalInscripcion = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [cartaMotivacion, setCartaMotivacion] = useState('');
   
   const { user } = useAuth();
 
@@ -175,12 +177,15 @@ const ModalInscripcion = ({
   const handleSubmit = async () => {
     try {
       const esGratuito = item.es_gratuito;
+      const requiereCarta = item.requiere_carta_motivacion;
       const userId = user?.id_usu;
 
       console.log('🚀 Iniciando inscripción:', {
         esGratuito,
         metodoPago,
         tieneArchivo: !!comprobantePago,
+        requiereCarta,
+        tieneCarta: !!cartaMotivacion,
         userId,
         tipo
       });
@@ -188,6 +193,11 @@ const ModalInscripcion = ({
       // Validaciones básicas
       if (!userId) {
         throw new Error('No se pudo obtener la información del usuario');
+      }
+
+      // Validar carta de motivación si es requerida
+      if (requiereCarta && !cartaMotivacion.trim()) {
+        throw new Error('La carta de motivación es obligatoria para este curso/evento');
       }
 
       if (!esGratuito) {
@@ -223,6 +233,11 @@ const ModalInscripcion = ({
         formData.append('idEvento', item.id_eve);
       } else {
         formData.append('idCurso', item.id_cur);
+      }
+
+      // Agregar carta de motivación si es requerida
+      if (requiereCarta) {
+        formData.append('cartaMotivacion', cartaMotivacion.trim());
       }
 
       // Solo agregar datos de pago si no es gratuito
@@ -295,6 +310,7 @@ const ModalInscripcion = ({
     setComprobantePago(null);
     setError(null);
     setSuccess(false);
+    setCartaMotivacion('');
     // Limpiar input de archivo
     const input = document.getElementById('comprobante_input');
     if (input) input.value = '';
@@ -389,6 +405,37 @@ const ModalInscripcion = ({
                 </Box>
               </CardContent>
             </Card>
+
+            {/* Carta de Motivación (si es requerida) */}
+            {item.requiere_carta_motivacion && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Description color="primary" />
+                  Carta de Motivación
+                </Typography>
+                
+                <Alert severity="info" sx={{ mb: 1 }}>
+                  <Typography variant="body2">
+                    Este {tipo === 'evento' ? 'evento' : 'curso'} requiere que escribas una carta de motivación explicando por qué deseas participar.
+                  </Typography>
+                </Alert>
+                
+                <TextField
+                  fullWidth
+                  label="Carta de Motivación"
+                  multiline
+                  rows={4}
+                  value={cartaMotivacion}
+                  onChange={(e) => setCartaMotivacion(e.target.value)}
+                  placeholder="Escribe aquí tu motivación para participar en este curso/evento..."
+                  required
+                  disabled={loading}
+                  error={item.requiere_carta_motivacion && !cartaMotivacion.trim()}
+                  helperText={item.requiere_carta_motivacion && !cartaMotivacion.trim() ? "La carta de motivación es obligatoria" : ""}
+                  sx={{ mb: 2 }}
+                />
+              </Box>
+            )}
 
             {error && (
               <Alert severity={error.tipo || 'error'}>
@@ -532,7 +579,12 @@ const ModalInscripcion = ({
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={loading || success || (!item.es_gratuito && (!metodoPago || !comprobantePago))}
+          disabled={
+            loading || 
+            success || 
+            (!item.es_gratuito && (!metodoPago || !comprobantePago)) ||
+            (item.requiere_carta_motivacion && !cartaMotivacion.trim())
+          }
           startIcon={loading ? <CircularProgress size={20} /> : null}
         >
           {loading ? 'Inscribiendo...' : 'Inscribirse'}
