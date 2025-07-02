@@ -1,6 +1,63 @@
-import api from './api';
+import api, { getBaseUrl } from './api';
 
 const CERTIFICATES_BASE_URL = '/certificados';
+
+/**
+ * Visualizar certificado (método mejorado)
+ */
+export const visualizarCertificado = async (tipo, idParticipacion) => {
+  try {
+    console.log('🔍 Solicitando certificado para visualizar:', { tipo, idParticipacion });
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('❌ No hay token de autenticación');
+      throw new Error('No se encontró token de autenticación');
+    }
+    
+    // Primero generar el certificado (siempre, para asegurar que esté actualizado)
+    console.log(`🔄 Generando certificado de ${tipo}...`);
+    if (tipo === 'evento') {
+      await generarCertificadoEventoPorParticipacion(idParticipacion);
+    } else {
+      await generarCertificadoCursoPorParticipacion(idParticipacion);
+    }
+    
+    // Obtener la URL base de manera segura
+    const baseURL = getBaseUrl();
+    
+    // Crear URL para iframe con token incluido
+    const urlCertificado = `${baseURL}/certificados/visualizar-${tipo}/${idParticipacion}?token=${encodeURIComponent(token)}`;
+    
+    console.log('🔗 URL para visualización de certificado:', urlCertificado);
+    
+    // Verificar que la URL sea accesible
+    try {
+      const testResponse = await fetch(urlCertificado, {
+        method: 'HEAD',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!testResponse.ok) {
+        console.error('❌ Error al verificar certificado:', testResponse.status);
+        throw new Error(`Error al verificar certificado: ${testResponse.status}`);
+      }
+      
+      return urlCertificado;
+    } catch (fetchError) {
+      console.error('❌ Error de conexión al verificar certificado:', fetchError);
+      
+      // Si hay un error de conexión, intentamos devolver la URL de todas formas
+      // ya que el certificado ya fue generado previamente
+      return urlCertificado;
+    }
+  } catch (error) {
+    console.error('❌ Error al preparar visualización de certificado:', error);
+    throw error;
+  }
+};
 
 /**
  * Obtener todos los certificados del usuario

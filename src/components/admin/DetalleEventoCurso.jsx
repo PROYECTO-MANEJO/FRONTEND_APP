@@ -51,7 +51,7 @@ import {
   Schedule,
   Category,
   Business,
-
+  ErrorOutline,
   Edit,
   Lock,
   PictureAsPdf,
@@ -62,6 +62,7 @@ import AdminSidebar from './AdminSidebar';
 import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
 import { inscripcionService } from '../../services/inscripcionService';
+import DocumentViewer from '../DocumentViewer';
 
 const DetalleEventoCurso = ({ item, onClose }) => {
   const navigate = useNavigate();
@@ -197,7 +198,10 @@ const DetalleEventoCurso = ({ item, onClose }) => {
         ? `/administracion/evento/inscripcion/${inscripcionId}/rechazar`
         : `/administracion/curso/inscripcion/${inscripcionId}/rechazar`;
       
-      const response = await api.put(endpoint);
+      // Enviar un motivo de rechazo (requerido por el backend)
+      const response = await api.put(endpoint, {
+        motivo: "Comprobante de pago rechazado por administrador"
+      });
       
       if (response.data.success) {
         setSnackbar({
@@ -217,7 +221,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
       console.error('Error al rechazar inscripción:', error);
       setSnackbar({
         open: true,
-        message: 'Error al rechazar la inscripción',
+        message: error.response?.data?.message || 'Error al rechazar la inscripción',
         severity: 'error'
       });
     } finally {
@@ -284,14 +288,17 @@ const DetalleEventoCurso = ({ item, onClose }) => {
     try {
       setComprobanteModal(prev => ({ ...prev, loading: true, open: true, inscripcion }));
       
-      let blob;
+      console.log('🔍 Solicitando comprobante para:', inscripcion.id_inscripcion);
+      
+      let pdfUrl;
       if (item.tipo === 'EVENTO') {
-        blob = await inscripcionService.descargarComprobantePagoEvento(inscripcion.id_inscripcion);
+        pdfUrl = await inscripcionService.visualizarComprobantePagoEvento(inscripcion.id_inscripcion);
       } else {
-        blob = await inscripcionService.descargarComprobantePagoCurso(inscripcion.id_inscripcion);
+        pdfUrl = await inscripcionService.visualizarComprobantePagoCurso(inscripcion.id_inscripcion);
       }
       
-      const pdfUrl = URL.createObjectURL(blob);
+      console.log('✅ URL obtenida:', pdfUrl);
+      
       setComprobanteModal(prev => ({ 
         ...prev, 
         pdfUrl, 
@@ -299,10 +306,10 @@ const DetalleEventoCurso = ({ item, onClose }) => {
       }));
       
     } catch (error) {
-      console.error('Error al cargar comprobante:', error);
+      console.error('❌ Error al cargar comprobante:', error);
       setSnackbar({
         open: true,
-        message: 'Error al cargar el comprobante',
+        message: 'Error al cargar el comprobante. El archivo no está disponible o no es válido.',
         severity: 'error'
       });
       setComprobanteModal({ open: false, inscripcion: null, pdfUrl: null, loading: false });
@@ -310,13 +317,22 @@ const DetalleEventoCurso = ({ item, onClose }) => {
   };
 
   const handleCerrarComprobanteModal = () => {
-    if (comprobanteModal.pdfUrl) {
-      URL.revokeObjectURL(comprobanteModal.pdfUrl);
-    }
     setComprobanteModal({ open: false, inscripcion: null, pdfUrl: null, loading: false });
   };
 
-
+  // Función para aprobar desde el visor de documentos
+  const handleAprobarDesdeVisor = () => {
+    if (comprobanteModal.inscripcion) {
+      handleAprobar(comprobanteModal.inscripcion.id_inscripcion, true);
+    }
+  };
+  
+  // Función para rechazar desde el visor de documentos
+  const handleRechazarDesdeVisor = () => {
+    if (comprobanteModal.inscripcion) {
+      handleRechazar(comprobanteModal.inscripcion.id_inscripcion, true);
+    }
+  };
 
   if (loading) {
     return (
@@ -825,88 +841,13 @@ const DetalleEventoCurso = ({ item, onClose }) => {
     </Dialog>
 
          {/* Modal de comprobante */}
-     <Dialog
+     <DocumentViewer
        open={comprobanteModal.open}
        onClose={handleCerrarComprobanteModal}
-       maxWidth="lg"
-       fullWidth
-       PaperProps={{
-         sx: { height: '90vh' }
-       }}
-     >
-       <DialogTitle>
-         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-             <PictureAsPdf sx={{ mr: 1 }} />
-             Comprobante de Pago
-             {comprobanteModal.inscripcion && (
-               <Typography variant="subtitle2" sx={{ ml: 2, color: 'text.secondary' }}>
-                 - {comprobanteModal.inscripcion.usuario.nombre_completo}
-               </Typography>
-             )}
-           </Box>
-           <IconButton onClick={handleCerrarComprobanteModal} size="small">
-             <Close />
-           </IconButton>
-         </Box>
-       </DialogTitle>
-       <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
-         {comprobanteModal.loading ? (
-           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-             <CircularProgress />
-           </Box>
-         ) : comprobanteModal.pdfUrl ? (
-           <iframe
-             src={comprobanteModal.pdfUrl}
-             style={{ 
-               width: '100%', 
-               height: '100%', 
-               border: 'none',
-               minHeight: '500px'
-             }}
-             title="Comprobante de Pago"
-           />
-         ) : (
-           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-             <Typography color="error">Error al cargar el comprobante</Typography>
-           </Box>
-         )}
-       </DialogContent>
-       <DialogActions sx={{ borderTop: 1, borderColor: 'divider', p: 2 }}>
-         <Button 
-           onClick={handleCerrarComprobanteModal}
-           variant="outlined"
-           startIcon={<Close />}
-         >
-           Cerrar
-         </Button>
-         
-         {/* Botones de acción solo si la inscripción está pendiente */}
-         {comprobanteModal.inscripcion?.estado_pago === 'PENDIENTE' && !itemData.es_gratuito && (
-           <>
-             <Button
-               onClick={() => handleRechazar(comprobanteModal.inscripcion.id_inscripcion, true)}
-               variant="outlined"
-               color="error"
-               startIcon={loadingAction ? <CircularProgress size={16} /> : <Cancel />}
-               disabled={loadingAction}
-               sx={{ mx: 1 }}
-             >
-               {loadingAction ? 'Rechazando...' : 'Rechazar'}
-             </Button>
-             <Button
-               onClick={() => handleAprobar(comprobanteModal.inscripcion.id_inscripcion, true)}
-               variant="contained"
-               color="success"
-               startIcon={loadingAction ? <CircularProgress size={16} /> : <CheckCircle />}
-               disabled={loadingAction}
-             >
-               {loadingAction ? 'Aprobando...' : 'Aprobar'}
-             </Button>
-           </>
-         )}
-       </DialogActions>
-     </Dialog>
+       pdfUrl={comprobanteModal.pdfUrl}
+       onApprove={comprobanteModal.inscripcion?.estado_pago === 'PENDIENTE' ? handleAprobarDesdeVisor : null}
+       onReject={comprobanteModal.inscripcion?.estado_pago === 'PENDIENTE' ? handleRechazarDesdeVisor : null}
+     />
   </Box>
   </Box>
 );

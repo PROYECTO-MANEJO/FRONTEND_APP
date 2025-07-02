@@ -55,45 +55,105 @@ const ModalInscripcion = ({
     { value: 'DEPOSITO', label: 'Depósito Bancario' }
   ];
 
-  // Función para validar archivo PDF
-  const validarArchivo = (file) => {
-    if (!file) return { valido: false, error: 'No se ha seleccionado archivo' };
-    
-    if (file.type !== 'application/pdf') {
-      return { valido: false, error: 'Solo se permiten archivos PDF' };
-    }
-    
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return { valido: false, error: 'El archivo no puede superar los 10MB' };
-    }
-    
-    return { valido: true };
-  };
-
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
-    const validacion = validarArchivo(file);
     
-    if (validacion.valido) {
-      setComprobantePago(file);
-      setError(null);
-      console.log('✅ Archivo seleccionado:', {
-        nombre: file.name,
-        tipo: file.type,
-        tamaño: file.size,
-        esArchivo: file instanceof File
+    // Si no hay archivo seleccionado, salir
+    if (!file) {
+      setError({
+        tipo: 'warning',
+        titulo: 'No se seleccionó archivo',
+        mensaje: 'Por favor seleccione un archivo PDF para continuar'
       });
-    } else {
+      return;
+    }
+    
+    console.log('🔍 Archivo seleccionado:', {
+      nombre: file.name,
+      tipo: file.type,
+      tamaño: file.size,
+      fecha: file.lastModified
+    });
+    
+    // Validar que sea un PDF
+    if (file.type !== 'application/pdf') {
       setError({
         tipo: 'error',
-        titulo: 'Archivo no válido',
-        mensaje: validacion.error
+        titulo: 'Formato incorrecto',
+        mensaje: 'Solo se permiten archivos en formato PDF'
       });
       setComprobantePago(null);
       // Limpiar input
       event.target.value = '';
+      return;
     }
+    
+    // Validar tamaño máximo (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError({
+        tipo: 'error',
+        titulo: 'Archivo demasiado grande',
+        mensaje: 'El archivo no puede superar los 10MB'
+      });
+      setComprobantePago(null);
+      // Limpiar input
+      event.target.value = '';
+      return;
+    }
+    
+    // Validar que el archivo no esté corrupto
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        // Verificar la firma del PDF (%PDF-)
+        const arr = new Uint8Array(e.target.result).subarray(0, 5);
+        const header = String.fromCharCode.apply(null, arr);
+        
+        if (header.indexOf('%PDF') !== 0) {
+          setError({
+            tipo: 'error',
+            titulo: 'Archivo PDF inválido',
+            mensaje: 'El archivo parece estar corrupto o no es un PDF válido'
+          });
+          setComprobantePago(null);
+          // Limpiar input
+          event.target.value = '';
+          return;
+        }
+        
+        // Si pasa todas las validaciones, guardar el archivo
+        setComprobantePago(file);
+        setError(null);
+        console.log('✅ Archivo PDF válido:', file.name);
+      } catch (err) {
+        console.error('❌ Error al validar PDF:', err);
+        setError({
+          tipo: 'error',
+          titulo: 'Error al procesar el archivo',
+          mensaje: 'No se pudo validar el archivo PDF. Intente con otro archivo.'
+        });
+        setComprobantePago(null);
+        // Limpiar input
+        event.target.value = '';
+      }
+    };
+    
+    reader.onerror = () => {
+      console.error('❌ Error al leer el archivo');
+      setError({
+        tipo: 'error',
+        titulo: 'Error al leer el archivo',
+        mensaje: 'No se pudo leer el archivo seleccionado. Intente con otro archivo.'
+      });
+      setComprobantePago(null);
+      // Limpiar input
+      event.target.value = '';
+    };
+    
+    // Leer solo los primeros bytes para verificar la firma del PDF
+    reader.readAsArrayBuffer(file.slice(0, 5));
   };
 
   const removeFile = () => {
@@ -138,10 +198,15 @@ const ModalInscripcion = ({
           throw new Error('Debe adjuntar el comprobante de pago en PDF');
         }
         
-        // Validar archivo una vez más
-        const validacion = validarArchivo(comprobantePago);
-        if (!validacion.valido) {
-          throw new Error(validacion.error);
+        // Validar que el archivo sea un PDF
+        if (comprobantePago.type !== 'application/pdf') {
+          throw new Error('El archivo debe ser un PDF válido');
+        }
+        
+        // Validar tamaño máximo (10MB)
+        const maxSize = 10 * 1024 * 1024;
+        if (comprobantePago.size > maxSize) {
+          throw new Error('El archivo no puede superar los 10MB');
         }
       }
 
