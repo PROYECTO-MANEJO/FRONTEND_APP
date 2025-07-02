@@ -123,11 +123,15 @@ export const obtenerTodasLasInscripciones = async () => {
     // Obtener inscripciones a cursos
     const inscripcionesCursos = await api.get('/inscripcionesCursos/curso/mis-inscripciones');
     
+    // Debug: Mostrar datos recibidos
+    console.log('DEBUG - Datos de eventos recibidos:', inscripcionesEventos.data.data);
+    console.log('DEBUG - Datos de cursos recibidos:', inscripcionesCursos.data.data);
+    
     // Formatear eventos
     const eventos = inscripcionesEventos.data.data.map(inscripcion => ({
       id_ins: inscripcion.id_ins,
       evento: inscripcion.evento?.nom_eve || 'Sin nombre',
-      estado_evento: inscripcion.evento?.estado_eve || 'ACTIVO',
+      estado_evento: inscripcion.evento?.estado || 'ACTIVO',
       fecha_inscripcion: inscripcion.fec_ins,
       metodo_pago: inscripcion.met_pag_ins,
       estado_pago: inscripcion.estado_pago,
@@ -141,7 +145,7 @@ export const obtenerTodasLasInscripciones = async () => {
     const cursos = inscripcionesCursos.data.data.map(inscripcion => ({
       id_ins_cur: inscripcion.id_ins_cur,
       curso: inscripcion.curso?.nom_cur || 'Sin nombre',
-      estado_curso: inscripcion.curso?.estado_cur || 'ACTIVO',
+      estado_curso: inscripcion.curso?.estado || 'ACTIVO',
       fecha_inscripcion: inscripcion.fec_ins_cur,
       metodo_pago: inscripcion.met_pag_ins_cur,
       estado_pago: inscripcion.estado_pago_cur,
@@ -150,6 +154,10 @@ export const obtenerTodasLasInscripciones = async () => {
       precio: inscripcion.curso?.precio,
       tipo: 'curso'
     }));
+    
+    // Debug: Mostrar datos mapeados
+    console.log('DEBUG - Eventos mapeados:', eventos);
+    console.log('DEBUG - Cursos mapeados:', cursos);
     
     return {
       success: true,
