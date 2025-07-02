@@ -97,6 +97,32 @@ export const generarCertificadoCurso = async (idCurso, idInscripcion) => {
     console.error('Error al generar certificado de curso:', error);
     throw error;
   }
+};
+
+/**
+ * Generar certificado de curso usando solo ID de participación
+ */
+export const generarCertificadoCursoPorParticipacion = async (idParticipacion) => {
+  try {
+    const response = await api.post(`${CERTIFICATES_BASE_URL}/generar-curso/${idParticipacion}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al generar certificado de curso por participación:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generar certificado de evento usando solo ID de participación
+ */
+export const generarCertificadoEventoPorParticipacion = async (idParticipacion) => {
+  try {
+    const response = await api.post(`${CERTIFICATES_BASE_URL}/generar-evento/${idParticipacion}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al generar certificado de evento por participación:', error);
+    throw error;
+  }
 }; 
 
 /**

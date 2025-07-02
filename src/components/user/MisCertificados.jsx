@@ -31,7 +31,8 @@ import {
 import { 
   obtenerParticipacionesTerminadas, 
   descargarCertificado,
-  obtenerTodasLasInscripciones
+  obtenerTodasLasInscripciones,
+  generarCertificadoEventoPorParticipacion
 } from '../../services/certificadoService';
 
 const MisCertificados = () => {
@@ -43,6 +44,8 @@ const MisCertificados = () => {
   const [downloading, setDownloading] = useState(null);
   const [detalleDialogOpen, setDetalleDialogOpen] = useState(false);
   const [itemSeleccionado, setItemSeleccionado] = useState(null);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
 
   useEffect(() => {
     cargarParticipaciones();
@@ -68,15 +71,74 @@ const MisCertificados = () => {
     }
   };
 
-  const handleDescargarCertificado = async (tipo, idParticipacion) => {
+  const handleVisualizarCertificado = async (tipo, idParticipacion, item) => {
     try {
       setDownloading(idParticipacion);
-      await descargarCertificado(tipo, idParticipacion);
+      
+      // Debug: Ver qué datos tenemos
+      console.log('Datos del item para certificado:', item);
+      
+      if (tipo === 'curso') {
+        // Para cursos, primero probar conectividad, luego generar PDF
+        const token = localStorage.getItem('token');
+        
+        console.log('🔍 Visualizando certificado curso con ID:', idParticipacion);
+        console.log('🔑 Token disponible:', token ? 'Sí' : 'No');
+        
+        // Verificar que tenemos token
+        if (!token) {
+          setError('No se encontró token de autenticación');
+          return;
+        }
+        
+                 try {
+           // Primero probar conectividad con endpoint de prueba
+           const testUrl = `http://localhost:3000/api/certificados/test/${idParticipacion}?token=${encodeURIComponent(token)}`;
+           console.log('🧪 Probando conectividad con:', testUrl);
+           
+           const testResponse = await fetch(testUrl);
+           console.log('📡 Respuesta de prueba:', testResponse.status, testResponse.statusText);
+           
+           if (testResponse.ok) {
+             const testData = await testResponse.json();
+             console.log('✅ Conectividad OK:', testData);
+             
+             // Si la conectividad funciona, usar la URL del PDF
+             const pdfUrl = `http://localhost:3000/api/certificados/visualizar-curso/${idParticipacion}?token=${encodeURIComponent(token)}`;
+             console.log('📄 URL del PDF:', pdfUrl);
+             
+             setPdfUrl(pdfUrl);
+             setPdfModalOpen(true);
+           } else {
+             console.error('❌ Error de conectividad:', testResponse.status);
+             setError(`Error de conectividad: ${testResponse.status} ${testResponse.statusText}`);
+           }
+         } catch (connectError) {
+           console.error('❌ Error de conexión:', connectError);
+           setError(`Error de conexión: ${connectError.message}`);
+         }
+        
+      } else if (tipo === 'evento') {
+        console.log('Generando certificado evento con ID:', idParticipacion);
+        await generarCertificadoEventoPorParticipacion(idParticipacion);
+        
+        // Luego descargar el certificado (por ahora mantenemos descarga para eventos)
+        await descargarCertificado(tipo, idParticipacion);
+        
+        // Recargar participaciones para actualizar el estado
+        await cargarParticipaciones();
+      }
+      
     } catch (err) {
-      setError(err.message || 'Error al descargar certificado');
+      setError(err.message || 'Error al generar/visualizar certificado');
     } finally {
       setDownloading(null);
     }
+  };
+
+  const handleCerrarPdfModal = () => {
+    setPdfModalOpen(false);
+    setPdfUrl(null);
   };
 
   const handleVerDetalles = (item) => {
@@ -238,10 +300,10 @@ const MisCertificados = () => {
             </Typography>
           )}
 
-          {esTerminada && esAprobado && tieneCertificado && (
+          {esTerminada && esAprobado && (
             <>
               <Typography variant="body2" color="success.main" mt={1}>
-                Certificado PDF disponible
+                {tieneCertificado ? 'Certificado PDF disponible' : 'Certificado puede generarse'}
               </Typography>
               <Button
                 variant="contained"
@@ -254,9 +316,10 @@ const MisCertificados = () => {
                     : <DownloadIcon />
                 }
                 onClick={() =>
-                  handleDescargarCertificado(
+                  handleVisualizarCertificado(
                     tipo,
-                    tipo === 'evento' ? item.id_par : item.id_par_cur
+                    tipo === 'evento' ? item.id_par : item.id_par_cur,
+                    item
                   )
                 }
                 disabled={
@@ -267,7 +330,7 @@ const MisCertificados = () => {
                 {downloading === item.id_par ||
                 downloading === item.id_par_cur
                   ? 'Descargando...'
-                  : 'Descargar certificado'}
+                  : tieneCertificado ? 'Descargar certificado' : 'Generar certificado'}
               </Button>
             </>
           )}
@@ -436,9 +499,10 @@ const MisCertificados = () => {
               color="success" 
               variant="contained"
               onClick={() =>
-                handleDescargarCertificado(
+                handleVisualizarCertificado(
                   tipo,
-                  tipo === 'evento' ? itemSeleccionado.id_par : itemSeleccionado.id_par_cur
+                  tipo === 'evento' ? itemSeleccionado.id_par : itemSeleccionado.id_par_cur,
+                  itemSeleccionado
                 )
               }
               disabled={downloading === itemSeleccionado.id_par || downloading === itemSeleccionado.id_par_cur}
@@ -532,6 +596,39 @@ const MisCertificados = () => {
 
       {/* Diálogo de detalles */}
       <DetalleDialog />
+
+      {/* Modal para visualizar PDF */}
+      <Dialog 
+        open={pdfModalOpen} 
+        onClose={handleCerrarPdfModal}
+        fullWidth
+        maxWidth="lg"
+        fullScreen
+      >
+        <DialogTitle>
+          Certificado de Curso
+          <Button 
+            onClick={handleCerrarPdfModal}
+            sx={{ float: 'right' }}
+            variant="outlined"
+          >
+            Cerrar
+          </Button>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, height: '100%' }}>
+          {pdfUrl && (
+            <iframe
+              src={pdfUrl}
+              style={{
+                width: '100%',
+                height: 'calc(100vh - 120px)',
+                border: 'none'
+              }}
+              title="Certificado PDF"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {error && (
         <Alert severity="error" sx={{ mt: 4 }}>
