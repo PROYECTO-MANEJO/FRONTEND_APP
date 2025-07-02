@@ -26,6 +26,7 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import paginaPrincipalService from '../services/paginaPrincipalService';
 import utaImage from '../assets/images/uta1.jpg';
+import CarreraEventosCursos from './CarreraEventosCursos';
 
 const AuthenticatedHomePage = () => {
   const theme = useTheme();
@@ -540,6 +541,9 @@ const AuthenticatedHomePage = () => {
           />
         </Container>
       </Box>
+
+      {/* Eventos y Cursos filtrados por carrera */}
+      <CarreraEventosCursos />
 
       {/* Content Sections */}
       <Container maxWidth="lg" sx={{ py: 8 }}>

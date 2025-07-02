@@ -113,7 +113,7 @@ const GestionAsistenciaEvento = () => {
   };
 
   const calcularAprobacion = (asistencia) => {
-    const asistenciaMinima = evento?.porcentajeAsistenciaAprobacion || 80;
+    const asistenciaMinima = evento?.porcentaje_asistencia_aprobacion || 80;
     return asistencia >= asistenciaMinima;
   };
 
@@ -201,7 +201,7 @@ const GestionAsistenciaEvento = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body1" sx={{ color: '#1976d2', fontSize: '1rem' }}>
-                    👥 Asistencia mínima: <strong>{evento.porcentajeAsistenciaAprobacion || 80}%</strong>
+                    👥 Asistencia mínima requerida: <strong>{evento.porcentaje_asistencia_aprobacion || 80}%</strong>
                   </Typography>
                 </Grid>
               </Grid>

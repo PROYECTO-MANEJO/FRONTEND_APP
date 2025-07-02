@@ -1,6 +1,63 @@
-import api from './api';
+import api, { getBaseUrl } from './api';
 
 const CERTIFICATES_BASE_URL = '/certificados';
+
+/**
+ * Visualizar certificado (método mejorado)
+ */
+export const visualizarCertificado = async (tipo, idParticipacion) => {
+  try {
+    console.log('🔍 Solicitando certificado para visualizar:', { tipo, idParticipacion });
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('❌ No hay token de autenticación');
+      throw new Error('No se encontró token de autenticación');
+    }
+    
+    // Primero generar el certificado (siempre, para asegurar que esté actualizado)
+    console.log(`🔄 Generando certificado de ${tipo}...`);
+    if (tipo === 'evento') {
+      await generarCertificadoEventoPorParticipacion(idParticipacion);
+    } else {
+      await generarCertificadoCursoPorParticipacion(idParticipacion);
+    }
+    
+    // Obtener la URL base de manera segura
+    const baseURL = getBaseUrl();
+    
+    // Crear URL para iframe con token incluido
+    const urlCertificado = `${baseURL}/certificados/visualizar-${tipo}/${idParticipacion}?token=${encodeURIComponent(token)}`;
+    
+    console.log('🔗 URL para visualización de certificado:', urlCertificado);
+    
+    // Verificar que la URL sea accesible
+    try {
+      const testResponse = await fetch(urlCertificado, {
+        method: 'HEAD',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!testResponse.ok) {
+        console.error('❌ Error al verificar certificado:', testResponse.status);
+        throw new Error(`Error al verificar certificado: ${testResponse.status}`);
+      }
+      
+      return urlCertificado;
+    } catch (fetchError) {
+      console.error('❌ Error de conexión al verificar certificado:', fetchError);
+      
+      // Si hay un error de conexión, intentamos devolver la URL de todas formas
+      // ya que el certificado ya fue generado previamente
+      return urlCertificado;
+    }
+  } catch (error) {
+    console.error('❌ Error al preparar visualización de certificado:', error);
+    throw error;
+  }
+};
 
 /**
  * Obtener todos los certificados del usuario
@@ -97,14 +154,103 @@ export const generarCertificadoCurso = async (idCurso, idInscripcion) => {
     console.error('Error al generar certificado de curso:', error);
     throw error;
   }
+};
+
+/**
+ * Generar certificado de curso usando solo ID de participación
+ */
+export const generarCertificadoCursoPorParticipacion = async (idParticipacion) => {
+  try {
+    const response = await api.post(`${CERTIFICATES_BASE_URL}/generar-curso/${idParticipacion}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al generar certificado de curso por participación:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generar certificado de evento usando solo ID de participación
+ */
+export const generarCertificadoEventoPorParticipacion = async (idParticipacion) => {
+  try {
+    const response = await api.post(`${CERTIFICATES_BASE_URL}/generar-evento/${idParticipacion}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al generar certificado de evento por participación:', error);
+    throw error;
+  }
 }; 
 
+/**
+ * Obtener participaciones completas (solo las que tienen registro de participación)
+ */
 export const obtenerParticipacionesCompletas = async () => {
   try {
     const response = await api.get(`${CERTIFICATES_BASE_URL}/mis-certificados/participaciones-completas`);
     return response.data;
   } catch (error) {
     console.error('Error al obtener participaciones completas:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener TODAS las inscripciones del usuario (incluyendo las que no tienen participación)
+ */
+export const obtenerTodasLasInscripciones = async () => {
+  try {
+    // Obtener inscripciones a eventos
+    const inscripcionesEventos = await api.get('/inscripciones/evento/mis-inscripciones');
+    
+    // Obtener inscripciones a cursos
+    const inscripcionesCursos = await api.get('/inscripcionesCursos/curso/mis-inscripciones');
+    
+    // Debug: Mostrar datos recibidos
+    console.log('DEBUG - Datos de eventos recibidos:', inscripcionesEventos.data.data);
+    console.log('DEBUG - Datos de cursos recibidos:', inscripcionesCursos.data.data);
+    
+    // Formatear eventos
+    const eventos = inscripcionesEventos.data.data.map(inscripcion => ({
+      id_ins: inscripcion.id_ins,
+      evento: inscripcion.evento?.nom_eve || 'Sin nombre',
+      estado_evento: inscripcion.evento?.estado || 'ACTIVO',
+      fecha_inscripcion: inscripcion.fec_ins,
+      metodo_pago: inscripcion.met_pag_ins,
+      estado_pago: inscripcion.estado_pago,
+      usuario: `${inscripcion.usuario?.nom_usu1 || ''} ${inscripcion.usuario?.ape_usu1 || ''}`.trim(),
+      es_gratuito: inscripcion.evento?.es_gratuito,
+      precio: inscripcion.evento?.precio,
+      tipo: 'evento'
+    }));
+    
+    // Formatear cursos
+    const cursos = inscripcionesCursos.data.data.map(inscripcion => ({
+      id_ins_cur: inscripcion.id_ins_cur,
+      curso: inscripcion.curso?.nom_cur || 'Sin nombre',
+      estado_curso: inscripcion.curso?.estado || 'ACTIVO',
+      fecha_inscripcion: inscripcion.fec_ins_cur,
+      metodo_pago: inscripcion.met_pag_ins_cur,
+      estado_pago: inscripcion.estado_pago_cur,
+      usuario: `${inscripcion.usuario?.nom_usu1 || ''} ${inscripcion.usuario?.ape_usu1 || ''}`.trim(),
+      es_gratuito: inscripcion.curso?.es_gratuito,
+      precio: inscripcion.curso?.precio,
+      tipo: 'curso'
+    }));
+    
+    // Debug: Mostrar datos mapeados
+    console.log('DEBUG - Eventos mapeados:', eventos);
+    console.log('DEBUG - Cursos mapeados:', cursos);
+    
+    return {
+      success: true,
+      data: {
+        eventos,
+        cursos
+      }
+    };
+  } catch (error) {
+    console.error('Error al obtener todas las inscripciones:', error);
     throw error;
   }
 };

@@ -11,13 +11,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  TextField,
   Alert,
   CircularProgress,
   Divider,
   Chip,
   Card,
-  IconButton
+  CardContent,
+  IconButton,
+  LinearProgress
 } from '@mui/material';
 import { 
   Close,
@@ -27,100 +28,11 @@ import {
   CheckCircle,
   UploadFile,
   Description,
-  Delete
+  Delete,
+  CloudUpload
 } from '@mui/icons-material';
 import { inscripcionService } from '../../services/inscripcionService';
 import { useAuth } from '../../context/AuthContext';
-
-// Función para mejorar los mensajes de error
-const mejorarMensajeError = (errorMessage) => {
-  const mensajesEspecificos = {
-    'Solo puedes inscribirte en eventos públicos': {
-      titulo: '🚫 Acceso Restringido',
-      mensaje: 'Como usuario externo, solo puedes inscribirte en eventos abiertos al público general. Este evento es exclusivo para estudiantes de carreras específicas.',
-      tipo: 'warning'
-    },
-    'No tienes una carrera asignada. Contacta al administrador.': {
-      titulo: '⚠️ Carrera No Asignada',
-      mensaje: 'Para inscribirte en este evento necesitas tener una carrera asignada en tu perfil. Por favor, contacta al administrador para que complete tu información académica.',
-      tipo: 'warning'
-    },
-    'Este evento no está habilitado para tu carrera': {
-      titulo: '📚 Carrera No Habilitada',
-      mensaje: 'Este evento está dirigido específicamente a estudiantes de ciertas carreras y la tuya no está incluida. Puedes buscar otros eventos disponibles para tu carrera.',
-      tipo: 'warning'
-    },
-    'Ya estás inscrito en este evento': {
-      titulo: '✅ Ya Inscrito',
-      mensaje: 'Ya te encuentras inscrito en este evento. Puedes revisar el estado de tu inscripción en tu perfil o contactar al organizador si tienes dudas.',
-      tipo: 'info'
-    },
-    'Faltan campos obligatorios': {
-      titulo: '📝 Información Incompleta',
-      mensaje: 'Por favor, completa todos los campos obligatorios del formulario de inscripción, especialmente el método de pago.',
-      tipo: 'error'
-    },
-    'Método de pago no válido': {
-      titulo: '💳 Método de Pago Inválido',
-      mensaje: 'El método de pago seleccionado no es válido. Por favor, selecciona una opción válida: Tarjeta de Crédito, Transferencia Bancaria o Depósito.',
-      tipo: 'error'
-    },
-    'Evento no encontrado': {
-      titulo: '❌ Evento No Encontrado',
-      mensaje: 'El evento al que intentas inscribirte no existe o ha sido eliminado. Por favor, actualiza la página e intenta nuevamente.',
-      tipo: 'error'
-    },
-    'Cuenta no encontrada': {
-      titulo: '👤 Usuario No Encontrado',
-      mensaje: 'No se pudo encontrar tu información de usuario. Por favor, cierra sesión e inicia sesión nuevamente.',
-      tipo: 'error'
-    },
-    'Solo puedes inscribirte en cursos públicos': {
-      titulo: '🚫 Acceso Restringido',
-      mensaje: 'Como usuario externo, solo puedes inscribirte en cursos abiertos al público general. Este curso es exclusivo para estudiantes de carreras específicas.',
-      tipo: 'warning'
-    },
-    'Debes tener tus documentos verificados por un administrador antes de poder inscribirte': {
-      titulo: '📄 Documentos No Verificados',
-      mensaje: 'Para inscribirte en cualquier evento o curso, necesitas tener tus documentos (cédula y matrícula si eres estudiante) verificados por un administrador. Ve a tu perfil para subirlos.',
-      tipo: 'warning'
-    },
-    'Debes subir todos los documentos requeridos': {
-      titulo: '📤 Documentos Incompletos',
-      mensaje: 'Antes de inscribirte, debes subir todos los documentos requeridos (cédula y matrícula si eres estudiante) en tu perfil.',
-      tipo: 'warning'
-    },
-    'Este curso no está habilitado para tu carrera': {
-      titulo: '📚 Carrera No Habilitada',
-      mensaje: 'Este curso está dirigido específicamente a estudiantes de ciertas carreras y la tuya no está incluida. Puedes buscar otros cursos disponibles para tu carrera.',
-      tipo: 'warning'
-    },
-    'Ya estás inscrito en este curso': {
-      titulo: '✅ Ya Inscrito',
-      mensaje: 'Ya te encuentras inscrito en este curso. Puedes revisar el estado de tu inscripción en tu perfil o contactar al organizador si tienes dudas.',
-      tipo: 'info'
-    },
-    'Curso no encontrado': {
-      titulo: '❌ Curso No Encontrado',
-      mensaje: 'El curso al que intentas inscribirte no existe o ha sido eliminado. Por favor, actualiza la página e intenta nuevamente.',
-      tipo: 'error'
-    }
-  };
-
-  // Buscar mensaje específico
-  for (const [clave, info] of Object.entries(mensajesEspecificos)) {
-    if (errorMessage.includes(clave)) {
-      return info;
-    }
-  }
-
-  // Mensaje genérico mejorado
-  return {
-    titulo: '⚠️ Error en la Inscripción',
-    mensaje: `Ha ocurrido un problema: ${errorMessage}. Si el problema persiste, por favor contacta al soporte técnico.`,
-    tipo: 'error'
-  };
-};
 
 const ModalInscripcion = ({ 
   open, 
@@ -145,20 +57,108 @@ const ModalInscripcion = ({
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      setComprobantePago(file);
-      setError(null);
-    } else {
+    
+    // Si no hay archivo seleccionado, salir
+    if (!file) {
+      setError({
+        tipo: 'warning',
+        titulo: 'No se seleccionó archivo',
+        mensaje: 'Por favor seleccione un archivo PDF para continuar'
+      });
+      return;
+    }
+    
+    console.log('🔍 Archivo seleccionado:', {
+      nombre: file.name,
+      tipo: file.type,
+      tamaño: file.size,
+      fecha: file.lastModified
+    });
+    
+    // Validar que sea un PDF
+    if (file.type !== 'application/pdf') {
       setError({
         tipo: 'error',
-        titulo: 'Archivo no válido',
-        mensaje: 'Solo se permiten archivos PDF para el comprobante de pago'
+        titulo: 'Formato incorrecto',
+        mensaje: 'Solo se permiten archivos en formato PDF'
       });
+      setComprobantePago(null);
+      // Limpiar input
+      event.target.value = '';
+      return;
     }
+    
+    // Validar tamaño máximo (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError({
+        tipo: 'error',
+        titulo: 'Archivo demasiado grande',
+        mensaje: 'El archivo no puede superar los 10MB'
+      });
+      setComprobantePago(null);
+      // Limpiar input
+      event.target.value = '';
+      return;
+    }
+    
+    // Validar que el archivo no esté corrupto
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        // Verificar la firma del PDF (%PDF-)
+        const arr = new Uint8Array(e.target.result).subarray(0, 5);
+        const header = String.fromCharCode.apply(null, arr);
+        
+        if (header.indexOf('%PDF') !== 0) {
+          setError({
+            tipo: 'error',
+            titulo: 'Archivo PDF inválido',
+            mensaje: 'El archivo parece estar corrupto o no es un PDF válido'
+          });
+          setComprobantePago(null);
+          // Limpiar input
+          event.target.value = '';
+          return;
+        }
+        
+        // Si pasa todas las validaciones, guardar el archivo
+        setComprobantePago(file);
+        setError(null);
+        console.log('✅ Archivo PDF válido:', file.name);
+      } catch (err) {
+        console.error('❌ Error al validar PDF:', err);
+        setError({
+          tipo: 'error',
+          titulo: 'Error al procesar el archivo',
+          mensaje: 'No se pudo validar el archivo PDF. Intente con otro archivo.'
+        });
+        setComprobantePago(null);
+        // Limpiar input
+        event.target.value = '';
+      }
+    };
+    
+    reader.onerror = () => {
+      console.error('❌ Error al leer el archivo');
+      setError({
+        tipo: 'error',
+        titulo: 'Error al leer el archivo',
+        mensaje: 'No se pudo leer el archivo seleccionado. Intente con otro archivo.'
+      });
+      setComprobantePago(null);
+      // Limpiar input
+      event.target.value = '';
+    };
+    
+    // Leer solo los primeros bytes para verificar la firma del PDF
+    reader.readAsArrayBuffer(file.slice(0, 5));
   };
 
   const removeFile = () => {
     setComprobantePago(null);
+    setError(null);
     // Limpiar input
     const input = document.getElementById('comprobante_input');
     if (input) input.value = '';
@@ -173,46 +173,89 @@ const ModalInscripcion = ({
   };
 
   const handleSubmit = async () => {
-    // Verificar si es contenido pagado y faltan campos de pago
-    const esGratuito = item.es_gratuito;
-    if (!esGratuito && (!metodoPago || !comprobantePago)) {
-      setError(mejorarMensajeError('Faltan campos obligatorios'));
-      return;
-    }
-
-    // Verificar que tengamos el ID del usuario
-    const userId = user?.id_usu;
-    if (!userId) {
-      setError(mejorarMensajeError('Cuenta no encontrada'));
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
     try {
-      // Crear FormData para enviar archivo
-      const formData = new FormData();
-      formData.append('idUsuario', userId);
+      const esGratuito = item.es_gratuito;
+      const userId = user?.id_usu;
 
+      console.log('🚀 Iniciando inscripción:', {
+        esGratuito,
+        metodoPago,
+        tieneArchivo: !!comprobantePago,
+        userId,
+        tipo
+      });
+
+      // Validaciones básicas
+      if (!userId) {
+        throw new Error('No se pudo obtener la información del usuario');
+      }
+
+      if (!esGratuito) {
+        if (!metodoPago) {
+          throw new Error('Debe seleccionar un método de pago');
+        }
+        if (!comprobantePago) {
+          throw new Error('Debe adjuntar el comprobante de pago en PDF');
+        }
+        
+        // Validar que el archivo sea un PDF
+        if (comprobantePago.type !== 'application/pdf') {
+          throw new Error('El archivo debe ser un PDF válido');
+        }
+        
+        // Validar tamaño máximo (10MB)
+        const maxSize = 10 * 1024 * 1024;
+        if (comprobantePago.size > maxSize) {
+          throw new Error('El archivo no puede superar los 10MB');
+        }
+      }
+
+      setLoading(true);
+      setError(null);
+
+      // Crear FormData correctamente
+      const formData = new FormData();
+      
+      // Agregar datos básicos
+      formData.append('idUsuario', userId);
+      
       if (tipo === 'evento') {
         formData.append('idEvento', item.id_eve);
       } else {
         formData.append('idCurso', item.id_cur);
       }
 
-      // Solo agregar información de pago si no es gratuito
+      // Solo agregar datos de pago si no es gratuito
       if (!esGratuito) {
         formData.append('metodoPago', metodoPago);
-        formData.append('comprobante_pago', comprobantePago);
+        formData.append('comprobante_pago', comprobantePago, comprobantePago.name);
+        
+        console.log('📎 Archivo agregado al FormData:', {
+          nombre: comprobantePago.name,
+          tipo: comprobantePago.type,
+          tamaño: comprobantePago.size
+        });
       }
 
+      // Debug: Mostrar contenido del FormData
+      console.log('📦 FormData preparado:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: [FILE] ${value.name} (${value.type}, ${formatFileSize(value.size)})`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
+      }
+
+      // Enviar la solicitud
+      let response;
       if (tipo === 'evento') {
-        await inscripcionService.inscribirseEventoConArchivo(formData);
+        response = await inscripcionService.inscribirseEventoConArchivo(formData);
       } else {
-        await inscripcionService.inscribirseCursoConArchivo(formData);
+        response = await inscripcionService.inscribirseCursoConArchivo(formData);
       }
 
+      console.log('✅ Inscripción exitosa:', response);
       setSuccess(true);
       
       // Notificar éxito al componente padre
@@ -227,8 +270,21 @@ const ModalInscripcion = ({
       }, 2000);
 
     } catch (error) {
-      const errorMessage = error.message || 'Error al procesar la inscripción';
-      setError(mejorarMensajeError(errorMessage));
+      console.error('❌ Error en inscripción:', error);
+      
+      let mensajeError = 'Error al procesar la inscripción';
+      
+      if (error.response?.data?.message) {
+        mensajeError = error.response.data.message;
+      } else if (error.message) {
+        mensajeError = error.message;
+      }
+      
+      setError({
+        tipo: 'error',
+        titulo: 'Error en la inscripción',
+        mensaje: mensajeError
+      });
     } finally {
       setLoading(false);
     }
@@ -296,46 +352,46 @@ const ModalInscripcion = ({
             </Typography>
             <Typography variant="body1" color="text.secondary">
               Tu inscripción ha sido procesada correctamente. 
-              Recibirás una confirmación por email.
+              {item.es_gratuito ? 'Estás inscrito inmediatamente.' : 'Quedará pendiente hasta que se verifique el pago.'}
             </Typography>
           </Box>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {/* Información del evento/curso */}
-            <Box>
-              <Typography variant="h6" color="primary" gutterBottom>
-                {titulo}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {descripcion}
-              </Typography>
-              
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1 }}>
-                <Typography variant="body2">
-                  <strong>Fecha de inicio:</strong> {new Date(fechaInicio).toLocaleDateString()}
+            <Card variant="outlined" sx={{ bgcolor: 'grey.50' }}>
+              <CardContent>
+                <Typography variant="h6" color="primary" gutterBottom>
+                  {titulo}
                 </Typography>
-                <Typography variant="body2">
-                  <strong>Duración:</strong> {duracion} horas
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {descripcion}
                 </Typography>
-              </Box>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2">
-                  <strong>Costo:</strong> {item.es_gratuito ? 'Gratuito' : `$${item.precio} USD`}
-                </Typography>
-                <Chip 
-                  label={item.es_gratuito ? 'GRATIS' : 'PAGADO'} 
-                  size="small"
-                  color={item.es_gratuito ? 'success' : 'warning'}
-                  variant="outlined"
-                />
-              </Box>
-            </Box>
-
-            <Divider />
+                
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1 }}>
+                  <Typography variant="body2">
+                    <strong>Fecha:</strong> {new Date(fechaInicio).toLocaleDateString('es-ES')}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Duración:</strong> {duracion}
+                  </Typography>
+                </Box>
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2">
+                    <strong>Costo:</strong> {item.es_gratuito ? 'Gratuito' : `$${item.precio} USD`}
+                  </Typography>
+                  <Chip 
+                    label={item.es_gratuito ? 'GRATIS' : 'PAGADO'} 
+                    size="small"
+                    color={item.es_gratuito ? 'success' : 'warning'}
+                    variant="outlined"
+                  />
+                </Box>
+              </CardContent>
+            </Card>
 
             {error && (
-              <Alert severity={error.tipo || 'error'} sx={{ mb: 2 }}>
+              <Alert severity={error.tipo || 'error'}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
                   {error.titulo}
                 </Typography>
@@ -348,17 +404,15 @@ const ModalInscripcion = ({
             {/* Formulario de inscripción */}
             {item.es_gratuito ? (
               /* Contenido gratuito */
-              <Box>
-                <Alert severity="success" sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    🎉 ¡{esEvento ? 'Evento' : 'Curso'} Gratuito!
-                  </Typography>
-                  <Typography variant="body2">
-                    Este {esEvento ? 'evento' : 'curso'} es completamente gratuito. 
-                    Tu inscripción será procesada automáticamente y recibirás una confirmación inmediata.
-                  </Typography>
-                </Alert>
-              </Box>
+              <Alert severity="success">
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  🎉 ¡{esEvento ? 'Evento' : 'Curso'} Gratuito!
+                </Typography>
+                <Typography variant="body2">
+                  Este {esEvento ? 'evento' : 'curso'} es completamente gratuito. 
+                  Tu inscripción será procesada automáticamente.
+                </Typography>
+              </Alert>
             ) : (
               /* Contenido pagado */
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -367,10 +421,10 @@ const ModalInscripcion = ({
                   Información de Pago
                 </Typography>
 
-                <Alert severity="warning" sx={{ mb: 2 }}>
+                <Alert severity="info">
                   <Typography variant="body2">
                     <strong>💰 Costo:</strong> ${item.precio} USD<br/>
-                    Tu inscripción quedará pendiente hasta que el administrador verifique tu comprobante de pago.
+                    Tu inscripción quedará <strong>pendiente</strong> hasta que el administrador verifique tu comprobante de pago.
                   </Typography>
                 </Alert>
 
@@ -381,6 +435,7 @@ const ModalInscripcion = ({
                     value={metodoPago}
                     label="Método de Pago"
                     onChange={(e) => setMetodoPago(e.target.value)}
+                    disabled={loading}
                   >
                     {metodosPago.map((metodo) => (
                       <MenuItem key={metodo.value} value={metodo.value}>
@@ -390,19 +445,49 @@ const ModalInscripcion = ({
                   </Select>
                 </FormControl>
 
-                {/* Subir Comprobante de Pago */}
+                {/* Upload de Comprobante */}
                 <Box>
-                  <Typography variant="subtitle1" gutterBottom>
-                    📄 Comprobante de Pago <span style={{ color: 'red' }}>*</span>
+                  <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <UploadFile color="primary" />
+                    Comprobante de Pago (PDF) *
                   </Typography>
                   
-                  {comprobantePago ? (
-                    <Card variant="outlined" sx={{ p: 2, mb: 2 }}>
+                  <input
+                    id="comprobante_input"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                    disabled={loading}
+                  />
+                  
+                  {!comprobantePago ? (
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      htmlFor="comprobante_input"
+                      startIcon={<CloudUpload />}
+                      fullWidth
+                      sx={{ 
+                        py: 2,
+                        borderStyle: 'dashed',
+                        borderWidth: 2,
+                        '&:hover': {
+                          borderStyle: 'dashed',
+                          borderWidth: 2
+                        }
+                      }}
+                      disabled={loading}
+                    >
+                      Seleccionar archivo PDF
+                    </Button>
+                  ) : (
+                    <Card variant="outlined" sx={{ p: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Description color="primary" />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Description color="error" />
                           <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
                               {comprobantePago.name}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
@@ -411,68 +496,48 @@ const ModalInscripcion = ({
                           </Box>
                         </Box>
                         <IconButton 
-                          onClick={removeFile}
+                          onClick={removeFile} 
+                          size="small" 
                           color="error"
-                          size="small"
+                          disabled={loading}
                         >
                           <Delete />
                         </IconButton>
                       </Box>
                     </Card>
-                  ) : (
-                    <Box>
-                      <input
-                        id="comprobante_input"
-                        type="file"
-                        accept=".pdf"
-                        onChange={handleFileSelect}
-                        style={{ display: 'none' }}
-                      />
-                      <label htmlFor="comprobante_input">
-                        <Button
-                          variant="outlined"
-                          component="span"
-                          startIcon={<UploadFile />}
-                          fullWidth
-                          sx={{ p: 3, borderStyle: 'dashed' }}
-                        >
-                          Seleccionar archivo PDF
-                        </Button>
-                      </label>
-                      <Typography variant="caption" display="block" sx={{ mt: 1, textAlign: 'center' }} color="text.secondary">
-                        Solo archivos PDF, máximo 10MB
-                      </Typography>
-                    </Box>
                   )}
                 </Box>
               </Box>
             )}
 
-            {/* Botones de acción */}
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 3 }}>
-              <Button
-                onClick={handleClose}
-                disabled={loading}
-                color="inherit"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                variant="contained"
-                disabled={loading || (!item.es_gratuito && (!metodoPago || !comprobantePago))}
-                sx={{ 
-                  bgcolor: '#6d1313', 
-                  '&:hover': { bgcolor: '#5a1010' },
-                  minWidth: 120
-                }}
-              >
-                {loading ? 'Procesando...' : 'Inscribirse'}
-              </Button>
-            </Box>
+            {loading && (
+              <Box>
+                <LinearProgress sx={{ mb: 1 }} />
+                <Typography variant="body2" color="text.secondary" align="center">
+                  Procesando inscripción...
+                </Typography>
+              </Box>
+            )}
           </Box>
         )}
       </DialogContent>
+
+      <DialogActions sx={{ p: 2 }}>
+        <Button 
+          onClick={handleClose} 
+          disabled={loading}
+        >
+          Cancelar
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={loading || success || (!item.es_gratuito && (!metodoPago || !comprobantePago))}
+          startIcon={loading ? <CircularProgress size={20} /> : null}
+        >
+          {loading ? 'Inscribiendo...' : 'Inscribirse'}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

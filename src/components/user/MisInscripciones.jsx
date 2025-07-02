@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -19,7 +19,10 @@ import {
   LocationOn,
   AccessTime,
   Payment,
-  Description
+  Description,
+  CheckCircle,
+  Cancel,
+  PlayArrow
 } from '@mui/icons-material';
 import UserSidebar from './UserSidebar';
 import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
@@ -34,6 +37,24 @@ const MisInscripciones = () => {
     loading, 
     error 
   } = useInscripciones();
+
+  // Debug: Mostrar los datos recibidos del backend
+  useEffect(() => {
+    if (!loading && !error) {
+      console.log('DEBUG - Inscripciones Eventos:', inscripcionesEventos);
+      console.log('DEBUG - Inscripciones Cursos:', inscripcionesCursos);
+      
+      // Verificar específicamente el estado de cada evento
+      inscripcionesEventos.forEach(inscripcion => {
+        console.log(`Evento: ${inscripcion.evento?.nom_eve || 'N/A'} - Estado: ${inscripcion.evento?.estado || 'No definido'}`);
+      });
+      
+      // Verificar específicamente el estado de cada curso
+      inscripcionesCursos.forEach(inscripcion => {
+        console.log(`Curso: ${inscripcion.curso?.nom_cur || 'N/A'} - Estado: ${inscripcion.curso?.estado || 'No definido'}`);
+      });
+    }
+  }, [inscripcionesEventos, inscripcionesCursos, loading, error]);
 
   if (loading) {
     return (
@@ -224,6 +245,14 @@ const InscripcionCard = ({ inscripcion, tipo }) => {
   const descripcion = esEvento ? item.des_eve : item.des_cur;
   const fechaInicio = esEvento ? item.fec_ini_eve : item.fec_ini_cur;
   const ubicacion = esEvento ? item.ubi_eve : null;
+  const estadoItem = esEvento ? item.estado : item.estado;
+  const estaCerrado = estadoItem === 'CERRADO';
+
+  // Debug: Mostrar información detallada de cada card
+  console.log(`DEBUG - Card ${esEvento ? 'Evento' : 'Curso'}: ${nombre}`);
+  console.log(`  - Estado del item: ${estadoItem || 'No definido'}`);
+  console.log(`  - ¿Está cerrado?: ${estaCerrado}`);
+  console.log(`  - Datos completos:`, item);
 
   const estadoInscripcion = {
     inscrito: true,
@@ -241,18 +270,43 @@ const InscripcionCard = ({ inscripcion, tipo }) => {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2 , width: '450px'}}>
       <CardContent sx={{ flexGrow: 1, p: 3 }}>
-        {/* Header con tipo y estado */}
+        {/* Header con tipo, estado y estado de cierre */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Chip 
-            label={esEvento ? 'EVENTO' : 'CURSO'}
-            size="small"
-            icon={esEvento ? <Event sx={{ fontSize: '0.7rem' }} /> : <School sx={{ fontSize: '0.7rem' }} />}
-            sx={{ 
-              bgcolor: esEvento ? '#1976d2' : '#2e7d32',
-              color: 'white',
-              fontWeight: 600
-            }}
-          />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Chip 
+              label={esEvento ? 'EVENTO' : 'CURSO'}
+              size="small"
+              icon={esEvento ? <Event sx={{ fontSize: '0.7rem' }} /> : <School sx={{ fontSize: '0.7rem' }} />}
+              sx={{ 
+                bgcolor: esEvento ? '#1976d2' : '#2e7d32',
+                color: 'white',
+                fontWeight: 600
+              }}
+            />
+            {estaCerrado ? (
+              <Chip 
+                label="FINALIZADO"
+                size="small"
+                icon={<CheckCircle sx={{ fontSize: '0.7rem' }} />}
+                sx={{ 
+                  bgcolor: '#d32f2f',
+                  color: 'white',
+                  fontWeight: 600
+                }}
+              />
+            ) : (
+              <Chip 
+                label="EN CURSO"
+                size="small"
+                icon={<PlayArrow sx={{ fontSize: '0.7rem' }} />}
+                sx={{ 
+                  bgcolor: '#1976d2',
+                  color: 'white',
+                  fontWeight: 600
+                }}
+              />
+            )}
+          </Box>
           <EstadoInscripcion 
             estado={estadoInscripcion.estado} 
             showDetails={false}
