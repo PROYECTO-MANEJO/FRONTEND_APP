@@ -55,7 +55,8 @@ import {
   Edit,
   Lock,
   PictureAsPdf,
-  Close
+  Close,
+  Description
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -93,6 +94,12 @@ const DetalleEventoCurso = ({ item, onClose }) => {
   // Estado para cerrar curso/evento
   const [cerrarDialogOpen, setCerrarDialogOpen] = useState(false);
   const [loadingCerrar, setLoadingCerrar] = useState(false);
+
+  // Estado para modal de carta de motivación
+  const [cartaModal, setCartaModal] = useState({ 
+    open: false, 
+    inscripcion: null
+  });
 
   useEffect(() => {
     cargarDetalles();
@@ -332,6 +339,28 @@ const DetalleEventoCurso = ({ item, onClose }) => {
     if (comprobanteModal.inscripcion) {
       handleRechazar(comprobanteModal.inscripcion.id_inscripcion, true);
     }
+  };
+
+  // Función para ver la carta de motivación
+  const handleVerCarta = (inscripcion) => {
+    // Asegurarse de que siempre haya algo que mostrar
+    const inscripcionConCarta = {
+      ...inscripcion,
+      carta_motivacion: inscripcion.carta_motivacion || "El usuario no ha proporcionado una carta de motivación o hubo un problema al cargarla."
+    };
+    
+    setCartaModal({
+      open: true,
+      inscripcion: inscripcionConCarta
+    });
+  };
+
+  // Función para cerrar modal de carta
+  const handleCerrarCartaModal = () => {
+    setCartaModal({
+      open: false,
+      inscripcion: null
+    });
   };
 
   if (loading) {
@@ -611,234 +640,235 @@ const DetalleEventoCurso = ({ item, onClose }) => {
         </Paper>
 
         {/* Tabla de inscripciones */}
-        <Paper>
-          {/* Tabla normal de inscripciones */}
-            <>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Usuario</TableCell>
-                      <TableCell>Contacto</TableCell>
-                      <TableCell>Carrera</TableCell>
-                      <TableCell>Fecha Inscripción</TableCell>
-                      <TableCell>Estado</TableCell>
-                      {!itemData.es_gratuito && <TableCell>Pago</TableCell>}
-                      <TableCell>Acciones</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredInscripciones.map((inscripcion) => (
-                  <TableRow key={inscripcion.id_inscripcion}>
+        <TableContainer component={Paper} sx={{ mt: 3 }}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                <TableCell>Usuario</TableCell>
+                <TableCell>Fecha Inscripción</TableCell>
+                <TableCell align="center">Estado</TableCell>
+                {!detalles?.es_gratuito && (
+                  <TableCell align="center">Comprobante</TableCell>
+                )}
+                {detalles?.requiere_carta_motivacion && (
+                  <TableCell align="center">Carta</TableCell>
+                )}
+                <TableCell align="center">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredInscripciones.length > 0 ? (
+                filteredInscripciones.map((inscripcion) => (
+                  <TableRow key={inscripcion.id_inscripcion || inscripcion.id}>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar sx={{ mr: 2, bgcolor: '#6d1313' }}>
+                        <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
                           {inscripcion.usuario.nombre_completo.charAt(0)}
                         </Avatar>
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                             {inscripcion.usuario.nombre_completo}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="body2" color="text.secondary">
                             {inscripcion.usuario.cedula}
                           </Typography>
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                          <Email sx={{ fontSize: 14, mr: 0.5 }} />
-                          <Typography variant="caption">
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Email fontSize="small" sx={{ mr: 0.5, fontSize: '0.875rem' }} />
                             {inscripcion.usuario.email}
                           </Typography>
                         </Box>
-                        {inscripcion.usuario.telefono && (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Phone sx={{ fontSize: 14, mr: 0.5 }} />
-                            <Typography variant="caption">
-                              {inscripcion.usuario.telefono}
-                            </Typography>
-                          </Box>
-                        )}
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2">
-                        {inscripcion.usuario.carrera}
-                      </Typography>
-                      <Chip 
-                        label={inscripcion.usuario.rol}
+                      {formatearFecha(inscripcion.fecha_inscripcion)}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Chip
+                        label={inscripcion.estado_pago}
+                        color={
+                          inscripcion.estado_pago === 'APROBADO' ? 'success' :
+                          inscripcion.estado_pago === 'RECHAZADO' ? 'error' : 'warning'
+                        }
                         size="small"
-                        variant="outlined"
-                        color={inscripcion.usuario.rol === 'ESTUDIANTE' ? 'primary' : 'secondary'}
                       />
                     </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {formatearFecha(inscripcion.fecha_inscripcion)}
-                      </Typography>
-                      {inscripcion.fecha_aprobacion && (
-                        <Typography variant="caption" color="text.secondary">
-                          Aprobado: {formatearFecha(inscripcion.fecha_aprobacion)}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {itemData.es_gratuito ? (
-                        <Chip label="Gratuito" color="success" size="small" />
-                      ) : (
-                        <Chip 
-                          label={
-                            inscripcion.estado_pago === 'APROBADO' ? 'Aprobado' :
-                            inscripcion.estado_pago === 'PENDIENTE' ? 'Pendiente' :
-                            'Rechazado'
-                          }
-                          color={
-                            inscripcion.estado_pago === 'APROBADO' ? 'success' :
-                            inscripcion.estado_pago === 'PENDIENTE' ? 'warning' :
-                            'error'
-                          }
-                          size="small"
-                        />
-                      )}
-                    </TableCell>
-                    {!itemData.es_gratuito && (
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                            ${inscripcion.valor}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {inscripcion.metodo_pago}
-                          </Typography>
-                          {inscripcion.tiene_comprobante && (
-                            <Chip 
-                              label="Con comprobante" 
-                              size="small" 
-                              color="info" 
-                              variant="outlined"
-                              sx={{ mt: 0.5, display: 'block' }}
-                            />
-                          )}
-                        </Box>
+                    {!detalles?.es_gratuito && (
+                      <TableCell align="center">
+                        {inscripcion.tiene_comprobante && (
+                          <Tooltip title="Ver comprobante de pago">
+                            <IconButton
+                              color="primary"
+                              size="small"
+                              onClick={() => handleVerComprobante(inscripcion)}
+                            >
+                              <PictureAsPdf />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </TableCell>
                     )}
-                    <TableCell>
-                      {/* Ícono para ver comprobante (siempre visible si tiene comprobante) */}
-                      {inscripcion.tiene_comprobante && (
-                        <Tooltip title="Ver comprobante">
+                    {detalles?.requiere_carta_motivacion && (
+                      <TableCell align="center">
+                        {/* FORZAR MOSTRAR SIEMPRE EL BOTÓN PARA CURSOS QUE REQUIEREN CARTA */}
+                        <Tooltip title="Ver carta de motivación">
                           <IconButton
-                            onClick={() => handleVerComprobante(inscripcion)}
-                            size="small"
                             color="primary"
+                            size="small"
+                            onClick={() => handleVerCarta(inscripcion)}
                           >
-                            <PictureAsPdf />
+                            <Description />
                           </IconButton>
                         </Tooltip>
+                      </TableCell>
+                    )}
+                    <TableCell align="center">
+                      {inscripcion.estado_pago === 'PENDIENTE' && (
+                        <>
+                          <Tooltip title="Aprobar inscripción">
+                            <IconButton
+                              color="success"
+                              size="small"
+                              onClick={() => setConfirmDialog({
+                                open: true,
+                                action: 'aprobar',
+                                inscripcion
+                              })}
+                            >
+                              <CheckCircle />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Rechazar inscripción">
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => setConfirmDialog({
+                                open: true,
+                                action: 'rechazar',
+                                inscripcion
+                              })}
+                            >
+                              <Cancel />
+                            </IconButton>
+                          </Tooltip>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </>
-    </Paper>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell 
+                    colSpan={
+                      detalles?.es_gratuito 
+                        ? (detalles?.requiere_carta_motivacion ? 5 : 4) 
+                        : (detalles?.requiere_carta_motivacion ? 6 : 5)
+                    } 
+                    align="center"
+                  >
+                    <Typography variant="body1" color="text.secondary" sx={{ py: 3 }}>
+                      No se encontraron inscripciones
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
 
-    {/* Snackbar para notificaciones */}
-    <Snackbar
-      open={snackbar.open}
-      autoHideDuration={6000}
-      onClose={() => setSnackbar({ ...snackbar, open: false })}
-    >
-      <Alert
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        severity={snackbar.severity}
-        sx={{ width: '100%' }}
       >
-        {snackbar.message}
-      </Alert>
-    </Snackbar>
-
-
-
-    {/* Diálogo de confirmación para acciones */}
-    <Dialog
-      open={confirmDialog.open}
-      onClose={() => setConfirmDialog({ open: false, action: null, inscripcion: null })}
-    >
-      <DialogTitle>
-        {confirmDialog.action === 'aprobar' ? 'Confirmar Aprobación' : 'Confirmar Rechazo'}
-      </DialogTitle>
-      <DialogContent>
-        <Typography>
-          {confirmDialog.action === 'aprobar' 
-            ? `¿Está seguro de que desea aprobar la inscripción de ${confirmDialog.inscripcion?.usuario?.nombre_completo}?`
-            : `¿Está seguro de que desea rechazar la inscripción de ${confirmDialog.inscripcion?.usuario?.nombre_completo}?`
-          }
-        </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setConfirmDialog({ open: false, action: null, inscripcion: null })}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={() => {
-            if (confirmDialog.action === 'aprobar') {
-              handleAprobar(confirmDialog.inscripcion.id_inscripcion);
-            } else {
-              handleRechazar(confirmDialog.inscripcion.id_inscripcion);
-            }
-          }}
-          variant="contained"
-          color={confirmDialog.action === 'aprobar' ? 'success' : 'error'}
-          disabled={loadingAction}
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
         >
-          {loadingAction ? <CircularProgress size={20} /> : 'Confirmar'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-
-    {/* Diálogo de confirmación para cerrar curso/evento */}
-    <Dialog
-      open={cerrarDialogOpen}
-      onClose={() => setCerrarDialogOpen(false)}
-      maxWidth="sm"
-      fullWidth
-    >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Lock sx={{ mr: 1, color: 'error.main' }} />
-          Cerrar {item.tipo}
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          Una vez cerrado el {item.tipo.toLowerCase()}, no podrá modificar las calificaciones ni la asistencia de los participantes.
+          {snackbar.message}
         </Alert>
-        <Typography variant="body1">
-          ¿Está seguro de que desea cerrar <strong>{itemData.nom_eve || itemData.nom_cur}</strong>?
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Esta acción permitirá generar los certificados para los participantes aprobados.
-        </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setCerrarDialogOpen(false)}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleCerrar}
-          variant="contained"
-          color="error"
-          disabled={loadingCerrar}
-          startIcon={loadingCerrar ? <CircularProgress size={20} color="inherit" /> : <Lock />}
-        >
-          {loadingCerrar ? 'Cerrando...' : `Cerrar ${item.tipo}`}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      </Snackbar>
+
+
+
+      {/* Diálogo de confirmación para acciones */}
+      <Dialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ open: false, action: null, inscripcion: null })}
+      >
+        <DialogTitle>
+          {confirmDialog.action === 'aprobar' ? 'Confirmar Aprobación' : 'Confirmar Rechazo'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            {confirmDialog.action === 'aprobar' 
+              ? `¿Está seguro de que desea aprobar la inscripción de ${confirmDialog.inscripcion?.usuario?.nombre_completo}?`
+              : `¿Está seguro de que desea rechazar la inscripción de ${confirmDialog.inscripcion?.usuario?.nombre_completo}?`
+            }
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialog({ open: false, action: null, inscripcion: null })}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              if (confirmDialog.action === 'aprobar') {
+                handleAprobar(confirmDialog.inscripcion.id_inscripcion);
+              } else {
+                handleRechazar(confirmDialog.inscripcion.id_inscripcion);
+              }
+            }}
+            variant="contained"
+            color={confirmDialog.action === 'aprobar' ? 'success' : 'error'}
+            disabled={loadingAction}
+          >
+            {loadingAction ? <CircularProgress size={20} /> : 'Confirmar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo de confirmación para cerrar curso/evento */}
+      <Dialog
+        open={cerrarDialogOpen}
+        onClose={() => setCerrarDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Lock sx={{ mr: 1, color: 'error.main' }} />
+            Cerrar {item.tipo}
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Una vez cerrado el {item.tipo.toLowerCase()}, no podrá modificar las calificaciones ni la asistencia de los participantes.
+          </Alert>
+          <Typography variant="body1">
+            ¿Está seguro de que desea cerrar <strong>{itemData.nom_eve || itemData.nom_cur}</strong>?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Esta acción permitirá generar los certificados para los participantes aprobados.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCerrarDialogOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleCerrar}
+            variant="contained"
+            color="error"
+            disabled={loadingCerrar}
+            startIcon={loadingCerrar ? <CircularProgress size={20} color="inherit" /> : <Lock />}
+          >
+            {loadingCerrar ? 'Cerrando...' : `Cerrar ${item.tipo}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
          {/* Modal de comprobante */}
      <DocumentViewer
@@ -848,7 +878,80 @@ const DetalleEventoCurso = ({ item, onClose }) => {
        onApprove={comprobanteModal.inscripcion?.estado_pago === 'PENDIENTE' ? handleAprobarDesdeVisor : null}
        onReject={comprobanteModal.inscripcion?.estado_pago === 'PENDIENTE' ? handleRechazarDesdeVisor : null}
      />
-  </Box>
+
+    {/* Modal para ver carta de motivación */}
+    <Dialog
+      open={cartaModal.open}
+      onClose={handleCerrarCartaModal}
+      maxWidth="md"
+      fullWidth
+    >
+      <DialogTitle>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6">
+            Carta de Motivación
+          </Typography>
+          <IconButton onClick={handleCerrarCartaModal}>
+            <Close />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        {cartaModal.inscripcion && (
+          <Box sx={{ p: 2 }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                Usuario: {cartaModal.inscripcion.usuario.nombre_completo}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {cartaModal.inscripcion.usuario.email} | {cartaModal.inscripcion.usuario.cedula}
+              </Typography>
+            </Box>
+            
+            <Paper elevation={0} variant="outlined" sx={{ p: 3, bgcolor: '#f9f9f9', borderRadius: 2 }}>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                {cartaModal.inscripcion.carta_motivacion}
+              </Typography>
+            </Paper>
+            
+            {cartaModal.inscripcion.estado_pago === 'PENDIENTE' && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 2 }}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => {
+                    setConfirmDialog({
+                      open: true,
+                      action: 'aprobar',
+                      inscripcion: cartaModal.inscripcion
+                    });
+                    handleCerrarCartaModal();
+                  }}
+                  startIcon={<CheckCircle />}
+                >
+                  Aprobar Inscripción
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => {
+                    setConfirmDialog({
+                      open: true,
+                      action: 'rechazar',
+                      inscripcion: cartaModal.inscripcion
+                    });
+                    handleCerrarCartaModal();
+                  }}
+                  startIcon={<Cancel />}
+                >
+                  Rechazar Inscripción
+                </Button>
+              </Box>
+            )}
+          </Box>
+        )}
+      </DialogContent>
+    </Dialog>
   </Box>
 );
 };
