@@ -64,6 +64,7 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
     porcentaje_asistencia_aprobacion: 80,
     nota_minima_aprobacion: 7.0,
     estado: 'ACTIVO', // ACTIVO, CERRADO
+    requiere_carta_motivacion: true,
   });
 
   useEffect(() => {
@@ -99,6 +100,7 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         porcentaje_asistencia_aprobacion: cursoEditado.porcentaje_asistencia_aprobacion || 80,
         nota_minima_aprobacion: cursoEditado.nota_minima_aprobacion || 7.0,
         estado: cursoEditado.estado || 'ACTIVO',
+        requiere_carta_motivacion: cursoEditado.requiere_carta_motivacion || true,
       });
     }
   }, [cursoEditado]);
@@ -134,6 +136,9 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
     if (field === 'es_gratuito' && value) {
       // Si se marca como gratuito, limpiar el precio
       setCurso({ ...curso, [field]: value, precio: '' });
+    } else if (field === 'requiere_carta_motivacion') {
+      // Para el checkbox de carta de motivación, usar el valor booleano directamente
+      setCurso({ ...curso, [field]: event.target.checked });
     } else {
       setCurso({ ...curso, [field]: value });
     }
@@ -262,6 +267,10 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      // Asegurarse de que requiere_carta_motivacion sea un booleano
+      const requiereCartaMotivacion = curso.requiere_carta_motivacion === true;
+      console.log('Valor de requiere_carta_motivacion antes de enviar:', requiereCartaMotivacion);
+      
       const data = {
         ...curso,
         dur_cur: parseInt(curso.dur_cur, 10),
@@ -272,7 +281,11 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
         porcentaje_asistencia_aprobacion: parseInt(curso.porcentaje_asistencia_aprobacion, 10),
         nota_minima_aprobacion: parseFloat(curso.nota_minima_aprobacion),
         estado: curso.estado || 'ACTIVO',
+        requiere_carta_motivacion: requiereCartaMotivacion,
       };
+      
+      console.log('Datos a enviar:', data);
+      
       let idCur = cursoEditado ? cursoEditado.id_cur : undefined;
       if (cursoEditado) {
         await api.put(`/cursos/${idCur}`, data);
@@ -292,7 +305,8 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
       setTimeout(() => {
         navigate('/admin/dashboard'); // Redirige al dashboard
       }, 1500);
-    } catch (err) {
+    } catch (error) {
+      console.error('Error al guardar curso:', error);
       setError('Error al guardar curso.');
     } finally {
       setLoading(false);
@@ -488,11 +502,40 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
               </Select>
             </FormControl>
             
+            {/* Checkbox para carta de motivación */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+              <Checkbox
+                checked={curso.requiere_carta_motivacion === true}
+                onChange={(e) => {
+                  const newValue = e.target.checked;
+                  console.log('Cambiando requiere_carta_motivacion a:', newValue);
+                  setCurso(prev => ({
+                    ...prev,
+                    requiere_carta_motivacion: newValue
+                  }));
+                }}
+                sx={{ 
+                  color: '#6d1313',
+                  '&.Mui-checked': { color: '#6d1313' }
+                }}
+              />
+              <Typography variant="body1">
+                Requiere carta de motivación para inscripción
+              </Typography>
+            </Box>
+            
             {/* Configuración de Precio */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
               <Checkbox
                 checked={curso.es_gratuito}
-                onChange={(e) => handleChange('es_gratuito')({ target: { value: e.target.checked } })}
+                onChange={(e) => {
+                  const isGratuito = e.target.checked;
+                  setCurso(prev => ({ 
+                    ...prev, 
+                    es_gratuito: isGratuito,
+                    precio: isGratuito ? '' : prev.precio
+                  }));
+                }}
                 sx={{ 
                   color: '#6d1313',
                   '&.Mui-checked': { color: '#6d1313' }
@@ -574,6 +617,7 @@ const CrearCurso = ({ cursoEditado = null, onClose, onSuccess }) => {
               <Typography variant="body1"><strong>Carreras:</strong> {carreras.filter(c => curso.carreras.includes(c.id_car)).map(c => c.nom_car).join(', ')}</Typography>
             )}
             <Typography variant="body1"><strong>¿Requiere verificación de documentos?:</strong> {curso.requiere_verificacion_docs ? 'Sí' : 'No'}</Typography>
+            <Typography variant="body1"><strong>¿Requiere carta de motivación?:</strong> {curso.requiere_carta_motivacion ? 'Sí' : 'No'}</Typography>
             <Typography variant="body1"><strong>Tipo de curso:</strong> {curso.es_gratuito ? 'Gratuito' : `Pagado - $${curso.precio}`}</Typography>
             <Typography variant="body1"><strong>Porcentaje mínimo de asistencia:</strong> {curso.porcentaje_asistencia_aprobacion}%</Typography>
             <Typography variant="body1"><strong>Nota mínima de aprobación:</strong> {curso.nota_minima_aprobacion}</Typography>

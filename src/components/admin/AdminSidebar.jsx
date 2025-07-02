@@ -54,7 +54,6 @@ const AdminSidebar = () => {
     { text: 'Gestión', icon: <ManageAccounts />, path: '/admin/gestion-inscripciones' },
     { text: 'Mis Solicitudes', icon: <Assignment />, path: '/admin/mis-solicitudes' },
     ...(user?.rol === 'MASTER' ? [{ text: 'Gestión Solicitudes', icon: <RequestPage />, path: '/admin/solicitudes' }] : []),
-    ...(user?.rol === 'MASTER' ? [{ text: 'Revisión de Planes', icon: <CheckCircle />, path: '/admin/revision-planes' }] : []),
     { text: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
   ];
 

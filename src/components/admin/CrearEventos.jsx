@@ -83,6 +83,8 @@ const CrearEventos = () => {
     carreras_seleccionadas: [],
     porcentaje_asistencia_aprobacion: 80,
     estado: 'ACTIVO', // ACTIVO, CERRADO
+    requiere_carta_motivacion: true,
+    requiere_verificacion_docs: false,
   });
 
   // Estados para datos del backend
@@ -146,10 +148,7 @@ const CrearEventos = () => {
 
       const formatearHora = (hora) => {
         if (!hora) return '';
-        if (typeof hora === 'string' && hora.includes(':')) {
-          return hora.substring(0, 5); // HH:MM
-        }
-        return hora;
+        return hora.substring(0, 5); // Obtener solo HH:MM
       };
 
       setEvento({
@@ -170,7 +169,9 @@ const CrearEventos = () => {
         precio: eventoData.precio || '',
         carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : [],
         porcentaje_asistencia_aprobacion: eventoData.porcentaje_asistencia_aprobacion || 80,
-        estado: eventoData.estado || 'ACTIVO'
+        estado: eventoData.estado || 'ACTIVO',
+        requiere_carta_motivacion: eventoData.requiere_carta_motivacion || false,
+        requiere_verificacion_docs: eventoData.requiere_verificacion_docs || false,
       });
 
     } catch (error) {
@@ -214,25 +215,61 @@ const CrearEventos = () => {
   // Manejar cambios en los campos
   const handleChange = (field) => (event) => {
     const value = event.target.value;
-    setEvento(prev => ({ ...prev, [field]: value }));
     
-    // Limpiar error del campo
+    // Validación y formateo específico por campo
+    if (field === 'es_gratuito') {
+      // Si cambia a gratuito, limpiar precio
+      if (value === true) {
+        setEvento(prev => ({
+          ...prev,
+          [field]: value,
+          precio: ''
+        }));
+      } else {
+        setEvento(prev => ({
+          ...prev,
+          [field]: value
+        }));
+      }
+    } else if (field === 'requiere_carta_motivacion' || field === 'requiere_verificacion_docs') {
+      // Para checkboxes, usar el valor booleano directamente
+      setEvento(prev => ({
+        ...prev,
+        [field]: event.target.checked
+      }));
+    } else if (field === 'hor_ini_eve' || field === 'hor_fin_eve') {
+      // Para horas, actualizar y recalcular duración
+      setEvento(prev => {
+        const updatedEvento = { ...prev, [field]: value };
+        
+        // Si ambas horas están definidas, calcular duración
+        if (updatedEvento.hor_ini_eve && updatedEvento.hor_fin_eve) {
+          const duracion = calcularDuracion(
+            updatedEvento.hor_ini_eve,
+            updatedEvento.hor_fin_eve
+          );
+          updatedEvento.dur_eve = duracion;
+        }
+        
+        return updatedEvento;
+      });
+    } else {
+      // Comportamiento estándar para otros campos
+      setEvento(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+    
+    // Limpiar error específico del campo
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => ({ ...prev, [field]: null }));
     }
 
     // Lógica especial para tipo de audiencia
     if (field === 'tipo_audiencia_eve') {
       if (value !== 'CARRERA_ESPECIFICA') {
         setEvento(prev => ({ ...prev, carreras_seleccionadas: [] }));
-      }
-    }
-
-    // Lógica especial para configuración de precio
-    if (field === 'es_gratuito') {
-      if (value) {
-        // Si se marca como gratuito, limpiar el precio
-        setEvento(prev => ({ ...prev, precio: '' }));
       }
     }
 
@@ -401,6 +438,10 @@ const CrearEventos = () => {
 
         setLoading(true);
         try {
+      // Asegurarse de que requiere_carta_motivacion sea un booleano
+      const requiereCartaMotivacion = evento.requiere_carta_motivacion === true;
+      console.log('Valor de requiere_carta_motivacion antes de enviar:', requiereCartaMotivacion);
+      
       // Preparar datos para el backend
       const datosEvento = {
         nom_eve: evento.nom_eve.trim(),
@@ -419,8 +460,12 @@ const CrearEventos = () => {
         es_gratuito: evento.es_gratuito,
         precio: evento.es_gratuito ? null : parseFloat(evento.precio),
         porcentaje_asistencia_aprobacion: parseInt(evento.porcentaje_asistencia_aprobacion, 10),
-        estado: evento.estado || 'ACTIVO'
+        estado: evento.estado || 'ACTIVO',
+        requiere_carta_motivacion: requiereCartaMotivacion,
+        requiere_verificacion_docs: !!evento.requiere_verificacion_docs,
       };
+      
+      console.log('Datos a enviar:', datosEvento);
 
       let eventoId;
       let response;
@@ -511,7 +556,9 @@ const CrearEventos = () => {
             es_gratuito: true,
             precio: '',
             porcentaje_asistencia_aprobacion: 80,
-            estado: 'ACTIVO'
+            estado: 'ACTIVO',
+            requiere_carta_motivacion: true,
+            requiere_verificacion_docs: false,
           });
         }
         setAlert({ show: false, message: '', severity: 'info' });
@@ -549,10 +596,27 @@ const CrearEventos = () => {
       precio: '',
       carreras_seleccionadas: [],
       porcentaje_asistencia_aprobacion: 80,
-      estado: 'ACTIVO'
+      estado: 'ACTIVO',
+      requiere_carta_motivacion: true,
+      requiere_verificacion_docs: false,
     });
     setErrors({});
     setAlert({ show: false, message: '', severity: 'info' });
+  };
+
+  // Función para calcular la duración en horas entre dos horas
+  const calcularDuracion = (horaInicio, horaFin) => {
+    const [hIni, mIni] = horaInicio.split(':').map(Number);
+    const [hFin, mFin] = horaFin.split(':').map(Number);
+    
+    const iniMinutos = hIni * 60 + mIni;
+    const finMinutos = hFin * 60 + mFin;
+    
+    // Si fin es menor que inicio, asumimos que es el día siguiente
+    const diferenciaMinutos = finMinutos >= iniMinutos ? finMinutos - iniMinutos : (24 * 60 - iniMinutos) + finMinutos;
+    
+    // Convertir a horas (redondeando hacia arriba)
+    return Math.ceil(diferenciaMinutos / 60);
   };
 
   return (
@@ -619,11 +683,11 @@ const CrearEventos = () => {
                     
                     <Grid xs={12} md={6}>
                       <FormControl fullWidth error={!!errors.id_cat_eve}>
-                        <InputLabel>Categoría *</InputLabel>
+                        <InputLabel>Categoríaaaaaa *</InputLabel>
                         <Select
                           value={evento.id_cat_eve}
                           onChange={handleChange('id_cat_eve')}
-                          label="Categoría *"
+                          label="Categoríasss *"
                         >
                           {categorias.map((categoria) => (
                             <MenuItem key={categoria.id_cat} value={categoria.id_cat}>
@@ -954,6 +1018,47 @@ const CrearEventos = () => {
                         </Alert>
                       </Grid>
                     )}
+                    
+                    {/* Verificación de documentos */}
+                    <Grid xs={12}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                        <Checkbox
+                          checked={evento.requiere_verificacion_docs}
+                          onChange={(e) => setEvento(prev => ({ ...prev, requiere_verificacion_docs: e.target.checked }))}
+                          sx={{ 
+                            color: '#6d1313',
+                            '&.Mui-checked': { color: '#6d1313' }
+                          }}
+                        />
+                        <Typography variant="body1">
+                          Requiere verificación de documentos
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    
+                    {/* Carta de motivación */}
+                    <Grid xs={12}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                        <Checkbox
+                          checked={evento.requiere_carta_motivacion === true}
+                          onChange={(e) => {
+                            const newValue = e.target.checked;
+                            console.log('Cambiando requiere_carta_motivacion a:', newValue);
+                            setEvento(prev => ({
+                              ...prev,
+                              requiere_carta_motivacion: newValue
+                            }));
+                          }}
+                          sx={{ 
+                            color: '#6d1313',
+                            '&.Mui-checked': { color: '#6d1313' }
+                          }}
+                        />
+                        <Typography variant="body1">
+                          Requiere carta de motivación para inscripción
+                        </Typography>
+                      </Box>
+                    </Grid>
                   </Grid>
                 </CardContent>
               </Card>
@@ -974,7 +1079,14 @@ const CrearEventos = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Checkbox
                             checked={evento.es_gratuito}
-                            onChange={(e) => handleChange('es_gratuito')({ target: { value: e.target.checked } })}
+                            onChange={(e) => {
+                              const isGratuito = e.target.checked;
+                              setEvento(prev => ({ 
+                                ...prev, 
+                                es_gratuito: isGratuito,
+                                precio: isGratuito ? '' : prev.precio
+                              }));
+                            }}
                             sx={{ 
                               color: '#6d1313',
                               '&.Mui-checked': { color: '#6d1313' }

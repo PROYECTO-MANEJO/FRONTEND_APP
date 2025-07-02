@@ -60,7 +60,37 @@ class PaginaPrincipalService {
     }
     return url; // Es una URL externa (Unsplash, etc.)
   }
+
+  // Obtener eventos y cursos públicos (para usuarios no autenticados)
+  async getEventosCursosPublicos() {
+    try {
+      const response = await api.get('/pagina-principal/eventos-cursos-publicos');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener eventos y cursos públicos');
+    }
+  }
+
+  // Obtener eventos y cursos por carrera (para estudiantes)
+  async getEventosCursosCarrera() {
+    try {
+      const response = await api.get('/pagina-principal/eventos-cursos-carrera');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener eventos y cursos por carrera');
+    }
+  }
+
+  // Obtener todos los eventos y cursos disponibles (para usuarios normales)
+  async getEventosCursosDisponibles() {
+    try {
+      const response = await api.get('/pagina-principal/eventos-cursos-disponibles');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al obtener eventos y cursos disponibles');
+    }
+  }
 }
 
-export const paginaPrincipalService = new PaginaPrincipalService();
+const paginaPrincipalService = new PaginaPrincipalService();
 export default paginaPrincipalService; 

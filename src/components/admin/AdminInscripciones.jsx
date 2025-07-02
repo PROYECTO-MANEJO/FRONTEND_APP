@@ -64,6 +64,10 @@ const AdminInscripciones = () => {
   const [comentario, setComentario] = useState('');
   const [procesando, setProcesando] = useState(false);
 
+  // Estados para modal de carta de motivación
+  const [modalCartaOpen, setModalCartaOpen] = useState(false);
+  const [cartaMotivacionSeleccionada, setCartaMotivacionSeleccionada] = useState('');
+
   // Estadísticas
   const [stats, setStats] = useState({
     totalInscripciones: 0,
@@ -138,6 +142,11 @@ const AdminInscripciones = () => {
     setInscripcionSeleccionada({ ...inscripcion, tipo });
     setAccionSeleccionada(accion);
     setModalOpen(true);
+  };
+
+  const handleVerCartaMotivacion = (inscripcion) => {
+    setCartaMotivacionSeleccionada(inscripcion.carta_motivacion || 'No hay carta de motivación disponible');
+    setModalCartaOpen(true);
   };
 
   const confirmarAccion = async () => {
@@ -277,6 +286,19 @@ const AdminInscripciones = () => {
                   
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
+                      {/* Ícono para ver carta de motivación - solo para cursos que la requieren */}
+                      {!esEvento && item?.requiere_carta_motivacion && inscripcion.carta_motivacion && (
+                        <Tooltip title="Ver carta de motivación">
+                          <IconButton
+                            size="small"
+                            color="info"
+                            onClick={() => handleVerCartaMotivacion(inscripcion)}
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      
                       {estado === 'PENDIENTE' && (
                         <>
                           <Tooltip title="Aprobar">
@@ -440,6 +462,34 @@ const AdminInscripciones = () => {
             )}
           </Box>
         </Paper>
+
+        {/* Modal de Carta de Motivación */}
+        <Dialog open={modalCartaOpen} onClose={() => setModalCartaOpen(false)} maxWidth="md" fullWidth>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Description color="primary" />
+            Carta de Motivación
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ 
+              p: 3, 
+              bgcolor: '#f9f9f9', 
+              borderRadius: 2, 
+              border: '1px solid #e0e0e0',
+              minHeight: 200,
+              maxHeight: 400,
+              overflow: 'auto'
+            }}>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                {cartaMotivacionSeleccionada}
+              </Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setModalCartaOpen(false)} variant="contained">
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Modal de Confirmación */}
         <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
