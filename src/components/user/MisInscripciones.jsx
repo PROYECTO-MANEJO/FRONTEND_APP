@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -19,13 +19,18 @@ import {
   LocationOn,
   AccessTime,
   Payment,
-  Description
+  Description,
+  CheckCircle,
+  Cancel,
+  PlayArrow
 } from '@mui/icons-material';
 import UserSidebar from './UserSidebar';
+import { useUserSidebarLayout } from '../../hooks/useUserSidebarLayout';
 import EstadoInscripcion from '../shared/EstadoInscripcion';
 import { useInscripciones } from '../../hooks/useInscripciones';
 
 const MisInscripciones = () => {
+  const { getMainContentStyle } = useUserSidebarLayout();
   const { 
     inscripcionesEventos, 
     inscripcionesCursos, 
@@ -33,11 +38,36 @@ const MisInscripciones = () => {
     error 
   } = useInscripciones();
 
+  // Debug: Mostrar los datos recibidos del backend
+  useEffect(() => {
+    if (!loading && !error) {
+      console.log('DEBUG - Inscripciones Eventos:', inscripcionesEventos);
+      console.log('DEBUG - Inscripciones Cursos:', inscripcionesCursos);
+      
+      // Verificar específicamente el estado de cada evento
+      inscripcionesEventos.forEach(inscripcion => {
+        console.log(`Evento: ${inscripcion.evento?.nom_eve || 'N/A'} - Estado: ${inscripcion.evento?.estado || 'No definido'}`);
+      });
+      
+      // Verificar específicamente el estado de cada curso
+      inscripcionesCursos.forEach(inscripcion => {
+        console.log(`Curso: ${inscripcion.curso?.nom_cur || 'N/A'} - Estado: ${inscripcion.curso?.estado || 'No definido'}`);
+      });
+    }
+  }, [inscripcionesEventos, inscripcionesCursos, loading, error]);
+
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <CircularProgress size={60} sx={{ color: '#b91c1c' }} />
         </Box>
       </Box>
@@ -46,9 +76,16 @@ const MisInscripciones = () => {
 
   if (error) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
         <UserSidebar />
-        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flexGrow: 1,
+          p: 3, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          ...getMainContentStyle()
+        }}>
           <Alert severity="error" sx={{ maxWidth: 500 }}>
             Error al cargar tus inscripciones: {error}
           </Alert>
@@ -60,11 +97,15 @@ const MisInscripciones = () => {
   const totalInscripciones = inscripcionesEventos.length + inscripcionesCursos.length;
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <UserSidebar />
       
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <Box sx={{ 
+        flexGrow: 1,
+        p: 3,
+        ...getMainContentStyle()
+      }}>
         <Container maxWidth="xl" sx={{ py: 4, px: 3 }}>
           {/* Header */}
           <Box sx={{ mb: 4, textAlign: 'center' }}>
@@ -204,6 +245,14 @@ const InscripcionCard = ({ inscripcion, tipo }) => {
   const descripcion = esEvento ? item.des_eve : item.des_cur;
   const fechaInicio = esEvento ? item.fec_ini_eve : item.fec_ini_cur;
   const ubicacion = esEvento ? item.ubi_eve : null;
+  const estadoItem = esEvento ? item.estado : item.estado;
+  const estaCerrado = estadoItem === 'CERRADO';
+
+  // Debug: Mostrar información detallada de cada card
+  console.log(`DEBUG - Card ${esEvento ? 'Evento' : 'Curso'}: ${nombre}`);
+  console.log(`  - Estado del item: ${estadoItem || 'No definido'}`);
+  console.log(`  - ¿Está cerrado?: ${estaCerrado}`);
+  console.log(`  - Datos completos:`, item);
 
   const estadoInscripcion = {
     inscrito: true,
@@ -221,18 +270,43 @@ const InscripcionCard = ({ inscripcion, tipo }) => {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2 , width: '450px'}}>
       <CardContent sx={{ flexGrow: 1, p: 3 }}>
-        {/* Header con tipo y estado */}
+        {/* Header con tipo, estado y estado de cierre */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Chip 
-            label={esEvento ? 'EVENTO' : 'CURSO'}
-            size="small"
-            icon={esEvento ? <Event sx={{ fontSize: '0.7rem' }} /> : <School sx={{ fontSize: '0.7rem' }} />}
-            sx={{ 
-              bgcolor: esEvento ? '#1976d2' : '#2e7d32',
-              color: 'white',
-              fontWeight: 600
-            }}
-          />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Chip 
+              label={esEvento ? 'EVENTO' : 'CURSO'}
+              size="small"
+              icon={esEvento ? <Event sx={{ fontSize: '0.7rem' }} /> : <School sx={{ fontSize: '0.7rem' }} />}
+              sx={{ 
+                bgcolor: esEvento ? '#1976d2' : '#2e7d32',
+                color: 'white',
+                fontWeight: 600
+              }}
+            />
+            {estaCerrado ? (
+              <Chip 
+                label="FINALIZADO"
+                size="small"
+                icon={<CheckCircle sx={{ fontSize: '0.7rem' }} />}
+                sx={{ 
+                  bgcolor: '#d32f2f',
+                  color: 'white',
+                  fontWeight: 600
+                }}
+              />
+            ) : (
+              <Chip 
+                label="EN CURSO"
+                size="small"
+                icon={<PlayArrow sx={{ fontSize: '0.7rem' }} />}
+                sx={{ 
+                  bgcolor: '#1976d2',
+                  color: 'white',
+                  fontWeight: 600
+                }}
+              />
+            )}
+          </Box>
           <EstadoInscripcion 
             estado={estadoInscripcion.estado} 
             showDetails={false}

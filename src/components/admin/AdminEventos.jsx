@@ -27,7 +27,8 @@ import {
   Divider,
   OutlinedInput,
   Checkbox,
-  ListItemText
+  ListItemText,
+  TableCell
 } from '@mui/material';
 import {
   Add,
@@ -44,16 +45,20 @@ import {
   Save,
   Cancel,
   Info,
-  AttachMoney
+  AttachMoney,
+  CheckCircle
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
+import { useEstadoDisplay } from '../../hooks/useEstadoDisplay';
 
 const AdminEventos = () => {
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const { getMainContentStyle } = useSidebarLayout();
 
   const [stats, setStats] = useState({
     totalEventos: 0,
@@ -91,7 +96,8 @@ const AdminEventos = () => {
     tipo_audiencia_eve: '',
     es_gratuito: true,
     precio: '',
-    carreras_seleccionadas: []
+    carreras_seleccionadas: [],
+    porcentaje_asistencia_aprobacion: 80
   });
 
   // Constantes
@@ -172,7 +178,7 @@ const AdminEventos = () => {
       // Calcular estadísticas
       const totalEventos = eventosData.length;
       const eventosActivos = eventosData.filter(e => {
-        const estado = obtenerEstadoEvento(e.fec_ini_eve, e.fec_fin_eve);
+        const estado = obtenerEstadoEvento(e.fec_ini_eve, e.fec_fin_eve, e.estado);
         return estado === 'EN_CURSO' || estado === 'PROXIMAMENTE';
       }).length;
       const totalInscripciones = eventosData.reduce((sum, e) => sum + (e.total_inscripciones || 0), 0);
@@ -264,7 +270,8 @@ const AdminEventos = () => {
         tipo_audiencia_eve: eventoData.tipo_audiencia_eve || '',
         es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
         precio: eventoData.precio || '',
-        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : []
+        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : [],
+        porcentaje_asistencia_aprobacion: eventoData.porcentaje_asistencia_aprobacion || 80
       });
     } else {
       // Modo creación - limpiar formulario
@@ -284,7 +291,8 @@ const AdminEventos = () => {
         tipo_audiencia_eve: '',
         es_gratuito: true,
         precio: '',
-        carreras_seleccionadas: []
+        carreras_seleccionadas: [],
+        porcentaje_asistencia_aprobacion: 80
       });
     }
     
@@ -336,6 +344,18 @@ const AdminEventos = () => {
       }
     }
 
+    // Validar campos de aprobación
+    if (!evento.porcentaje_asistencia_aprobacion || evento.porcentaje_asistencia_aprobacion === '') {
+      nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia mínimo es obligatorio';
+    } else {
+      const porcentajeAsistencia = parseFloat(evento.porcentaje_asistencia_aprobacion);
+      if (isNaN(porcentajeAsistencia)) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia debe ser un número entre 0 y 100';
+      } else if (porcentajeAsistencia < 0 || porcentajeAsistencia > 100) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia debe ser un número entre 0 y 100';
+      }
+    }
+
     if (Object.keys(nuevosErrores).length > 0) {
       setErrors(nuevosErrores);
       return;
@@ -359,8 +379,12 @@ const AdminEventos = () => {
         capacidad_max_eve: parseInt(evento.capacidad_max_eve),
         tipo_audiencia_eve: evento.tipo_audiencia_eve,
         es_gratuito: evento.es_gratuito,
-        precio: evento.es_gratuito ? null : parseFloat(evento.precio)
+        precio: evento.es_gratuito ? null : parseFloat(evento.precio),
+        porcentaje_asistencia_aprobacion: parseInt(evento.porcentaje_asistencia_aprobacion, 10)
       };
+
+      // Debug: Ver qué datos estamos enviando
+      console.log('Datos del evento a enviar:', datosEvento);
 
       let eventoId;
       
@@ -428,9 +452,12 @@ const AdminEventos = () => {
 
     } catch (error) {
       console.error('Error al procesar evento:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el evento`,
+        message: error.response?.data?.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el evento: ${error.message}`,
         severity: 'error'
       });
     } finally {
@@ -459,33 +486,39 @@ const AdminEventos = () => {
     }
   };
 
-  // Función auxiliar para obtener el estado del evento
-  const obtenerEstadoEvento = (fechaInicio, fechaFin) => {
+  // Renderizar el estado del evento en la tabla
+  const EventoEstadoChip = ({ evento }) => {
+    const { estado: estadoDisplay, color: estadoColor } = useEstadoDisplay(evento, 'evento');
+    
+    return (
+      <Chip
+        label={estadoDisplay}
+        color={estadoColor}
+        size="small"
+        sx={{ fontWeight: 600 }}
+      />
+    );
+  };
+
+  // Función para obtener el estado del evento
+  const obtenerEstadoEvento = (fechaInicio, fechaFin, estadoDB) => {
+    // Si está cerrado en la base de datos, siempre mostrar FINALIZADO
+    if (estadoDB === 'CERRADO') {
+      return 'FINALIZADO';
+    }
+
     const hoy = new Date();
     const inicio = new Date(fechaInicio);
     const fin = new Date(fechaFin);
-    
-    if (hoy < inicio) return 'PROXIMAMENTE';
-    if (hoy >= inicio && hoy <= fin) return 'EN_CURSO';
-    if (hoy > fin) return 'FINALIZADO';
-    return 'INDETERMINADO';
-  };
 
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case 'EN_CURSO':
-        return '#10b981';
-      case 'FINALIZADO':
-        return '#6b7280';
-      case 'PROXIMAMENTE':
-        return '#f59e0b';
-      case 'ACTIVO':
-        return '#10b981';
-      case 'CANCELADO':
-        return '#ef4444';
-      default:
-        return '#f59e0b';
-    }
+    // Si ya pasó la fecha fin, mostrar FINALIZADO
+    if (hoy > fin) return 'FINALIZADO';
+
+    // Si aún no llega la fecha de inicio, mostrar PRÓXIMAMENTE
+    if (hoy < inicio) return 'PRÓXIMAMENTE';
+
+    // Si está entre las fechas y está activo, mostrar EN CURSO
+    return 'EN CURSO';
   };
 
   const formatearFecha = (fecha) => {
@@ -584,7 +617,7 @@ const AdminEventos = () => {
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, ...getMainContentStyle() }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ color: '#6d1313', fontWeight: 'bold', mb: 1 }}>
@@ -689,18 +722,13 @@ const AdminEventos = () => {
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden'
                       }}>
-                        {evento.nom_eve}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {evento.nom_eve}
+                          </Typography>
+                          <EventoEstadoChip evento={evento} />
+                        </Box>
                       </Typography>
-                      <Chip
-                        label={obtenerEstadoEvento(evento.fec_ini_eve, evento.fec_fin_eve)}
-                        size="small"
-                        sx={{
-                          bgcolor: getEstadoColor(obtenerEstadoEvento(evento.fec_ini_eve, evento.fec_fin_eve)),
-                          color: 'white',
-                          fontWeight: 500,
-                          ml: 1
-                        }}
-                      />
                     </Box>
                     
                     {/* Descripción */}
@@ -1244,6 +1272,48 @@ const AdminEventos = () => {
                         ? "Este evento será gratuito. Los estudiantes podrán inscribirse sin necesidad de proporcionar información de pago."
                         : "Este evento es pagado. Los estudiantes deberán proporcionar el método de pago y el comprobante al inscribirse."
                       }
+                    </Alert>
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              {/* Criterios de Aprobación */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', color: '#6d1313' }}>
+                  <CheckCircle sx={{ mr: 1 }} />
+                  📋 Criterios de Aprobación (Obligatorios)
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Porcentaje mínimo de asistencia (%)"
+                      value={evento.porcentaje_asistencia_aprobacion}
+                      onChange={(e) => setEvento(prev => ({ ...prev, porcentaje_asistencia_aprobacion: e.target.value }))}
+                      error={!!errors.porcentaje_asistencia_aprobacion}
+                      helperText={errors.porcentaje_asistencia_aprobacion || 'Porcentaje mínimo requerido para aprobar (0-100)'}
+                      inputProps={{ 
+                        min: 0, 
+                        max: 100,
+                        step: 1
+                      }}
+                      required
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#6d1313',
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Alert severity="warning" sx={{ bgcolor: '#fff3cd', borderColor: '#6d1313' }}>
+                      <strong>Importante:</strong> Los participantes deberán cumplir con al menos el {evento.porcentaje_asistencia_aprobacion}% de asistencia para aprobar el evento y recibir su certificado.
                     </Alert>
                   </Grid>
                 </Grid>

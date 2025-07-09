@@ -1,209 +1,251 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Avatar,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip
+  Box, Typography, Grid, Card, CardContent, Avatar, Button, Divider, CircularProgress, Alert
 } from '@mui/material';
 import {
-  BarChart,
-  TrendingUp,
-  People,
-  Event,
-  School,
-  AttachMoney,
-  Download,
-  Assessment,
-  Timeline
+  People, Event, School, AttachMoney, Assessment, BugReport, TrendingUp, PictureAsPdf
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 const AdminReportes = () => {
-  const [loading, setLoading] = useState(true);
-  const [reportData, setReportData] = useState({
-    usuarios: [],
-    eventos: [],
-    cursos: [],
-    ingresos: []
-  });
+  const { getMainContentStyle } = useSidebarLayout();
+  const { isMaster } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
-  useEffect(() => {
-    loadReportData();
-  }, []);
+  const reportTypes = [
+    {
+      tipo: 'usuarios',
+      title: 'Reporte de Usuarios',
+      description: 'Estadísticas detalladas de usuarios registrados',
+      icon: <People />,
+      color: '#3b82f6',
+      btnColor: 'primary'
+    },
+    {
+      tipo: 'eventos',
+      title: 'Reporte de Eventos',
+      description: 'Análisis de eventos y participación',
+      icon: <Event />,
+      color: '#10b981',
+      btnColor: 'success'
+    },
+    {
+      tipo: 'cursos',
+      title: 'Reporte de Cursos',
+      description: 'Estadísticas de cursos y completación',
+      icon: <School />,
+      color: '#f59e0b',
+      btnColor: 'warning'
+    },
+    {
+      tipo: 'financiero',
+      title: 'Reportes Financieros',
+      description: 'Ver historial y generar reportes de ingresos',
+      icon: <AttachMoney />,
+      color: '#ef4444',
+      btnColor: 'error'
+    }
+  ];
 
-  const loadReportData = async () => {
+  // Reportes PDF de solicitudes (solo para MASTER)
+  const solicitudesPDFTypes = [
+    {
+      tipo: 'estado',
+      title: 'Reporte por Estados',
+      description: 'Distribución de solicitudes por estados del sistema',
+      icon: <Assessment />,
+      color: '#9c27b0',
+      btnColor: 'secondary'
+    },
+    {
+      tipo: 'desarrollador',
+      title: 'Carga por Desarrollador',
+      description: 'Solicitudes asignadas y carga de trabajo por desarrollador',
+      icon: <BugReport />,
+      color: '#2196f3',
+      btnColor: 'primary'
+    },
+    {
+      tipo: 'resumen',
+      title: 'Reporte Ejecutivo',
+      description: 'Resumen general y métricas principales del sistema',
+      icon: <TrendingUp />,
+      color: '#673ab7',
+      btnColor: 'secondary'
+    }
+  ];
+
+  const handleVerReportes = (tipo) => {
+    // Reportes existentes
+    if (tipo === 'financiero') {
+      navigate('/admin/reportes/historial?tipo=FINANZAS');
+    } else if (tipo === 'usuarios') {
+      navigate('/admin/reportes/historial-usuarios?tipo=USUARIOS');
+    } else if (tipo === 'eventos') {
+      navigate('/admin/reportes/historial-eventos?tipo=EVENTOS');
+    } else if (tipo === 'cursos') {
+      navigate('/admin/reportes/historial-cursos?tipo=CURSOS');
+    }
+  };
+
+  const handleGenerarPDFSolicitudes = async (tipoReporte) => {
     try {
       setLoading(true);
-      // Aquí irían las llamadas reales a la API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Datos simulados
-      setReportData({
-        usuarios: [
-          { mes: 'Enero', total: 120, nuevos: 25 },
-          { mes: 'Febrero', total: 145, nuevos: 30 },
-          { mes: 'Marzo', total: 180, nuevos: 35 },
-          { mes: 'Abril', total: 210, nuevos: 40 },
-          { mes: 'Mayo', total: 250, nuevos: 45 }
-        ],
-        eventos: [
-          { nombre: 'Conferencia Tech 2024', inscritos: 150, ingresos: 7500 },
-          { nombre: 'Workshop Web Dev', inscritos: 35, ingresos: 1050 },
-          { nombre: 'Seminario Marketing', inscritos: 80, ingresos: 3200 }
-        ],
-        cursos: [
-          { nombre: 'JavaScript Avanzado', estudiantes: 45, completados: 38 },
-          { nombre: 'React Fundamentals', estudiantes: 60, completados: 52 },
-          { nombre: 'Node.js Backend', estudiantes: 30, completados: 25 }
-        ],
-        ingresos: [
-          { concepto: 'Eventos', monto: 11750, porcentaje: 65 },
-          { concepto: 'Cursos', monto: 5250, porcentaje: 29 },
-          { concepto: 'Otros', monto: 1000, porcentaje: 6 }
-        ]
-      });
+      setMessage(null);
+
+      const endpoint = `/reportes/solicitudes/${tipoReporte}/pdf`;
+      const response = await api.post(endpoint);
+
+      if (response.data.success) {
+        setMessage({
+          type: 'success',
+          text: `✅ ${response.data.message}`
+        });
+        // Redirigir al tipo correcto de reporte
+        setTimeout(() => {
+          const tipoReporteMap = {
+            'estado': 'SOLICITUDES_ESTADO',
+            'desarrollador': 'SOLICITUDES_DESARROLLADOR',
+            'resumen': 'SOLICITUDES_RESUMEN'
+          };
+          navigate(`/admin/reportes/historial-solicitudes?tipo=${tipoReporteMap[tipoReporte]}`);
+        }, 2000);
+      }
     } catch (error) {
-      console.error('Error al cargar datos de reportes:', error);
+      console.error('Error generando reporte PDF:', error);
+      if (error.response?.status === 401) {
+        // Si es error de autenticación, redirigir al homepage
+        navigate('/');
+        return;
+      }
+      setMessage({
+        type: 'error',
+        text: `❌ Error al generar el reporte: ${error.response?.data?.message || error.message}`
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const stats = [
-    {
-      title: 'Ingresos Totales',
-      value: '$18,000',
-      icon: <AttachMoney />,
-      color: '#10b981',
-      change: '+12%'
-    },
-    {
-      title: 'Usuarios Activos',
-      value: '250',
-      icon: <People />,
-      color: '#3b82f6',
-      change: '+8%'
-    },
-    {
-      title: 'Eventos Realizados',
-      value: '15',
-      icon: <Event />,
-      color: '#f59e0b',
-      change: '+25%'
-    },
-    {
-      title: 'Cursos Completados',
-      value: '115',
-      icon: <School />,
-      color: '#7c3aed',
-      change: '+15%'
-    }
-  ];
-
-  const reportTypes = [
-    {
-      title: 'Reporte de Usuarios',
-      description: 'Estadísticas detalladas de usuarios registrados',
-      icon: <People />,
-      color: '#3b82f6'
-    },
-    {
-      title: 'Reporte de Eventos',
-      description: 'Análisis de eventos y participación',
-      icon: <Event />,
-      color: '#10b981'
-    },
-    {
-      title: 'Reporte de Cursos',
-      description: 'Estadísticas de cursos y completación',
-      icon: <School />,
-      color: '#f59e0b'
-    },
-    {
-      title: 'Reporte Financiero',
-      description: 'Análisis de ingresos y gastos',
-      icon: <AttachMoney />,
-      color: '#ef4444'
-    }
-  ];
-
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 4, background: '#fafbfc', minHeight: '100vh', ...getMainContentStyle() }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
             Reportes y Análisis
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="subtitle1" color="text.secondary">
             Visualiza estadísticas y genera reportes del sistema
           </Typography>
         </Box>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
-            <CircularProgress size={60} sx={{ color: '#7c3aed' }} />
-          </Box>
-        ) : (
-          <>
-            {/* Stats Cards */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              {stats.map((stat, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
-                  <Card>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Box>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            {stat.title}
-                          </Typography>
-                          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                            {stat.value}
-                          </Typography>
-                          <Chip
-                            label={stat.change}
-                            size="small"
-                            sx={{
-                              bgcolor: stat.change.startsWith('+') ? '#dcfce7' : '#fef2f2',
-                              color: stat.change.startsWith('+') ? '#16a34a' : '#dc2626',
-                              fontWeight: 500
-                            }}
-                          />
-                        </Box>
-                        <Avatar sx={{ bgcolor: stat.color, width: 56, height: 56 }}>
-                          {stat.icon}
-                        </Avatar>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+        {/* Reportes Generales */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: '#1976d2' }}>
+            📊 Reportes Generales del Sistema
+          </Typography>
+          <Grid container spacing={3} sx={{ maxWidth: 800, mx: 'auto' }}>
+            {reportTypes.map((report) => (
+              <Grid item xs={12} sm={6} md={6} key={report.tipo}>
+                <Card sx={{ 
+                  height: 280, 
+                  minWidth: 350,
+                  maxWidth: 350,
+                  mx: 'auto',
+                  display: 'flex', 
+                  flexDirection: 'column' 
+                }}>
+                  <CardContent sx={{ textAlign: 'center', p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: report.color,
+                        width: 64,
+                        height: 64,
+                        mx: 'auto',
+                        mb: 2
+                      }}
+                    >
+                      {report.icon}
+                    </Avatar>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                      {report.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
+                      {report.description}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color={report.tipo === 'usuarios' ? 'primary' : report.btnColor}
+                      fullWidth
+                      onClick={() => handleVerReportes(report.tipo)}
+                      startIcon={<Assessment />}
+                      sx={{ 
+                        mt: 'auto',
+                        ...(report.tipo === 'usuarios' && {
+                          backgroundColor: '#1976d2',
+                          '&:hover': {
+                            backgroundColor: '#1565c0'
+                          }
+                        })
+                      }}
+                    >
+                      Ver Reportes
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
 
-            {/* Report Generation */}
+        {/* Reportes de Solicitudes (Solo para MASTER) */}
+        {isMaster() && (
+          <>
+            <Divider sx={{ my: 4 }} />
             <Box sx={{ mb: 4 }}>
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
-                Generar Reportes
-              </Typography>
-              <Grid container spacing={3}>
-                {reportTypes.map((report, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
-                    <Card sx={{ height: '100%' }}>
-                      <CardContent sx={{ textAlign: 'center', p: 3 }}>
+              <Box sx={{ mb: 3, textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: '#9c27b0' }}>
+                  🔒 Reportes de Solicitudes de Cambio (MASTER)
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Análisis exclusivo y auditoría del sistema de solicitudes
+                </Typography>
+              </Box>
+              {/* Mensaje de estado */}
+              {message && (
+                <Alert 
+                  severity={message.type} 
+                  sx={{ mb: 3, maxWidth: 600, mx: 'auto' }}
+                  onClose={() => setMessage(null)}
+                >
+                  {message.text}
+                </Alert>
+              )}
+
+              <Grid container spacing={3} sx={{ maxWidth: 1000, mx: 'auto' }}>
+                {solicitudesPDFTypes.map((report) => (
+                  <Grid item xs={12} sm={6} md={4} key={report.tipo}>
+                    <Card sx={{ 
+                      height: 300, 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      border: '2px solid transparent',
+                      '&:hover': {
+                        border: '2px solid #9c27b0',
+                        transform: 'translateY(-4px)',
+                        transition: 'all 0.3s ease'
+                      }
+                    }}>
+                      <CardContent sx={{ textAlign: 'center', p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                         <Avatar
                           sx={{
                             bgcolor: report.color,
@@ -218,19 +260,19 @@ const AdminReportes = () => {
                         <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
                           {report.title}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
                           {report.description}
                         </Typography>
                         <Button
                           variant="contained"
-                          startIcon={<Download />}
-                          sx={{
-                            bgcolor: report.color,
-                            '&:hover': { bgcolor: report.color, opacity: 0.9 }
-                          }}
+                          color={report.btnColor}
                           fullWidth
+                          onClick={() => handleGenerarPDFSolicitudes(report.tipo)}
+                          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <PictureAsPdf />}
+                          disabled={loading}
+                          sx={{ mt: 'auto' }}
                         >
-                          Descargar
+                          {loading ? 'Generando...' : 'Generar PDF'}
                         </Button>
                       </CardContent>
                     </Card>
@@ -238,139 +280,6 @@ const AdminReportes = () => {
                 ))}
               </Grid>
             </Box>
-
-            {/* Data Tables */}
-            <Grid container spacing={3}>
-              {/* Eventos más populares */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={2} sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Event sx={{ mr: 2, color: '#7c3aed' }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Eventos Más Populares
-                    </Typography>
-                  </Box>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Evento</TableCell>
-                          <TableCell align="right">Inscritos</TableCell>
-                          <TableCell align="right">Ingresos</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {reportData.eventos.map((evento, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{evento.nombre}</TableCell>
-                            <TableCell align="right">{evento.inscritos}</TableCell>
-                            <TableCell align="right">${evento.ingresos}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Paper>
-              </Grid>
-
-              {/* Cursos con mejor rendimiento */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={2} sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <School sx={{ mr: 2, color: '#7c3aed' }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Rendimiento de Cursos
-                    </Typography>
-                  </Box>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Curso</TableCell>
-                          <TableCell align="right">Estudiantes</TableCell>
-                          <TableCell align="right">Completados</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {reportData.cursos.map((curso, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{curso.nombre}</TableCell>
-                            <TableCell align="right">{curso.estudiantes}</TableCell>
-                            <TableCell align="right">
-                              {curso.completados} ({Math.round((curso.completados / curso.estudiantes) * 100)}%)
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Paper>
-              </Grid>
-
-              {/* Distribución de ingresos */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={2} sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <AttachMoney sx={{ mr: 2, color: '#7c3aed' }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Distribución de Ingresos
-                    </Typography>
-                  </Box>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Concepto</TableCell>
-                          <TableCell align="right">Monto</TableCell>
-                          <TableCell align="right">Porcentaje</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {reportData.ingresos.map((ingreso, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{ingreso.concepto}</TableCell>
-                            <TableCell align="right">${ingreso.monto}</TableCell>
-                            <TableCell align="right">{ingreso.porcentaje}%</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Paper>
-              </Grid>
-
-              {/* Crecimiento de usuarios */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={2} sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <TrendingUp sx={{ mr: 2, color: '#7c3aed' }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Crecimiento de Usuarios
-                    </Typography>
-                  </Box>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Mes</TableCell>
-                          <TableCell align="right">Total</TableCell>
-                          <TableCell align="right">Nuevos</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {reportData.usuarios.map((usuario, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{usuario.mes}</TableCell>
-                            <TableCell align="right">{usuario.total}</TableCell>
-                            <TableCell align="right">+{usuario.nuevos}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Paper>
-              </Grid>
-            </Grid>
           </>
         )}
       </Box>
@@ -378,4 +287,4 @@ const AdminReportes = () => {
   );
 };
 
-export default AdminReportes; 
+export default AdminReportes;

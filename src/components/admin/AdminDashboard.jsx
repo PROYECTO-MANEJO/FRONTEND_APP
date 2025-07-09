@@ -1,61 +1,38 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useContext } from 'react';
 import {
   Typography,
   Box,
   Grid,
-  CircularProgress,
-  Paper,
-  Container,
   Card,
   CardContent,
   Avatar,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar
+  Alert,
+  Chip
 } from '@mui/material';
 import { 
   People,
   Event,
   School,
   RequestPage,
-  BarChart,
   TrendingUp,
-  CheckCircle,
-  AdminPanelSettings,
-  Assignment,
-  Notifications,
-  Person,
-  EventNote
+  VerifiedUser,
+  ManageAccounts,
+  ArrowForward
 } from '@mui/icons-material';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { AuthContext } from '../../context/AuthContext';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
+import useGitHubPolling from '../../hooks/useGitHubPolling';
 
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalEvents: 0,
-    totalCourses: 0,
-    pendingRequests: 0
-  });
+  const { getMainContentStyle } = useSidebarLayout();
+  
+  // Iniciar polling automático de GitHub para MASTER/ADMIN
+  useGitHubPolling(180000); // 3 minutos
 
-  useEffect(() => {
-    // Simular carga de estadísticas
-    setTimeout(() => {
-      setStats({
-        totalUsers: 156,
-        totalEvents: 23,
-        totalCourses: 12,
-        pendingRequests: 8
-      });
-      setLoading(false);
-    }, 1000);
-  }, []);
 
   const quickActions = [
     {
@@ -63,7 +40,8 @@ const AdminDashboard = () => {
       description: 'Administrar cuentas de usuario',
       icon: <People />,
       path: '/admin/usuarios',
-      color: '#6d1313'
+      color: '#6d1313',
+      isRestricted: user?.rol !== 'MASTER'
     },
     {
       title: 'Gestionar Eventos',
@@ -80,10 +58,26 @@ const AdminDashboard = () => {
       color: '#6d1313'
     },
     {
-      title: 'Ver Solicitudes',
-      description: 'Revisar solicitudes pendientes',
+      title: 'Solicitudes de Cambio',
+      description: 'Revisar solicitudes de cambio',
       icon: <RequestPage />,
       path: '/admin/solicitudes',
+      color: '#6d1313',
+      isRestricted: user?.rol !== 'MASTER'
+    },
+    {
+      title: 'Verificar Documentos',
+      description: 'Revisar documentos pendientes',
+      icon: <VerifiedUser />,
+      path: '/admin/verificacion-documentos',
+      color: '#6d1313',
+      isRestricted: user?.rol !== 'MASTER'
+    },
+    {
+      title: 'Gestión',
+      description: 'Administrar inscripciones',
+      icon: <ManageAccounts />,
+      path: '/admin/gestion-inscripciones',
       color: '#6d1313'
     },
     {
@@ -92,61 +86,30 @@ const AdminDashboard = () => {
       icon: <TrendingUp />,
       path: '/admin/reportes',
       color: '#6d1313'
-    },
-    {
-      title: 'Configuración',
-      description: 'Configurar el sistema',
-      icon: <Assignment />,
-      path: '/admin/configuracion',
-      color: '#6d1313'
     }
-  ];
+  ].filter(action => !action.isRestricted);
 
-  const recentActivities = [
-    { id: 1, type: 'user', message: 'Nuevo usuario registrado: Juan Pérez', time: '2 min ago' },
-    { id: 2, type: 'event', message: 'Evento "Conferencia Tech" creado', time: '15 min ago' },
-    { id: 3, type: 'request', message: 'Nueva solicitud de cambio recibida', time: '1 hora ago' },
-    { id: 4, type: 'course', message: 'Curso "React Avanzado" actualizado', time: '2 horas ago' }
-  ];
 
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case 'user': return <Person />;
-      case 'event': return <EventNote />;
-      case 'request': return <RequestPage />;
-      case 'course': return <School />;
-      default: return <Notifications />;
-    }
-  };
-
-  const getActivityColor = (type) => {
-    switch (type) {
-      case 'user': return '#6d1313';
-      case 'event': return '#6d1313';
-      case 'request': return '#6d1313';
-      case 'course': return '#6d1313';
-      default: return '#6d1313';
-    }
-  };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Box 
-      sx={{
+            sx={{
               background: 'linear-gradient(135deg, #6d1313 0%, #8b1a1a 100%)',
               borderRadius: 3,
               p: 4,
               color: 'white',
-              mb: 3
-      }}
-    >
+              mb: 3,
+              position: 'relative'
+            }}
+          >
             <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
-              ¡Bienvenido, {user?.nombre}!
+              ¡Bienvenido, {user?.nom_usu1}!
             </Typography>
             <Typography variant="h6" sx={{ opacity: 0.9 }}>
               Panel de Administración - Sistema de Gestión
@@ -154,88 +117,45 @@ const AdminDashboard = () => {
           </Box>
         </Box>
 
-        {/* Statistics Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
-                    <People />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
-                      {loading ? <CircularProgress size={24} /> : stats.totalUsers}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Usuarios
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+        
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
-                    <Event />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
-                      {loading ? <CircularProgress size={24} /> : stats.totalEvents}
-                    </Typography>
-            <Typography variant="body2" color="text.secondary">
-                      Eventos Activos
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
-                    <School />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
-                      {loading ? <CircularProgress size={24} /> : stats.totalCourses}
+        {/* Información de Rol */}
+        {user?.rol !== 'MASTER' && (
+          <Alert 
+            severity="info" 
+            sx={{ 
+              mb: 3, 
+              borderRadius: 2,
+              border: '1px solid #6d1313',
+              '& .MuiAlert-icon': { color: '#6d1313' }
+            }}
+          >
+            <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+              ℹ️ Acceso de Administrador Estándar
             </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Cursos Disponibles
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Tu rol actual te permite gestionar eventos, cursos, inscripciones y reportes. 
+              Las siguientes funcionalidades están restringidas a <strong>Administradores Master</strong>:
             </Typography>
-          </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ bgcolor: '#6d1313', mr: 2 }}>
-                    <Assignment />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6d1313' }}>
-                      {loading ? <CircularProgress size={24} /> : stats.pendingRequests}
-                    </Typography>
-            <Typography variant="body2" color="text.secondary">
-                      Solicitudes Pendientes
-            </Typography>
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-          </Grid>
-        </Grid>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Chip 
+                label="👥 Gestión de Usuarios" 
+                size="small" 
+                sx={{ bgcolor: '#ffebee', color: '#6d1313' }}
+              />
+              <Chip 
+                label="📋 Solicitudes de Cambio" 
+                size="small" 
+                sx={{ bgcolor: '#ffebee', color: '#6d1313' }}
+              />
+              <Chip 
+                label="✅ Verificación de Documentos" 
+                size="small" 
+                sx={{ bgcolor: '#ffebee', color: '#6d1313' }}
+              />
+            </Box>
+          </Alert>
+        )}
 
         {/* Quick Actions */}
         <Card sx={{ borderRadius: 3, boxShadow: 3, mb: 4 }}>
@@ -247,8 +167,8 @@ const AdminDashboard = () => {
               {quickActions.map((action, index) => (
                 <Grid item xs={12} sm={6} md={4} key={index}>
                   <Card 
-        sx={{
-          borderRadius: 2,
+                    sx={{
+                      borderRadius: 2,
                       cursor: 'pointer',
                       transition: 'all 0.3s ease',
                       '&:hover': { 
@@ -259,19 +179,22 @@ const AdminDashboard = () => {
                     onClick={() => navigate(action.path)}
                   >
                     <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar sx={{ bgcolor: action.color, mr: 2 }}>
-                          {action.icon}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                            {action.title}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {action.description}
-                          </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar sx={{ bgcolor: action.color, mr: 2 }}>
+                            {action.icon}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                              {action.title}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {action.description}
+                            </Typography>
+                          </Box>
                         </Box>
-    </Box>
+                        <ArrowForward sx={{ color: '#6d1313' }} />
+                      </Box>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -280,34 +203,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
-        <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: '#6d1313' }}>
-              Actividad Reciente
-      </Typography>
-            <List>
-              {recentActivities.map((activity) => (
-                <ListItem key={activity.id} sx={{ borderRadius: 2, mb: 1 }}>
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: getActivityColor(activity.type) }}>
-                      {getActivityIcon(activity.type)}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={activity.message}
-                    secondary={activity.time}
-                  />
-                  <Chip 
-                    label={activity.type.toUpperCase()} 
-                    size="small" 
-                    sx={{ bgcolor: '#6d1313', color: 'white' }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </CardContent>
-        </Card>
+
       </Box>
     </Box>
 );

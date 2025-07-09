@@ -31,10 +31,13 @@ import {
   People,
   Category,
   Edit,
-  AttachMoney
+  AttachMoney,
+  Assignment,
+  CheckCircle
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
+import { useSidebarLayout } from '../../hooks/useSidebarLayout';
 import api from '../../services/api';
 
 const AREAS_EVENTO = [
@@ -55,6 +58,7 @@ const TIPOS_AUDIENCIA = [
 ];
 
 const CrearEventos = () => {
+  const { getMainContentStyle } = useSidebarLayout();
   const { id } = useParams(); // Para detectar si estamos editando
   const navigate = useNavigate();
   const isEditing = Boolean(id);
@@ -76,7 +80,11 @@ const CrearEventos = () => {
         tipo_audiencia_eve: '',
         es_gratuito: true,
         precio: '',
-    carreras_seleccionadas: []
+    carreras_seleccionadas: [],
+    porcentaje_asistencia_aprobacion: 80,
+    estado: 'ACTIVO', // ACTIVO, CERRADO
+    requiere_carta_motivacion: true,
+    requiere_verificacion_docs: false,
   });
 
   // Estados para datos del backend
@@ -140,10 +148,7 @@ const CrearEventos = () => {
 
       const formatearHora = (hora) => {
         if (!hora) return '';
-        if (typeof hora === 'string' && hora.includes(':')) {
-          return hora.substring(0, 5); // HH:MM
-        }
-        return hora;
+        return hora.substring(0, 5); // Obtener solo HH:MM
       };
 
       setEvento({
@@ -162,7 +167,11 @@ const CrearEventos = () => {
         tipo_audiencia_eve: eventoData.tipo_audiencia_eve || '',
         es_gratuito: eventoData.es_gratuito !== undefined ? eventoData.es_gratuito : true,
         precio: eventoData.precio || '',
-        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : []
+        carreras_seleccionadas: eventoData.carreras ? eventoData.carreras.map(c => c.id) : [],
+        porcentaje_asistencia_aprobacion: eventoData.porcentaje_asistencia_aprobacion || 80,
+        estado: eventoData.estado || 'ACTIVO',
+        requiere_carta_motivacion: eventoData.requiere_carta_motivacion || false,
+        requiere_verificacion_docs: eventoData.requiere_verificacion_docs || false,
       });
 
     } catch (error) {
@@ -206,11 +215,55 @@ const CrearEventos = () => {
   // Manejar cambios en los campos
   const handleChange = (field) => (event) => {
     const value = event.target.value;
-    setEvento(prev => ({ ...prev, [field]: value }));
     
-    // Limpiar error del campo
+    // Validación y formateo específico por campo
+    if (field === 'es_gratuito') {
+      // Si cambia a gratuito, limpiar precio
+      if (value === true) {
+        setEvento(prev => ({
+          ...prev,
+          [field]: value,
+          precio: ''
+        }));
+      } else {
+        setEvento(prev => ({
+          ...prev,
+          [field]: value
+        }));
+      }
+    } else if (field === 'requiere_carta_motivacion' || field === 'requiere_verificacion_docs') {
+      // Para checkboxes, usar el valor booleano directamente
+      setEvento(prev => ({
+        ...prev,
+        [field]: event.target.checked
+      }));
+    } else if (field === 'hor_ini_eve' || field === 'hor_fin_eve') {
+      // Para horas, actualizar y recalcular duración
+      setEvento(prev => {
+        const updatedEvento = { ...prev, [field]: value };
+        
+        // Si ambas horas están definidas, calcular duración
+        if (updatedEvento.hor_ini_eve && updatedEvento.hor_fin_eve) {
+          const duracion = calcularDuracion(
+            updatedEvento.hor_ini_eve,
+            updatedEvento.hor_fin_eve
+          );
+          updatedEvento.dur_eve = duracion;
+        }
+        
+        return updatedEvento;
+      });
+    } else {
+      // Comportamiento estándar para otros campos
+      setEvento(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+    
+    // Limpiar error específico del campo
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => ({ ...prev, [field]: null }));
     }
 
     // Lógica especial para tipo de audiencia
@@ -220,11 +273,15 @@ const CrearEventos = () => {
       }
     }
 
-    // Lógica especial para configuración de precio
-    if (field === 'es_gratuito') {
-      if (value) {
-        // Si se marca como gratuito, limpiar el precio
-        setEvento(prev => ({ ...prev, precio: '' }));
+    // Validación en tiempo real para porcentaje de asistencia
+    if (field === 'porcentaje_asistencia_aprobacion') {
+      const porcentaje = parseFloat(value);
+      if (value && !isNaN(porcentaje)) {
+        if (porcentaje < 0 || porcentaje > 100) {
+          setErrors(prev => ({ ...prev, [field]: 'El porcentaje debe estar entre 0 y 100' }));
+        } else if (porcentaje < 50 && porcentaje > 0) {
+          setErrors(prev => ({ ...prev, [field]: 'Se recomienda un mínimo del 50% para eventos académicos' }));
+        }
       }
     }
 
@@ -348,6 +405,22 @@ const CrearEventos = () => {
       }
     }
 
+    // Validar campos de aprobación
+    if (!evento.porcentaje_asistencia_aprobacion || evento.porcentaje_asistencia_aprobacion === '') {
+      nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje de asistencia mínimo es obligatorio';
+    } else {
+      const porcentajeAsistencia = parseFloat(evento.porcentaje_asistencia_aprobacion);
+      if (isNaN(porcentajeAsistencia)) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'Debe ser un número válido';
+      } else if (porcentajeAsistencia < 0) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje no puede ser menor a 0';
+      } else if (porcentajeAsistencia > 100) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'El porcentaje no puede ser mayor a 100';
+      } else if (porcentajeAsistencia < 50) {
+        nuevosErrores.porcentaje_asistencia_aprobacion = 'Se recomienda un mínimo del 50% para eventos académicos';
+      }
+    }
+
     setErrors(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
@@ -365,6 +438,10 @@ const CrearEventos = () => {
 
         setLoading(true);
         try {
+      // Asegurarse de que requiere_carta_motivacion sea un booleano
+      const requiereCartaMotivacion = evento.requiere_carta_motivacion === true;
+      console.log('Valor de requiere_carta_motivacion antes de enviar:', requiereCartaMotivacion);
+      
       // Preparar datos para el backend
       const datosEvento = {
         nom_eve: evento.nom_eve.trim(),
@@ -381,8 +458,14 @@ const CrearEventos = () => {
         capacidad_max_eve: parseInt(evento.capacidad_max_eve),
         tipo_audiencia_eve: evento.tipo_audiencia_eve,
         es_gratuito: evento.es_gratuito,
-        precio: evento.es_gratuito ? null : parseFloat(evento.precio)
+        precio: evento.es_gratuito ? null : parseFloat(evento.precio),
+        porcentaje_asistencia_aprobacion: parseInt(evento.porcentaje_asistencia_aprobacion, 10),
+        estado: evento.estado || 'ACTIVO',
+        requiere_carta_motivacion: requiereCartaMotivacion,
+        requiere_verificacion_docs: !!evento.requiere_verificacion_docs,
       };
+      
+      console.log('Datos a enviar:', datosEvento);
 
       let eventoId;
       let response;
@@ -469,7 +552,13 @@ const CrearEventos = () => {
             ced_org_eve: '',
             capacidad_max_eve: '',
             tipo_audiencia_eve: '',
-            carreras_seleccionadas: []
+            carreras_seleccionadas: [],
+            es_gratuito: true,
+            precio: '',
+            porcentaje_asistencia_aprobacion: 80,
+            estado: 'ACTIVO',
+            requiere_carta_motivacion: true,
+            requiere_verificacion_docs: false,
           });
         }
         setAlert({ show: false, message: '', severity: 'info' });
@@ -505,17 +594,36 @@ const CrearEventos = () => {
       tipo_audiencia_eve: '',
       es_gratuito: true,
       precio: '',
-      carreras_seleccionadas: []
+      carreras_seleccionadas: [],
+      porcentaje_asistencia_aprobacion: 80,
+      estado: 'ACTIVO',
+      requiere_carta_motivacion: true,
+      requiere_verificacion_docs: false,
     });
     setErrors({});
     setAlert({ show: false, message: '', severity: 'info' });
+  };
+
+  // Función para calcular la duración en horas entre dos horas
+  const calcularDuracion = (horaInicio, horaFin) => {
+    const [hIni, mIni] = horaInicio.split(':').map(Number);
+    const [hFin, mFin] = horaFin.split(':').map(Number);
+    
+    const iniMinutos = hIni * 60 + mIni;
+    const finMinutos = hFin * 60 + mFin;
+    
+    // Si fin es menor que inicio, asumimos que es el día siguiente
+    const diferenciaMinutos = finMinutos >= iniMinutos ? finMinutos - iniMinutos : (24 * 60 - iniMinutos) + finMinutos;
+    
+    // Convertir a horas (redondeando hacia arriba)
+    return Math.ceil(diferenciaMinutos / 60);
   };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <AdminSidebar />
       
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 3, ...getMainContentStyle() }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ color: '#6d1313', fontWeight: 'bold', mb: 1 }}>
@@ -552,7 +660,7 @@ const CrearEventos = () => {
         <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
           <Grid container spacing={4}>
             {/* Información Básica */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -561,7 +669,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         label="Nombre del Evento"
@@ -573,13 +681,13 @@ const CrearEventos = () => {
                       />
                     </Grid>
                     
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <FormControl fullWidth error={!!errors.id_cat_eve}>
-                        <InputLabel>Categoría *</InputLabel>
+                        <InputLabel>Categoríaaaaaa *</InputLabel>
                         <Select
                           value={evento.id_cat_eve}
                           onChange={handleChange('id_cat_eve')}
-                          label="Categoría *"
+                          label="Categoríasss *"
                         >
                           {categorias.map((categoria) => (
                             <MenuItem key={categoria.id_cat} value={categoria.id_cat}>
@@ -590,8 +698,10 @@ const CrearEventos = () => {
                         {errors.id_cat_eve && <FormHelperText>{errors.id_cat_eve}</FormHelperText>}
                       </FormControl>
                     </Grid>
+                  </Grid>
 
-                    <Grid item xs={12}>
+                  <Grid container spacing={3}>
+                    <Grid xs={12}>
                       <TextField
                         fullWidth
                         label="Descripción"
@@ -604,8 +714,46 @@ const CrearEventos = () => {
                         required
                       />
                     </Grid>
-
-                    <Grid item xs={12} md={6}>
+                  </Grid>
+                  
+                  {/* Campos de aprobación - EXACTAMENTE COMO EN CURSOS */}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <Box sx={{ mt: 2, mb: 2, p: 2, border: '2px solid #6d1313', borderRadius: 2, bgcolor: '#fafafa' }}>
+                        <Typography variant="h6" sx={{ color: '#6d1313', fontWeight: 'bold', mb: 2 }}>
+                          📋 Criterios de Aprobación (Obligatorios)
+                        </Typography>
+                        
+                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                          <TextField
+                            fullWidth
+                            type="number"
+                            label="Porcentaje mínimo de asistencia (%)"
+                            value={evento.porcentaje_asistencia_aprobacion}
+                            onChange={handleChange('porcentaje_asistencia_aprobacion')}
+                            error={!!errors.porcentaje_asistencia_aprobacion}
+                            helperText={errors.porcentaje_asistencia_aprobacion || "Porcentaje mínimo requerido para aprobar (0-100)"}
+                            inputProps={{ 
+                              min: 0, 
+                              max: 100,
+                              step: 1
+                            }}
+                            required
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                '&.Mui-focused fieldset': {
+                                  borderColor: '#6d1313',
+                                },
+                              },
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                  
+                  <Grid container spacing={3}>
+                    <Grid xs={12} md={6}>
                       <FormControl fullWidth error={!!errors.are_eve}>
                         <InputLabel>Área *</InputLabel>
                         <Select
@@ -623,7 +771,7 @@ const CrearEventos = () => {
                       </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         label="Ubicación"
@@ -643,7 +791,7 @@ const CrearEventos = () => {
             </Grid>
 
             {/* Fechas y Horarios */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -652,7 +800,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="date"
@@ -667,7 +815,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="date"
@@ -682,7 +830,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="time"
@@ -697,7 +845,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="time"
@@ -712,7 +860,7 @@ const CrearEventos = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         label="Duración Total (horas)"
@@ -727,7 +875,7 @@ const CrearEventos = () => {
             </Grid>
 
             {/* Organización y Capacidad */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -736,7 +884,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <FormControl fullWidth error={!!errors.ced_org_eve}>
                         <InputLabel>Organizador *</InputLabel>
                         <Select
@@ -754,7 +902,7 @@ const CrearEventos = () => {
                       </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <TextField
                         fullWidth
                         type="number"
@@ -773,7 +921,7 @@ const CrearEventos = () => {
             </Grid>
 
             {/* Tipo de Audiencia */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -782,7 +930,7 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <FormControl fullWidth error={!!errors.tipo_audiencia_eve}>
                         <InputLabel>Tipo de Audiencia *</InputLabel>
                         <Select
@@ -807,7 +955,7 @@ const CrearEventos = () => {
 
                     {/* Mostrar información del tipo seleccionado */}
                     {evento.tipo_audiencia_eve && (
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Alert severity="info" sx={{ mb: 2 }}>
                           {TIPOS_AUDIENCIA.find(t => t.value === evento.tipo_audiencia_eve)?.description}
                         </Alert>
@@ -816,7 +964,7 @@ const CrearEventos = () => {
 
                     {/* Selector de carreras solo para CARRERA_ESPECIFICA */}
                     {evento.tipo_audiencia_eve === 'CARRERA_ESPECIFICA' && (
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <FormControl fullWidth error={!!errors.carreras_seleccionadas}>
                           <InputLabel>Carreras Específicas *</InputLabel>
                           <Select
@@ -861,7 +1009,7 @@ const CrearEventos = () => {
 
                     {/* Mostrar mensaje para otros tipos */}
                     {(evento.tipo_audiencia_eve === 'TODAS_CARRERAS' || evento.tipo_audiencia_eve === 'PUBLICO_GENERAL') && (
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Alert severity="success">
                           {evento.tipo_audiencia_eve === 'TODAS_CARRERAS' 
                             ? 'Este evento estará disponible automáticamente para todas las carreras de la universidad'
@@ -870,13 +1018,54 @@ const CrearEventos = () => {
                         </Alert>
                       </Grid>
                     )}
+                    
+                    {/* Verificación de documentos */}
+                    <Grid xs={12}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                        <Checkbox
+                          checked={evento.requiere_verificacion_docs}
+                          onChange={(e) => setEvento(prev => ({ ...prev, requiere_verificacion_docs: e.target.checked }))}
+                          sx={{ 
+                            color: '#6d1313',
+                            '&.Mui-checked': { color: '#6d1313' }
+                          }}
+                        />
+                        <Typography variant="body1">
+                          Requiere verificación de documentos
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    
+                    {/* Carta de motivación */}
+                    <Grid xs={12}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                        <Checkbox
+                          checked={evento.requiere_carta_motivacion === true}
+                          onChange={(e) => {
+                            const newValue = e.target.checked;
+                            console.log('Cambiando requiere_carta_motivacion a:', newValue);
+                            setEvento(prev => ({
+                              ...prev,
+                              requiere_carta_motivacion: newValue
+                            }));
+                          }}
+                          sx={{ 
+                            color: '#6d1313',
+                            '&.Mui-checked': { color: '#6d1313' }
+                          }}
+                        />
+                        <Typography variant="body1">
+                          Requiere carta de motivación para inscripción
+                        </Typography>
+                      </Box>
+                    </Grid>
                   </Grid>
                 </CardContent>
               </Card>
             </Grid>
 
             {/* Configuración de Precio */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -885,12 +1074,19 @@ const CrearEventos = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <FormControl error={!!errors.es_gratuito}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Checkbox
                             checked={evento.es_gratuito}
-                            onChange={(e) => handleChange('es_gratuito')({ target: { value: e.target.checked } })}
+                            onChange={(e) => {
+                              const isGratuito = e.target.checked;
+                              setEvento(prev => ({ 
+                                ...prev, 
+                                es_gratuito: isGratuito,
+                                precio: isGratuito ? '' : prev.precio
+                              }));
+                            }}
                             sx={{ 
                               color: '#6d1313',
                               '&.Mui-checked': { color: '#6d1313' }
@@ -905,7 +1101,7 @@ const CrearEventos = () => {
                     </Grid>
 
                     {!evento.es_gratuito && (
-                      <Grid item xs={12} md={6}>
+                      <Grid xs={12} md={6}>
                         <TextField
                           fullWidth
                           type="number"
@@ -927,7 +1123,7 @@ const CrearEventos = () => {
                       </Grid>
                     )}
 
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Alert severity={evento.es_gratuito ? "success" : "info"}>
                         {evento.es_gratuito 
                           ? "Este evento será gratuito. Los estudiantes podrán inscribirse sin necesidad de proporcionar información de pago."
@@ -940,34 +1136,72 @@ const CrearEventos = () => {
               </Card>
             </Grid>
 
-            {/* Botones de acción */}
-            <Grid item xs={12}>
-              <Divider sx={{ mb: 3 }} />
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            {/* Botones de Acción */}
+            <Grid xs={12}>
+              <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', pt: 2 }}>
                 <Button
-                  variant="outlined"
-                  onClick={handleLimpiar}
-                  startIcon={<Cancel />}
+                  variant="contained"
+                  size="large"
+                  onClick={handleSubmit}
                   disabled={loading}
-                >
-                  Limpiar
-                </Button>
-                
-                                    <Button
-                        variant="contained"
-                        onClick={handleSubmit}
-                  startIcon={loading ? <CircularProgress size={20} /> : <Save />}
-                        disabled={loading || loadingEvento}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Save />}
                   sx={{
+                    minWidth: 200,
+                    height: 50,
                     bgcolor: '#6d1313',
-                    '&:hover': { bgcolor: '#8b1a1a' }
+                    '&:hover': { bgcolor: '#5a1010' },
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold'
                   }}
                 >
-                  {loading 
-                    ? (isEditing ? 'Actualizando...' : 'Creando...') 
-                    : (isEditing ? 'Actualizar Evento' : 'Crear Evento')
-                  }
-                    </Button>
+                  {loading ? 'Guardando...' : (isEditing ? 'Actualizar Evento' : 'Crear Evento')}
+                </Button>
+
+                {!isEditing && (
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={handleLimpiar}
+                    disabled={loading}
+                    startIcon={<Cancel />}
+                    sx={{
+                      minWidth: 150,
+                      height: 50,
+                      borderColor: '#6d1313',
+                      color: '#6d1313',
+                      '&:hover': {
+                        borderColor: '#5a1010',
+                        bgcolor: '#f5f5f5'
+                      },
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Limpiar
+                  </Button>
+                )}
+
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => navigate('/admin/eventos')}
+                  disabled={loading}
+                  startIcon={<Cancel />}
+                  sx={{
+                    minWidth: 150,
+                    height: 50,
+                    borderColor: '#666',
+                    color: '#666',
+                    '&:hover': {
+                      borderColor: '#555',
+                      bgcolor: '#f5f5f5'
+                    },
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Cancelar
+                </Button>
               </Box>
             </Grid>
           </Grid>
@@ -977,4 +1211,4 @@ const CrearEventos = () => {
   );
 };
 
-export default CrearEventos; 
+export default CrearEventos;
