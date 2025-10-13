@@ -1,27 +1,26 @@
-import api from './api';
+import api from "./api";
 
 class AuthService {
   // Login de usuario
   async login(email, password) {
     try {
-      const response = await api.post('/auth/login', {
+      const response = await api.post("/auth/login", {
         email,
-        password
+        password,
       });
 
       if (response.data.success) {
         // Guardar token y datos del usuario en localStorage
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
         return response.data;
       }
 
-      throw new Error(response.data.message || 'Error en el login');
+      throw new Error(response.data.message || "Error en el login");
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error de conexión');
+      throw new Error(error.response?.data?.message || "Error de conexión");
     }
   }
-
 
   // Registro de usuario normal
   async register(userData) {
@@ -29,12 +28,11 @@ class AuthService {
       const requestData = {
         email: userData.email,
         password: userData.password,
-        nombre: userData.nombre,
-        nombre2: userData.nombre2 || '',
-        apellido: userData.apellido,
-        apellido2: userData.apellido2 || '',
-
-        ced_usu: userData.ced_usu
+        firstName: userData.nombre,
+        secondName: userData.nombre2 || "",
+        lastName: userData.apellido,
+        secondLastName: userData.apellido2 || "",
+        cedula: userData.ced_usu,
       };
 
       // Solo incluir carrera si se proporciona
@@ -42,8 +40,7 @@ class AuthService {
         requestData.carrera = userData.carrera;
       }
 
-      const response = await api.post('/auth/createUser', requestData);
-
+      const response = await api.post("/auth/register", requestData);
 
       if (response.data.success) {
         // NO guardes token porque no se entrega
@@ -51,135 +48,142 @@ class AuthService {
         return response.data;
       }
 
-      throw new Error(response.data.message || 'Error en el registro');
+      throw new Error(response.data.message || "Error en el registro");
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error de conexión');
+      throw new Error(error.response?.data?.message || "Error de conexión");
     }
   }
-
 
   // Crear usuario administrador
   async createAdmin(adminData) {
     try {
-      const response = await api.post('/auth/createAdmin', {
+      const response = await api.post("/auth/createAdmin", {
         ced_usu: adminData.cedula,
         nom_usu1: adminData.nombre,
-        nom_usu2: adminData.nombre2 || '',
+        nom_usu2: adminData.nombre2 || "",
         ape_usu1: adminData.apellido,
-        ape_usu2: adminData.apellido2 || '',
+        ape_usu2: adminData.apellido2 || "",
         fec_nac_usu: adminData.fechaNacimiento,
         num_tel_usu: adminData.telefono,
         pas_usu: adminData.password,
         id_car_per: adminData.cargoId || null,
-        cor_cue: adminData.email
+        cor_cue: adminData.email,
       });
 
       if (response.data.success) {
         return response.data;
       }
 
-      throw new Error(response.data.message || 'Error al crear administrador');
+      throw new Error(response.data.message || "Error al crear administrador");
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error de conexión');
+      throw new Error(error.response?.data?.message || "Error de conexión");
     }
   }
 
   // Verificar token
   async checkToken() {
     try {
-      const response = await api.get('/auth/check-token');
+      const response = await api.get("/auth/check-token");
 
       if (response.data.success) {
         // Actualizar datos del usuario
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        localStorage.setItem("token", response.data.token);
         return response.data;
       }
 
-      throw new Error('Token inválido');
+      throw new Error("Token inválido");
     } catch {
       this.logout();
-      throw new Error('Sesión expirada');
+      throw new Error("Sesión expirada");
     }
   }
 
   // Logout
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   }
 
   // Obtener usuario actual
   getCurrentUser() {
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem("user");
     return user ? JSON.parse(user) : null;
   }
 
   // Verificar si está autenticado
   isAuthenticated() {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem("token");
   }
 
   // Verificar si es administrador
   isAdmin() {
     const user = this.getCurrentUser();
-    return user?.rol === 'ADMINISTRADOR' || user?.rol === 'MASTER';
+    return user?.rol === "ADMINISTRADOR" || user?.rol === "MASTER";
   }
 
   // Obtener token
   getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   }
 
   // Solicitar recuperación de contraseña
   async forgotPassword(email) {
     try {
-      const response = await api.post('/recovery/forgot-password', {
-        email
+      const response = await api.post("/recovery/forgot-password", {
+        email,
       });
 
       if (response.data.success) {
         return response.data;
       }
 
-      throw new Error(response.data.message || 'Error al enviar el correo de recuperación');
+      throw new Error(
+        response.data.message || "Error al enviar el correo de recuperación"
+      );
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error de conexión');
+      throw new Error(error.response?.data?.message || "Error de conexión");
     }
   }
 
   // Restablecer contraseña
   async resetPassword(token, password) {
     try {
-      const response = await api.post('/recovery/reset-password', {
+      const response = await api.post("/recovery/reset-password", {
         token,
-        password
+        password,
       });
 
       if (response.data.success) {
         return response.data;
       }
 
-      throw new Error(response.data.message || 'Error al restablecer la contraseña');
+      throw new Error(
+        response.data.message || "Error al restablecer la contraseña"
+      );
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error de conexión');
+      throw new Error(error.response?.data?.message || "Error de conexión");
     }
   }
 
   // Verificar token de recuperación
   async verifyResetToken(token) {
     try {
-      const response = await api.post('/recovery/verify-reset-token', {
-        token
+      const response = await api.post("/recovery/verify-reset-token", {
+        token,
       });
 
       if (response.data.success) {
         return response.data;
       }
 
-      throw new Error(response.data.message || 'Token de recuperación inválido');
+      throw new Error(
+        response.data.message || "Token de recuperación inválido"
+      );
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Token inválido o expirado');
+      throw new Error(
+        error.response?.data?.message || "Token inválido o expirado"
+      );
     }
   }
 }

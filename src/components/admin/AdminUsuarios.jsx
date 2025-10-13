@@ -94,7 +94,11 @@ const AdminUsuarios = () => {
     try {
       setLoading(true);
       const response = await api.get('/users/admins');
-      const usuariosData = response.data.usuarios || [];
+      console.log('Respuesta completa del servidor:', response);
+      console.log('response.data:', response.data);
+      console.log('response.data.data:', response.data.data);
+      const usuariosData = response.data.data?.usuarios || response.data.usuarios || [];
+      console.log('Usuarios encontrados:', usuariosData);
       setUsuarios(usuariosData);
       
       // Calcular estadísticas (solo administradores)
@@ -194,7 +198,7 @@ const AdminUsuarios = () => {
           updateData.pas_usu = userForm.pas_usu;
         }
         
-        await api.put(`/users/${editingUser.ced_usu}`, updateData);
+        await api.put(`/admin/users/${editingUser.ced_usu}`, updateData);
         setSnackbar({
           open: true,
           message: 'Administrador actualizado correctamente',

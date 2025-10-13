@@ -103,10 +103,21 @@ const CarreraEventosCursos = () => {
         
         console.log('Respuesta del servidor:', response);
         
+        // El BaseController envuelve la respuesta en { success: true, data: {...} }
+        // Por eso necesitamos acceder a response.data
+        const responseData = response?.data || response;
+        
+        // Asegurar que eventos y cursos siempre sean arrays
+        const safeResponse = {
+          eventos: Array.isArray(responseData?.eventos) ? responseData.eventos : [],
+          cursos: Array.isArray(responseData?.cursos) ? responseData.cursos : [],
+          carrera: responseData?.carrera || null
+        };
+        
         // Mostrar detalles de los cursos recibidos
-        if (response.cursos && response.cursos.length > 0) {
+        if (safeResponse.cursos.length > 0) {
           console.log('Cursos recibidos:');
-          response.cursos.forEach((curso, index) => {
+          safeResponse.cursos.forEach((curso, index) => {
             console.log(`${index+1}. ${curso.nom_cur} - Audiencia: ${curso.tipo_audiencia_cur}`);
             if (curso.tipo_audiencia_cur === 'CARRERA_ESPECIFICA' && curso.cursosPorCarrera) {
               console.log('   Carreras asociadas:', curso.cursosPorCarrera.map(c => c.carrera.nom_car).join(', '));
@@ -117,20 +128,22 @@ const CarreraEventosCursos = () => {
         }
         
         // Mostrar detalles de los eventos recibidos
-        if (response.eventos && response.eventos.length > 0) {
+        if (safeResponse.eventos.length > 0) {
           console.log('Eventos recibidos:');
-          response.eventos.forEach((evento, index) => {
+          safeResponse.eventos.forEach((evento, index) => {
             console.log(`${index+1}. ${evento.nom_eve} - Audiencia: ${evento.tipo_audiencia_eve}`);
           });
         } else {
           console.log('No se recibieron eventos del servidor');
         }
         
-        setData(response);
+        setData(safeResponse);
         
       } catch (error) {
         console.error('Error detallado:', error);
         setError('No se pudieron cargar los eventos y cursos. Por favor, intenta más tarde.');
+        // Asegurar que siempre tengamos una estructura válida incluso en caso de error
+        setData({ eventos: [], cursos: [], carrera: null });
       } finally {
         setLoading(false);
       }

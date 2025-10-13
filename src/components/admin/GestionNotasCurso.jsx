@@ -99,10 +99,19 @@ const GestionNotasCurso = () => {
     }
 
     try {
+      console.log('Guardando participación:', {
+        cursoId: id,
+        inscripcionId,
+        nota_final: parseFloat(notaFinal),
+        asistencia_porcentaje: parseFloat(asistencia)
+      });
+
       const response = await api.put(`/participaciones/cursos/${id}/inscripcion/${inscripcionId}`, {
         nota_final: parseFloat(notaFinal),
         asistencia_porcentaje: parseFloat(asistencia)
       });
+
+      console.log('Respuesta del servidor:', response.data);
 
       if (response.data.success) {
         toast.success('Participación actualizada correctamente');
@@ -116,26 +125,34 @@ const GestionNotasCurso = () => {
         toast.error(response.data.message || 'Error al actualizar la participación');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error completo:', error);
+      console.error('Respuesta de error:', error.response?.data);
       toast.error(error.response?.data?.message || 'Error de conexión');
     }
   };
 
   const formatearNota = (nota) => {
-    if (nota > 10) {
-      return `${nota}%`;
+    if (!nota || nota === 0) return 'Sin nota';
+    const notaNum = Number(nota);
+    if (isNaN(notaNum)) return 'Sin nota';
+    if (notaNum > 10) {
+      return `${notaNum}%`;
     }
-    return nota.toFixed(1);
+    return notaNum.toFixed(1);
   };
 
   const calcularAprobacion = (nota, asistencia) => {
     const notaMinima = curso?.nota_minima_aprobacion || 7.0;
     const asistenciaMinima = curso?.porcentaje_asistencia_aprobacion || 80;
     
-    // Validar que la nota esté en el rango correcto según el tipo de calificación
-    const notaNormalizada = nota > 10 ? (nota / 100) * 10 : nota; // Si es porcentaje, convertir a escala 1-10
+    // Validar que tengamos valores válidos
+    const notaNum = Number(nota) || 0;
+    const asistenciaNum = Number(asistencia) || 0;
     
-    return notaNormalizada >= notaMinima && asistencia >= asistenciaMinima;
+    // Validar que la nota esté en el rango correcto según el tipo de calificación
+    const notaNormalizada = notaNum > 10 ? (notaNum / 100) * 10 : notaNum; // Si es porcentaje, convertir a escala 1-10
+    
+    return notaNormalizada >= notaMinima && asistenciaNum >= asistenciaMinima;
   };
 
   if (loading) {

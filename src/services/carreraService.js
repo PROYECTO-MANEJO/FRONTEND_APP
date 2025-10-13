@@ -1,13 +1,15 @@
-import api from '../services/api';
+import api from "../services/api";
 
 export const carreraService = {
   // Obtener todas las carreras
   async getAll() {
     try {
-      const response = await api.get('/carreras');
-      return response.data.data; // Extraer solo los datos
+      const response = await api.get("/carreras");
+      return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener carreras');
+      throw new Error(
+        error.response?.data?.message || "Error al obtener carreras"
+      );
     }
   },
 
@@ -17,17 +19,21 @@ export const carreraService = {
       const response = await api.get(`/carreras/${id}`);
       return response.data.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener la carrera');
+      throw new Error(
+        error.response?.data?.message || "Error al obtener la carrera"
+      );
     }
   },
 
   // Crear una nueva carrera
   async create(carreraData) {
     try {
-      const response = await api.post('/carreras', carreraData);
+      const response = await api.post("/carreras", carreraData);
       return response.data.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al crear la carrera');
+      throw new Error(
+        error.response?.data?.message || "Error al crear la carrera"
+      );
     }
   },
 
@@ -37,7 +43,9 @@ export const carreraService = {
       const response = await api.put(`/carreras/${id}`, carreraData);
       return response.data.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al actualizar la carrera');
+      throw new Error(
+        error.response?.data?.message || "Error al actualizar la carrera"
+      );
     }
   },
 
@@ -47,7 +55,9 @@ export const carreraService = {
       const response = await api.delete(`/carreras/${id}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al eliminar la carrera');
+      throw new Error(
+        error.response?.data?.message || "Error al eliminar la carrera"
+      );
     }
-  }
+  },
 };

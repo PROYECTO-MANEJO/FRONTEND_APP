@@ -91,9 +91,17 @@ const GestionAsistenciaEvento = () => {
     }
 
     try {
+      console.log('Guardando asistencia:', {
+        eventoId: id,
+        inscripcionId,
+        asi_par: parseInt(asistencia)
+      });
+
       const response = await api.put(`/participaciones/eventos/${id}/inscripcion/${inscripcionId}`, {
         asi_par: parseInt(asistencia)
       });
+
+      console.log('Respuesta del servidor:', response.data);
 
       if (response.data.success) {
         toast.success('Participación actualizada correctamente');
@@ -107,7 +115,8 @@ const GestionAsistenciaEvento = () => {
         toast.error(response.data.message || 'Error al actualizar la participación');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error completo:', error);
+      console.error('Respuesta de error:', error.response?.data);
       toast.error(error.response?.data?.message || 'Error de conexión');
     }
   };

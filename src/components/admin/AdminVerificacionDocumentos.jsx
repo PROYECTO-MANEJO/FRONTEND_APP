@@ -71,12 +71,35 @@ const AdminVerificacionDocumentos = () => {
     try {
       setLoading(true);
       const response = await documentService.getPendingDocuments();
-      if (response.success) {
-        setDocumentData(response.data);
+      
+      // El backend devuelve { success: true, usuarios: [...], total: ... }
+      if (response && response.usuarios) {
+        // Separar estudiantes y usuarios por rol
+        const estudiantes = response.usuarios.filter(user => user.rol === 'ESTUDIANTE');
+        const usuarios = response.usuarios.filter(user => user.rol !== 'ESTUDIANTE');
+        
+        setDocumentData({
+          estudiantes,
+          usuarios,
+          total: response.total || response.usuarios.length
+        });
+      } else {
+        // Fallback si la estructura no es la esperada
+        setDocumentData({
+          estudiantes: [],
+          usuarios: [],
+          total: 0
+        });
       }
     } catch (error) {
       console.error('Error cargando documentos pendientes:', error);
       showAlert('Error al cargar documentos pendientes', 'error');
+      // Asegurar que documentData tenga la estructura correcta en caso de error
+      setDocumentData({
+        estudiantes: [],
+        usuarios: [],
+        total: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -146,9 +169,10 @@ const AdminVerificacionDocumentos = () => {
       const { action, user } = confirmDialog;
 
       if (action === 'approve') {
+        // Siempre aprobar todos los documentos disponibles
         await documentService.approveUserDocument(
           user.id_usu,
-          user.rol === 'ESTUDIANTE' ? 'all' : 'cedula'
+          'all'
         );
         showAlert(`Documentos de ${user.nombre_completo} aprobados exitosamente`);
       } else if (action === 'reject') {
@@ -348,22 +372,30 @@ const AdminVerificacionDocumentos = () => {
         <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Documentos Pendientes de Verificación ({documentData.total})
+              Documentos Pendientes de Verificación ({documentData?.total || 0})
             </Typography>
 
             <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-              <Tab label={`Estudiantes (${documentData.estudiantes.length})`} icon={<StudentIcon />} iconPosition="start" />
-              <Tab label={`Usuarios (${documentData.usuarios.length})`} icon={<UserIcon />} iconPosition="start" />
+              <Tab 
+                label={`Estudiantes (${documentData?.estudiantes?.length || 0})`} 
+                icon={<StudentIcon />} 
+                iconPosition="start" 
+              />
+              <Tab 
+                label={`Usuarios (${documentData?.usuarios?.length || 0})`} 
+                icon={<UserIcon />} 
+                iconPosition="start" 
+              />
             </Tabs>
 
             {tabValue === 0 ? (
-              documentData.estudiantes.length > 0 ? (
+              documentData?.estudiantes?.length > 0 ? (
                 renderUserTable(documentData.estudiantes, 'estudiante')
               ) : (
                 <Alert severity="info">No hay estudiantes con documentos pendientes de verificación</Alert>
               )
             ) : (
-              documentData.usuarios.length > 0 ? (
+              documentData?.usuarios?.length > 0 ? (
                 renderUserTable(documentData.usuarios, 'usuario')
               ) : (
                 <Alert severity="info">No hay usuarios con documentos pendientes de verificación</Alert>

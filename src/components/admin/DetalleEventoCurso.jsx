@@ -103,11 +103,11 @@ const DetalleEventoCurso = ({ item, onClose }) => {
 
   useEffect(() => {
     cargarDetalles();
-  }, [item]);
+  }, [item]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     filtrarInscripciones();
-  }, [inscripciones, searchTerm, selectedTab]);
+  }, [inscripciones, searchTerm, selectedTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cargarDetalles = async () => {
     try {
@@ -406,7 +406,7 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                 {item.tipo === 'EVENTO' ? itemData.nom_eve : itemData.nom_cur}
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                Gestión de inscripciones - {item.tipo}
+                Gestión de inscripciones - {item.tipo} - Estado: {itemData.estado}
               </Typography>
             </Box>
           </Box>
@@ -420,13 +420,18 @@ const DetalleEventoCurso = ({ item, onClose }) => {
                 color="primary"
                 startIcon={<School />}
                 onClick={() => {
+                  console.log('Navegando a gestión:', item.tipo, item.id_eve || item.id_cur);
                   if (item.tipo === 'EVENTO') {
                     navigate(`/admin/gestion-asistencia-evento/${item.id_eve}`);
                   } else {
                     navigate(`/admin/gestion-notas-curso/${item.id_cur}`);
                   }
                 }}
-                sx={{ minWidth: 200 }}
+                sx={{ 
+                  minWidth: 200,
+                  bgcolor: '#2e7d32',
+                  '&:hover': { bgcolor: '#1b5e20' }
+                }}
               >
                 {item.tipo === 'EVENTO' ? 'Gestionar Asistencia' : 'Gestionar Notas'}
               </Button>
@@ -447,13 +452,33 @@ const DetalleEventoCurso = ({ item, onClose }) => {
           
           {/* Indicador de estado cerrado */}
           {itemData.estado === 'CERRADO' && (
-            <Chip
-              icon={<Lock />}
-              label={`${item.tipo} CERRADO`}
-              color="error"
-              variant="outlined"
-              size="large"
-            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <Chip
+                icon={<Lock />}
+                label={`${item.tipo} CERRADO`}
+                color="error"
+                variant="outlined"
+                size="large"
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                No se pueden gestionar calificaciones en {item.tipo.toLowerCase()}s cerrados
+              </Typography>
+            </Box>
+          )}
+          
+          {/* Mensaje para otros estados */}
+          {itemData.estado !== 'ACTIVO' && itemData.estado !== 'CERRADO' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <Chip
+                label={`Estado: ${itemData.estado}`}
+                color="warning"
+                variant="outlined"
+                size="large"
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                Solo se pueden gestionar calificaciones en {item.tipo.toLowerCase()}s activos
+              </Typography>
+            </Box>
           )}
         </Box>
 

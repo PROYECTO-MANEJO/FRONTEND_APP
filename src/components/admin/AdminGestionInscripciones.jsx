@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -32,7 +33,9 @@ import {
   Person,
   Visibility,
   FilterList,
-  Refresh
+  Refresh,
+  Assignment,
+  CheckCircle
 } from '@mui/icons-material';
 
 import AdminSidebar from './AdminSidebar';
@@ -42,6 +45,7 @@ import api from '../../services/api';
 
 const AdminGestionInscripciones = () => {
   const { getMainContentStyle } = useSidebarLayout();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
@@ -68,7 +72,7 @@ const AdminGestionInscripciones = () => {
 
   useEffect(() => {
     filtrarItems();
-  }, [items, searchTerm, selectedTab]);
+  }, [items, searchTerm, selectedTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cargarDatos = async () => {
     try {
@@ -505,6 +509,26 @@ const AdminGestionInscripciones = () => {
 
                     {/* Acciones */}
                     <Box sx={{ p: 2, pt: 0 }}>
+                      {/* Botón de gestión de calificaciones/asistencia si hay inscripciones aprobadas */}
+                      {(item.estadisticas?.aprobadas || 0) > 0 && (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          color="primary"
+                          startIcon={item.tipo === 'EVENTO' ? <CheckCircle /> : <Assignment />}
+                          onClick={() => {
+                            if (item.tipo === 'EVENTO') {
+                              navigate(`/admin/gestion-asistencia-evento/${item.id_eve}`);
+                            } else {
+                              navigate(`/admin/gestion-notas-curso/${item.id_cur}`);
+                            }
+                          }}
+                          sx={{ mb: 1 }}
+                        >
+                          {item.tipo === 'EVENTO' ? 'Gestionar Asistencia' : 'Gestionar Notas'}
+                        </Button>
+                      )}
+                      
                       <Button
                         fullWidth
                         variant="contained"

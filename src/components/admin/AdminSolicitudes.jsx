@@ -177,8 +177,9 @@ const AdminSolicitudes = () => {
         setLoading(true);
         setError(null);
         const response = await solicitudesAdminService.obtenerTodasLasSolicitudes(filtros);
-        setSolicitudes(response.data.solicitudes || []);
-        setPagination(response.data.pagination || {});
+        console.log('DATOS EXACTOS RECIBIDOS EN EL COMPONENTE:', response);
+        setSolicitudes(response.solicitudes || []);
+        setPagination(response.pagination || {});
       } catch (err) {
         console.error('Error al cargar solicitudes:', err);
         setError('Error al cargar solicitudes: ' + err.message);
@@ -263,8 +264,8 @@ const AdminSolicitudes = () => {
       setLoading(true);
       setError(null);
       const response = await solicitudesAdminService.obtenerTodasLasSolicitudes(filtros);
-      setSolicitudes(response.data.solicitudes || []);
-      setPagination(response.data.pagination || {});
+      setSolicitudes(response.solicitudes || []);
+      setPagination(response.pagination || {});
     } catch (err) {
       console.error('Error al cargar solicitudes:', err);
       setError('Error al cargar solicitudes: ' + err.message);

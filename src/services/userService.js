@@ -24,7 +24,7 @@ export const userService = {
   // Obtener todos los usuarios (admin)
   async getAll() {
     try {
-      const response = await api.get('/api/users');
+      const response = await api.get('/users');
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error al obtener usuarios');

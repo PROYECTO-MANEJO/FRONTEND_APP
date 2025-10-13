@@ -55,15 +55,28 @@ const MisCertificados = () => {
       setLoading(true);
       
       // Cargar participaciones terminadas (para pestañas aprobados/reprobados)
-      const responseTerminadas = await obtenerParticipacionesTerminadas();
-      setParticipaciones(responseTerminadas.data);
+      try {
+        const responseTerminadas = await obtenerParticipacionesTerminadas();
+        console.log('Participaciones terminadas:', responseTerminadas);
+        setParticipaciones(responseTerminadas?.participaciones || { eventos: [], cursos: [] });
+      } catch (err) {
+        console.warn('No se pudieron cargar participaciones terminadas:', err);
+        setParticipaciones({ eventos: [], cursos: [] });
+      }
       
       // Cargar TODAS las inscripciones (incluyendo las que no tienen participación)
-      const responseTodas = await obtenerTodasLasInscripciones();
-      setTodasLasInscripciones(responseTodas.data);
+      try {
+        const responseTodas = await obtenerTodasLasInscripciones();
+        console.log('Todas las inscripciones:', responseTodas);
+        setTodasLasInscripciones(responseTodas?.data || { eventos: [], cursos: [] });
+      } catch (err) {
+        console.warn('No se pudieron cargar todas las inscripciones:', err);
+        setTodasLasInscripciones({ eventos: [], cursos: [] });
+      }
       
       setError(null);
     } catch (err) {
+      console.error('Error general:', err);
       setError(err.message || 'Error al cargar participaciones');
     } finally {
       setLoading(false);
@@ -123,14 +136,14 @@ const MisCertificados = () => {
 
   // Para pestaña "Todos" - usar todas las inscripciones
   const inscripcionesTotales = [
-    ...(todasLasInscripciones.eventos || []),
-    ...(todasLasInscripciones.cursos || [])
+    ...(Array.isArray(todasLasInscripciones?.eventos) ? todasLasInscripciones.eventos : []),
+    ...(Array.isArray(todasLasInscripciones?.cursos) ? todasLasInscripciones.cursos : [])
   ];
 
   // Para pestañas "Aprobados" y "Reprobados" - usar solo las terminadas
   const participacionesTerminadas = [
-    ...(participaciones.eventos || []),
-    ...(participaciones.cursos || [])
+    ...(Array.isArray(participaciones?.eventos) ? participaciones.eventos : []),
+    ...(Array.isArray(participaciones?.cursos) ? participaciones.cursos : [])
   ];
   
   const participacionesAprobadas = participacionesTerminadas.filter(p => p.aprobado);
@@ -229,15 +242,15 @@ const MisCertificados = () => {
               {tipo === 'curso' && (
                 <>
                   Nota Final:{' '}
-                  <strong>{item.nota_final ?? 'N/A'}/100</strong>
+                  <strong>{item.nota ?? 'N/A'}/100</strong>
                   <br />
                 </>
               )}
               Asistencia:{' '}
               <strong>
                 {tipo === 'evento'
-                  ? item.asi_par ?? 'N/A'
-                  : item.asistencia_porcentaje ?? 'N/A'}%
+                  ? item.asistencia ?? 'N/A'
+                  : item.asistencia ?? 'N/A'}%
               </strong>
               <br />
               Participante: {item.usuario}
@@ -281,24 +294,20 @@ const MisCertificados = () => {
                 fullWidth
                 sx={{ mt: 2 }}
                 startIcon={
-                  downloading === item.id_par || downloading === item.id_par_cur
+                  downloading === item.id_participacion
                     ? <CircularProgress size={16} color="inherit" />
                     : <VisibilityIcon />
                 }
                 onClick={() =>
                   handleVisualizarCertificado(
                     tipo,
-                    tipo === 'evento' ? item.id_par : item.id_par_cur,
+                    item.id_participacion,
                     item
                   )
                 }
-                disabled={
-                  downloading === item.id_par ||
-                  downloading === item.id_par_cur
-                }
+                disabled={downloading === item.id_participacion}
               >
-                {downloading === item.id_par ||
-                downloading === item.id_par_cur
+                {downloading === item.id_participacion
                   ? 'Cargando...'
                   : 'Ver certificado'}
               </Button>
@@ -471,14 +480,14 @@ const MisCertificados = () => {
               onClick={() =>
                 handleVisualizarCertificado(
                   tipo,
-                  tipo === 'evento' ? itemSeleccionado.id_par : itemSeleccionado.id_par_cur,
+                  itemSeleccionado.id_participacion,
                   itemSeleccionado
                 )
               }
-              disabled={downloading === itemSeleccionado.id_par || downloading === itemSeleccionado.id_par_cur}
-              startIcon={downloading ? <CircularProgress size={16} /> : <VisibilityIcon />}
+              disabled={downloading === itemSeleccionado.id_participacion}
+              startIcon={downloading === itemSeleccionado.id_participacion ? <CircularProgress size={16} /> : <VisibilityIcon />}
             >
-              {downloading ? 'Cargando...' : 'Ver certificado'}
+              {downloading === itemSeleccionado.id_participacion ? 'Cargando...' : 'Ver certificado'}
             </Button>
           )}
         </DialogActions>

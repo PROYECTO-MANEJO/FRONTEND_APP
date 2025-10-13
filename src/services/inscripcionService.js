@@ -5,7 +5,7 @@ export const inscripcionService = {
   // Inscripciones para eventos
   inscribirseEvento: async (inscripcionData) => {
     try {
-      const response = await api.post('/inscripciones/eventos', inscripcionData);
+      const response = await api.post('/inscriptions/events', inscripcionData);
       return response.data;
     } catch (error) {
       console.error('Error al inscribirse en evento:', error);
@@ -39,7 +39,7 @@ export const inscripcionService = {
 
   obtenerMisInscripcionesEventos: async () => {
     try {
-      const response = await api.get('/inscripciones/evento/mis-inscripciones');
+      const response = await api.get('/inscriptions/my-events');
       return response.data.data;
     } catch (error) {
       console.error('Error al obtener inscripciones de eventos:', error);
@@ -261,7 +261,7 @@ startxref
   // Inscripciones para cursos
   inscribirseCurso: async (inscripcionData) => {
     try {
-      const response = await api.post('/inscripcionesCursos/curso', inscripcionData);
+      const response = await api.post('/inscriptions/courses', inscripcionData);
       return response.data;
     } catch (error) {
       console.error('Error al inscribirse en curso:', error);
@@ -295,7 +295,7 @@ startxref
 
   obtenerMisInscripcionesCursos: async () => {
     try {
-      const response = await api.get('/inscripcionesCursos/curso/mis-inscripciones');
+      const response = await api.get('/inscriptions/my-courses');
       return response.data.data;
     } catch (error) {
       console.error('Error al obtener inscripciones de cursos:', error);

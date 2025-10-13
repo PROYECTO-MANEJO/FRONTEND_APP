@@ -1,6 +1,6 @@
 import api, { getBaseUrl } from './api';
 
-const CERTIFICATES_BASE_URL = '/certificados';
+const CERTIFICATES_BASE_URL = '/certificates';
 
 /**
  * Visualizar certificado (método mejorado)
@@ -64,7 +64,7 @@ export const visualizarCertificado = async (tipo, idParticipacion) => {
  */
 export const obtenerMisCertificados = async () => {
   try {
-    const response = await api.get(`${CERTIFICATES_BASE_URL}/mis-certificados`);
+    const response = await api.get(`${CERTIFICATES_BASE_URL}/my-certificates`);
     return response.data;
   } catch (error) {
     console.error('Error al obtener certificados:', error);
@@ -102,7 +102,7 @@ export const obtenerParticipacionesTerminadas = async () => {
 export const descargarCertificado = async (tipo, idParticipacion) => {
   try {
     const response = await api.get(
-      `${CERTIFICATES_BASE_URL}/descargar/${tipo}/${idParticipacion}`,
+      `${CERTIFICATES_BASE_URL}/download/${tipo}/${idParticipacion}`,
       {
         responseType: 'blob', // Importante para archivos
       }
@@ -201,17 +201,21 @@ export const obtenerParticipacionesCompletas = async () => {
 export const obtenerTodasLasInscripciones = async () => {
   try {
     // Obtener inscripciones a eventos
-    const inscripcionesEventos = await api.get('/inscripciones/evento/mis-inscripciones');
+    const inscripcionesEventos = await api.get('/inscriptions/my-events');
     
     // Obtener inscripciones a cursos
-    const inscripcionesCursos = await api.get('/inscripcionesCursos/curso/mis-inscripciones');
+    const inscripcionesCursos = await api.get('/inscriptions/my-courses');
     
     // Debug: Mostrar datos recibidos
-    console.log('DEBUG - Datos de eventos recibidos:', inscripcionesEventos.data.data);
-    console.log('DEBUG - Datos de cursos recibidos:', inscripcionesCursos.data.data);
+    console.log('DEBUG - Datos de eventos recibidos:', inscripcionesEventos.data);
+    console.log('DEBUG - Datos de cursos recibidos:', inscripcionesCursos.data);
+    
+    // Verificar que los datos existen y son arrays
+    const eventosData = inscripcionesEventos.data?.data || [];
+    const cursosData = inscripcionesCursos.data?.data || [];
     
     // Formatear eventos
-    const eventos = inscripcionesEventos.data.data.map(inscripcion => ({
+    const eventos = eventosData.map(inscripcion => ({
       id_ins: inscripcion.id_ins,
       evento: inscripcion.evento?.nom_eve || 'Sin nombre',
       estado_evento: inscripcion.evento?.estado || 'ACTIVO',
@@ -225,7 +229,7 @@ export const obtenerTodasLasInscripciones = async () => {
     }));
     
     // Formatear cursos
-    const cursos = inscripcionesCursos.data.data.map(inscripcion => ({
+    const cursos = cursosData.map(inscripcion => ({
       id_ins_cur: inscripcion.id_ins_cur,
       curso: inscripcion.curso?.nom_cur || 'Sin nombre',
       estado_curso: inscripcion.curso?.estado || 'ACTIVO',
@@ -251,6 +255,14 @@ export const obtenerTodasLasInscripciones = async () => {
     };
   } catch (error) {
     console.error('Error al obtener todas las inscripciones:', error);
-    throw error;
+    // Devolver estructura vacía en caso de error
+    return {
+      success: false,
+      data: {
+        eventos: [],
+        cursos: []
+      },
+      error: error.message
+    };
   }
 };
