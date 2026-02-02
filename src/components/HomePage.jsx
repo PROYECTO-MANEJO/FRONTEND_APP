@@ -82,7 +82,7 @@ const HomePage = () => {
               fontSize: { xs: '2.5rem', md: '3.5rem' }
             }}
           >
-            FISEI - SIGEC
+            FISEI - SIGAD
           </Typography>
           <Typography
             variant="h5"

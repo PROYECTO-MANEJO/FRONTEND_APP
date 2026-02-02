@@ -38,7 +38,7 @@ const AuthenticatedHomePage = () => {
 
   // Estado para el contenido editable
   const [contenido, setContenido] = useState({
-    titulo_hero: 'FISEI - SIGEC',
+    titulo_hero: 'FISEI - SIGAD',
     subtitulo_hero: 'Sistema Integral de Gestión de Eventos y Cursos',
     descripcion_hero: 'Facultad de Ingeniería en Sistemas, Electrónica e Industrial - Universidad Técnica de Ambato',
     titulo_ofrecemos: '¿Qué Ofrecemos?',
@@ -97,7 +97,7 @@ const AuthenticatedHomePage = () => {
         
         // Actualizar contenido de texto
         setContenido({
-          titulo_hero: data.titulo_hero || 'FISEI - SIGEC',
+          titulo_hero: data.titulo_hero || 'FISEI - SIGAD',
           subtitulo_hero: data.subtitulo_hero || 'Sistema Integral de Gestión de Eventos y Cursos',
           descripcion_hero: data.descripcion_hero || 'Facultad de Ingeniería en Sistemas, Electrónica e Industrial - Universidad Técnica de Ambato',
           titulo_ofrecemos: data.titulo_ofrecemos || '¿Qué Ofrecemos?',
